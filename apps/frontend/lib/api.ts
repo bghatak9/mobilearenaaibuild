@@ -146,3 +146,162 @@ export async function getReviewBySlug(slug: string): Promise<Review> {
   if (!res.ok) throw new Error("Failed to fetch review");
   return res.json();
 }
+
+/* ------------------------------------------------------------------ *
+ * Comments / moderation
+ * ------------------------------------------------------------------ */
+
+export type Comment = {
+  id: number;
+  body: string;
+  createdAt: string;
+  user?: { id: number; email: string } | null;
+  device?: { id: number; name: string; slug: string } | null;
+};
+
+export async function getComments(): Promise<Comment[]> {
+  const res = await fetch(`${API_URL}/comments`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch comments");
+  return res.json();
+}
+
+/* ------------------------------------------------------------------ *
+ * Auth + admin helpers
+ *
+ * The token is stored client-side and attached to mutating admin
+ * requests. The backend write endpoints are not strictly guarded yet,
+ * but we always forward the token so guards can be enabled later.
+ * ------------------------------------------------------------------ */
+
+const TOKEN_KEY = "ma_admin_token";
+
+export function getToken(): string | null {
+  if (typeof window === "undefined") return null;
+  return window.localStorage.getItem(TOKEN_KEY);
+}
+
+export function setToken(token: string | null) {
+  if (typeof window === "undefined") return;
+  if (token) window.localStorage.setItem(TOKEN_KEY, token);
+  else window.localStorage.removeItem(TOKEN_KEY);
+}
+
+function authHeaders(): Record<string, string> {
+  const token = getToken();
+  return {
+    "Content-Type": "application/json",
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+}
+
+export async function login(
+  email: string,
+  password: string,
+): Promise<{ access_token: string }> {
+  const res = await fetch(`${API_URL}/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error("Invalid credentials");
+  return res.json();
+}
+
+/* ---- News (admin) ---- */
+
+export type NewsInput = {
+  title: string;
+  content: string;
+  excerpt?: string;
+  thumbnail?: string;
+  featured?: boolean;
+  status?: NewsArticle["status"];
+};
+
+export async function getAllNews(): Promise<NewsArticle[]> {
+  // No status filter -> backend returns every article (incl. drafts).
+  const res = await fetch(`${API_URL}/news`, { cache: "no-store" });
+  if (!res.ok) throw new Error("Failed to fetch news");
+  return res.json();
+}
+
+export async function createNews(input: NewsInput): Promise<NewsArticle> {
+  const res = await fetch(`${API_URL}/news`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to create article");
+  return res.json();
+}
+
+export async function updateNews(
+  id: number,
+  input: Partial<NewsInput>,
+): Promise<NewsArticle> {
+  const res = await fetch(`${API_URL}/news/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to update article");
+  return res.json();
+}
+
+export async function deleteNews(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/news/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete article");
+}
+
+/* ---- Reviews (admin) ---- */
+
+export type ReviewInput = {
+  title: string;
+  content: string;
+  score: number;
+  deviceId: number;
+  pros?: string[];
+  cons?: string[];
+};
+
+export async function createReview(input: ReviewInput): Promise<Review> {
+  const res = await fetch(`${API_URL}/reviews`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to create review");
+  return res.json();
+}
+
+export async function updateReview(
+  id: number,
+  input: Partial<ReviewInput>,
+): Promise<Review> {
+  const res = await fetch(`${API_URL}/reviews/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to update review");
+  return res.json();
+}
+
+export async function deleteReview(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/reviews/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete review");
+}
+
+export async function deleteComment(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/comments/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete comment");
+}

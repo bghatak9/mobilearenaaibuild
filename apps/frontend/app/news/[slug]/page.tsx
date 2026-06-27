@@ -1,8 +1,11 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import JsonLd from "@/components/seo/JsonLd";
+import { absoluteUrl } from "@/lib/seo";
 import { getNewsBySlug, type NewsArticle } from "@/lib/api";
 
 function formatDate(value?: string | null): string {
@@ -12,6 +15,47 @@ function formatDate(value?: string | null): string {
     month: "long",
     day: "numeric",
   });
+}
+
+function summarize(article: NewsArticle): string {
+  return (
+    article.excerpt ?? article.content.replace(/\s+/g, " ").slice(0, 160).trim()
+  );
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const article = await getNewsBySlug(slug);
+    const description = summarize(article);
+    const url = absoluteUrl(`/news/${article.slug}`);
+    const published = article.publishedAt ?? article.createdAt;
+    return {
+      title: article.title,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        type: "article",
+        url,
+        title: article.title,
+        description,
+        publishedTime: published,
+        ...(article.thumbnail ? { images: [{ url: article.thumbnail }] } : {}),
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: article.title,
+        description,
+        ...(article.thumbnail ? { images: [article.thumbnail] } : {}),
+      },
+    };
+  } catch {
+    return { title: "Article not found" };
+  }
 }
 
 export default async function NewsArticlePage({
@@ -28,8 +72,28 @@ export default async function NewsArticlePage({
     notFound();
   }
 
+  const published = article.publishedAt ?? article.createdAt;
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "NewsArticle",
+    headline: article.title,
+    description: summarize(article),
+    datePublished: published,
+    dateModified: published,
+    ...(article.thumbnail ? { image: [article.thumbnail] } : {}),
+    mainEntityOfPage: {
+      "@type": "WebPage",
+      "@id": absoluteUrl(`/news/${article.slug}`),
+    },
+    publisher: {
+      "@type": "Organization",
+      name: "MobileArena",
+    },
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <JsonLd data={jsonLd} />
       <Header />
 
       <article className="mx-auto max-w-3xl px-5 py-10">

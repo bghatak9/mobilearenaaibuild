@@ -1,9 +1,33 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { Trophy } from "lucide-react";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { absoluteUrl } from "@/lib/seo";
 import { compareDevices, type Device, type CompareResult } from "@/lib/api";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const result = await compareDevices(slug);
+  if (!result || result.devices.length < 2) {
+    return { title: "Compare phones" };
+  }
+  const names = result.devices.map((d) => d.name).join(" vs ");
+  const description = `Side-by-side specs comparison: ${names}. Display, chipset, battery, cameras and more.`;
+  const url = absoluteUrl(`/compare/${slug}`);
+  return {
+    title: names,
+    description,
+    alternates: { canonical: url },
+    openGraph: { type: "website", url, title: names, description },
+    twitter: { card: "summary_large_image", title: names, description },
+  };
+}
 
 type RowDef = {
   label: string;

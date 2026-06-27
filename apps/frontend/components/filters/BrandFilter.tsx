@@ -1,8 +1,14 @@
+type BrandFilterProps = {
+  brands: string[];
+  selected: string | null;
+  onSelect: (brand: string) => void;
+};
+
 export default function BrandFilter({
   brands,
   selected,
   onSelect,
-}: any) {
+}: BrandFilterProps) {
   return (
     <div className="flex gap-2 flex-wrap">
       {brands.map((brand: string) => (

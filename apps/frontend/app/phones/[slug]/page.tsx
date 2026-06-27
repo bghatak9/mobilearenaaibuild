@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star } from "lucide-react";
@@ -6,7 +7,54 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import SpecsTable from "@/components/phone/SpecsTable";
 import CompareButton from "@/components/compare/CompareButton";
+import JsonLd from "@/components/seo/JsonLd";
+import { absoluteUrl } from "@/lib/seo";
 import { getDeviceBySlug, type Device } from "@/lib/api";
+
+function deviceSummary(device: Device): string {
+  const parts = [
+    device.display ? `${device.display.size}" ${device.display.type}` : null,
+    device.chipset?.cpu,
+    device.battery ? `${device.battery.capacity} mAh battery` : null,
+  ].filter(Boolean);
+  return parts.length
+    ? `${device.name}: ${parts.join(", ")}. Full specs, price and reviews.`
+    : `${device.name} — full specifications, price and reviews on MobileArena.`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const device = await getDeviceBySlug(slug);
+    const description = deviceSummary(device);
+    const image = device.images?.[0]?.url;
+    const url = absoluteUrl(`/phones/${device.slug}`);
+    return {
+      title: device.name,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        type: "website",
+        url,
+        title: device.name,
+        description,
+        ...(image ? { images: [{ url: image }] } : {}),
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: device.name,
+        description,
+        ...(image ? { images: [image] } : {}),
+      },
+    };
+  } catch {
+    return { title: "Phone not found" };
+  }
+}
 
 export default async function PhoneDetailPage({
   params,
@@ -24,8 +72,38 @@ export default async function PhoneDetailPage({
 
   const gallery = device.images ?? [];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: device.name,
+    description: deviceSummary(device),
+    ...(device.brand?.name ? { brand: { "@type": "Brand", name: device.brand.name } } : {}),
+    ...(gallery[0]?.url ? { image: gallery.map((g) => g.url) } : {}),
+    ...(device.price != null
+      ? {
+          offers: {
+            "@type": "Offer",
+            price: device.price,
+            priceCurrency: "USD",
+            availability: "https://schema.org/InStock",
+          },
+        }
+      : {}),
+    ...(device.rating != null
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: device.rating,
+            bestRating: 10,
+            ratingCount: Math.max(device.reviews?.length ?? 1, 1),
+          },
+        }
+      : {}),
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <JsonLd data={jsonLd} />
       <Header />
 
       <section className="mx-auto max-w-7xl px-5 py-8">

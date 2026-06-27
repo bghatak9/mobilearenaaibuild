@@ -1,10 +1,48 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Star, ThumbsUp, ThumbsDown } from "lucide-react";
 
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import JsonLd from "@/components/seo/JsonLd";
+import { absoluteUrl } from "@/lib/seo";
 import { getReviewBySlug, type Review } from "@/lib/api";
+
+function summarize(review: Review): string {
+  return review.content.replace(/\s+/g, " ").slice(0, 160).trim();
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  try {
+    const review = await getReviewBySlug(slug);
+    const description = summarize(review);
+    const url = absoluteUrl(`/reviews/${review.slug}`);
+    return {
+      title: review.title,
+      description,
+      alternates: { canonical: url },
+      openGraph: {
+        type: "article",
+        url,
+        title: review.title,
+        description,
+      },
+      twitter: {
+        card: "summary_large_image",
+        title: review.title,
+        description,
+      },
+    };
+  } catch {
+    return { title: "Review not found" };
+  }
+}
 
 export default async function ReviewDetailPage({
   params,
@@ -23,8 +61,27 @@ export default async function ReviewDetailPage({
   const pros = Array.isArray(review.pros) ? review.pros : [];
   const cons = Array.isArray(review.cons) ? review.cons : [];
 
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Review",
+    name: review.title,
+    reviewBody: review.content,
+    datePublished: review.publishedAt,
+    reviewRating: {
+      "@type": "Rating",
+      ratingValue: review.score,
+      bestRating: 10,
+      worstRating: 0,
+    },
+    author: { "@type": "Organization", name: "MobileArena" },
+    ...(review.device
+      ? { itemReviewed: { "@type": "Product", name: review.device.name } }
+      : {}),
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 pb-24">
+      <JsonLd data={jsonLd} />
       <Header />
 
       <article className="mx-auto max-w-3xl px-5 py-10">
