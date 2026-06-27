@@ -1,0 +1,8 @@
+### Get devices
+GET http://localhost:4000/devices
+
+### Pagination
+GET http://localhost:4000/devices?page=1&limit=10
+
+### Search
+GET http://localhost:4000/devices?search=iphone

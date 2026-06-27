@@ -1,0 +1,25 @@
+version: "3.9"
+
+services:
+  postgres:
+    image: postgres:16
+    container_name: mobilearena_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: mobilearena
+      POSTGRES_PASSWORD: mobilearena123
+      POSTGRES_DB: mobilearena_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  redis:
+    image: redis:7
+    container_name: mobilearena_redis
+    restart: always
+    ports:
+      - "6379:6379"
+
+volumes:
+  postgres_data:
