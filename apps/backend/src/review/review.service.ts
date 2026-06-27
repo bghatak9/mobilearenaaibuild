@@ -2,39 +2,57 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { slugify } from '../common/slug';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 
+const CACHE_PREFIX = 'reviews:';
+const CACHE_TTL = 60;
+
 @Injectable()
 export class ReviewService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   findAll(deviceId?: number) {
-    return this.prisma.review.findMany({
-      where: deviceId ? { deviceId } : {},
-      orderBy: { publishedAt: 'desc' },
-      include: {
-        device: { select: { id: true, name: true, slug: true } },
-      },
-    });
+    return this.cache.wrap(
+      `${CACHE_PREFIX}list:${deviceId ?? 'all'}`,
+      CACHE_TTL,
+      () =>
+        this.prisma.review.findMany({
+          where: deviceId ? { deviceId } : {},
+          orderBy: { publishedAt: 'desc' },
+          include: {
+            device: { select: { id: true, name: true, slug: true } },
+          },
+        }),
+    );
   }
 
   async findBySlug(slug: string) {
-    const review = await this.prisma.review.findUnique({
-      where: { slug },
-      include: { device: true },
-    });
+    return this.cache.wrap(
+      `${CACHE_PREFIX}slug:${slug}`,
+      CACHE_TTL,
+      async () => {
+        const review = await this.prisma.review.findUnique({
+          where: { slug },
+          include: { device: true },
+        });
 
-    if (!review) {
-      throw new NotFoundException(`Review "${slug}" not found.`);
-    }
+        if (!review) {
+          throw new NotFoundException(`Review "${slug}" not found.`);
+        }
 
-    return review;
+        return review;
+      },
+    );
   }
 
-  create(dto: CreateReviewDto) {
-    return this.prisma.review.create({
+  async create(dto: CreateReviewDto) {
+    const review = await this.prisma.review.create({
       data: {
         title: dto.title,
         slug: dto.slug ?? slugify(dto.title),
@@ -46,12 +64,14 @@ export class ReviewService {
         ...(dto.publishedAt ? { publishedAt: new Date(dto.publishedAt) } : {}),
       },
     });
+    await this.invalidate();
+    return review;
   }
 
   async update(id: number, dto: UpdateReviewDto) {
     await this.ensureExists(id);
 
-    return this.prisma.review.update({
+    const review = await this.prisma.review.update({
       where: { id },
       data: {
         ...(dto.title !== undefined ? { title: dto.title } : {}),
@@ -69,11 +89,21 @@ export class ReviewService {
           : {}),
       },
     });
+    await this.invalidate();
+    return review;
   }
 
   async remove(id: number) {
     await this.ensureExists(id);
-    return this.prisma.review.delete({ where: { id } });
+    const review = await this.prisma.review.delete({ where: { id } });
+    await this.invalidate();
+    return review;
+  }
+
+  // Reviews are embedded in device detail payloads, so bust both caches.
+  private async invalidate() {
+    await this.cache.delByPrefix(CACHE_PREFIX);
+    await this.cache.delByPrefix('devices:');
   }
 
   private async ensureExists(id: number) {

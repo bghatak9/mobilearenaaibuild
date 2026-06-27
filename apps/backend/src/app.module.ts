@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { CacheModule } from './cache/cache.module';
 import { BrandModule } from './brand/brand.module';
 import { CategoryModule } from './category/category.module';
 import { ManufacturerModule } from './manufacturer/manufacturer.module';
@@ -17,6 +18,7 @@ import { CompareModule } from './compare/compare.module';
 @Module({
   imports: [
     PrismaModule,
+    CacheModule,
     BrandModule,
     CategoryModule,
     ManufacturerModule,

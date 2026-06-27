@@ -28,9 +28,11 @@ services:
     restart: unless-stopped
     depends_on:
       - postgres
+      - redis
     environment:
       DATABASE_URL: postgresql://mobilearena:mobilearena123@postgres:5432/mobilearena_db?schema=public
       JWT_SECRET: change-me-in-production
+      REDIS_URL: redis://redis:6379
     ports:
       - "4000:4000"
 

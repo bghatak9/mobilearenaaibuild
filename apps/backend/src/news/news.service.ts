@@ -2,34 +2,53 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PostStatus, Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { CacheService } from '../cache/cache.service';
 import { slugify } from '../common/slug';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
 
+const CACHE_PREFIX = 'news:';
+const CACHE_TTL = 60;
+
 @Injectable()
 export class NewsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly cache: CacheService,
+  ) {}
 
   findAll(params?: { status?: PostStatus; featured?: boolean }) {
-    const where: Prisma.NewsWhereInput = {};
-    if (params?.status) where.status = params.status;
-    if (params?.featured !== undefined) where.featured = params.featured;
+    const key = `${CACHE_PREFIX}list:${params?.status ?? 'any'}:${
+      params?.featured ?? 'any'
+    }`;
 
-    return this.prisma.news.findMany({
-      where,
-      orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+    return this.cache.wrap(key, CACHE_TTL, () => {
+      const where: Prisma.NewsWhereInput = {};
+      if (params?.status) where.status = params.status;
+      if (params?.featured !== undefined) where.featured = params.featured;
+
+      return this.prisma.news.findMany({
+        where,
+        orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
+      });
     });
   }
 
   async findBySlug(slug: string) {
-    const article = await this.prisma.news.findUnique({ where: { slug } });
-    if (!article) {
-      throw new NotFoundException(`News article "${slug}" not found.`);
-    }
-    return article;
+    return this.cache.wrap(
+      `${CACHE_PREFIX}slug:${slug}`,
+      CACHE_TTL,
+      async () => {
+        const article = await this.prisma.news.findUnique({ where: { slug } });
+        if (!article) {
+          throw new NotFoundException(`News article "${slug}" not found.`);
+        }
+        return article;
+      },
+    );
   }
 
-  create(dto: CreateNewsDto) {
+  async create(dto: CreateNewsDto) {
     const status = dto.status ?? PostStatus.DRAFT;
     const publishedAt = dto.publishedAt
       ? new Date(dto.publishedAt)
@@ -37,7 +56,7 @@ export class NewsService {
         ? new Date()
         : null;
 
-    return this.prisma.news.create({
+    const article = await this.prisma.news.create({
       data: {
         title: dto.title,
         slug: dto.slug ?? slugify(dto.title),
@@ -49,6 +68,8 @@ export class NewsService {
         publishedAt,
       },
     });
+    await this.cache.delByPrefix(CACHE_PREFIX);
+    return article;
   }
 
   async update(id: number, dto: UpdateNewsDto) {
@@ -69,12 +90,16 @@ export class NewsService {
       data.publishedAt = new Date();
     }
 
-    return this.prisma.news.update({ where: { id }, data });
+    const article = await this.prisma.news.update({ where: { id }, data });
+    await this.cache.delByPrefix(CACHE_PREFIX);
+    return article;
   }
 
   async remove(id: number) {
     await this.ensureExists(id);
-    return this.prisma.news.delete({ where: { id } });
+    const article = await this.prisma.news.delete({ where: { id } });
+    await this.cache.delByPrefix(CACHE_PREFIX);
+    return article;
   }
 
   private async ensureExists(id: number) {
