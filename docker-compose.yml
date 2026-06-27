@@ -33,6 +33,8 @@ services:
       DATABASE_URL: postgresql://mobilearena:mobilearena123@postgres:5432/mobilearena_db?schema=public
       JWT_SECRET: change-me-in-production
       REDIS_URL: redis://redis:6379
+      # Optional error tracking — passed through from the host if set.
+      SENTRY_DSN: ${SENTRY_DSN:-}
     ports:
       - "4000:4000"
 

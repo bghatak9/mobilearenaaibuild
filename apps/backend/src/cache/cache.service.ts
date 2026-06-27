@@ -59,6 +59,16 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     return `${this.prefix}${key}`;
   }
 
+  /** True when a Redis connection is currently usable. */
+  isHealthy() {
+    return this.healthy;
+  }
+
+  /** True when caching is intentionally disabled (no client configured). */
+  isEnabled() {
+    return this.client !== null;
+  }
+
   async get<T>(key: string): Promise<T | null> {
     if (!this.client || !this.healthy) return null;
     try {

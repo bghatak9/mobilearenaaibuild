@@ -1,7 +1,10 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { initSentry } from './observability/sentry';
 
 async function bootstrap() {
+  initSentry();
+
   const app = await NestFactory.create(AppModule);
 
   app.enableCors({

@@ -72,17 +72,40 @@ news/review) is available via `npm run prisma:seed --workspace apps/backend`.
 
 ## Admin dashboard
 
-The admin lives at `/admin` (e.g. http://localhost:3000/admin) and covers:
+The admin lives at `/admin` (e.g. http://localhost:3000/admin).
 
-- **News** — create/edit/delete articles, set status (`DRAFT` / `REVIEW` /
-  `PUBLISHED`) and the "featured" flag.
-- **Reviews** — create/edit/delete reviews, pick the reviewed device, set the
-  score and pros/cons.
-- **Moderation** — list and remove user comments across all devices.
+### Role hierarchy
 
-Sign in at `/admin/login` with a user created via `POST /auth/register`. The
-token is stored client-side and forwarded as a `Bearer` token on writes. The
-admin UI is excluded from indexing via `robots.txt`.
+```
+SUPER_ADMIN  →  platform owner (1–2 accounts)
+  └── ADMIN    →  business/content management
+        ├── EDITOR    →  publish news & reviews
+        ├── AUTHOR    →  write drafts
+        └── MODERATOR →  comment moderation
+```
+
+Staff sign in at `/admin/login` via `POST /admin/auth/login` (normal `USER`
+accounts are rejected). Public signup (`POST /auth/register`) always creates
+`USER` accounts only.
+
+After seeding, a default **SUPER_ADMIN** is available:
+
+- Email: `superadmin@mobilearena.com`
+- Password: `SuperAdmin123!` (override with `SUPER_ADMIN_EMAIL` /
+  `SUPER_ADMIN_PASSWORD` env vars before `npm run prisma:seed`)
+
+### Features by role
+
+| Area | SUPER_ADMIN | ADMIN | EDITOR | AUTHOR | MODERATOR |
+|------|:-----------:|:-----:|:------:|:------:|:---------:|
+| User management | ✓ | ✓ (limited) | | | |
+| Devices (CRUD) | ✓ | ✓ | | | |
+| News / Reviews | ✓ | ✓ | ✓ | drafts | |
+| Comment moderation | ✓ | ✓ | ✓ | | ✓ |
+| Audit logs | ✓ | ✓ | | | |
+
+Server-side JWT + `@Roles()` guards enforce every write endpoint; the admin
+sidebar hides sections the signed-in role cannot access.
 
 ## SEO
 
@@ -95,6 +118,24 @@ cards, and JSON-LD structured data:
 
 `app/sitemap.ts` and `app/robots.ts` generate `/sitemap.xml` and `/robots.txt`
 from live API data.
+
+## Monitoring & analytics
+
+The API exposes operational endpoints and ships structured request logging:
+
+- `GET /health` — liveness (process up + uptime).
+- `GET /health/ready` — readiness; checks Postgres and Redis. Returns `503`
+  when the database is unreachable (a down/disabled cache is tolerated).
+- `GET /metrics` — Prometheus exposition: default Node/process metrics plus
+  `http_requests_total` and `http_request_duration_seconds` (labelled by
+  method, matched route and status).
+- Every request logs `METHOD url status duration` (health/metrics are silenced).
+- Unhandled errors are normalised by a global exception filter; set `SENTRY_DSN`
+  to forward 5xx errors to Sentry (no-op when unset).
+
+The frontend reports Core Web Vitals and can load a privacy-friendly analytics
+script — both are opt-in via `NEXT_PUBLIC_VITALS_ENDPOINT`,
+`NEXT_PUBLIC_ANALYTICS_SRC` and `NEXT_PUBLIC_ANALYTICS_DOMAIN`.
 
 ## CI/CD
 
