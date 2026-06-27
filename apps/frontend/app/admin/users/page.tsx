@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 
+import { RoleGate } from "@/components/admin/RoleGate";
 import {
   createUser,
   deleteUser,
@@ -13,13 +13,11 @@ import {
 import { useAdminAuth } from "@/lib/admin-auth";
 import {
   assignableRoles,
-  canManageUsers,
   roleLabel,
   type UserRole,
 } from "@/lib/roles";
 
 export default function AdminUsersPage() {
-  const router = useRouter();
   const { user: actor } = useAdminAuth();
   const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -30,12 +28,6 @@ export default function AdminUsersPage() {
   const [formName, setFormName] = useState("");
   const [formPassword, setFormPassword] = useState("");
   const [formRole, setFormRole] = useState<UserRole>("EDITOR");
-
-  useEffect(() => {
-    if (actor && !canManageUsers(actor.role)) {
-      router.replace("/admin");
-    }
-  }, [actor, router]);
 
   useEffect(() => {
     getUsers()
@@ -90,9 +82,10 @@ export default function AdminUsersPage() {
     }
   }
 
-  if (!actor || !canManageUsers(actor.role)) return null;
+  if (!actor) return null;
 
   return (
+    <RoleGate allowed={["SUPER_ADMIN", "ADMIN"]}>
     <div className="p-8">
       <div className="mb-6 flex items-center justify-between">
         <div>
@@ -244,5 +237,6 @@ export default function AdminUsersPage() {
         </div>
       )}
     </div>
+    </RoleGate>
   );
 }

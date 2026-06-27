@@ -10,48 +10,30 @@ import {
   MessageSquare,
   Users,
   LogOut,
+  Settings,
+  Shield,
+  BarChart3,
+  UserPlus,
+  FileText,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth";
-import {
-  canManageContent,
-  canManageUsers,
-  canModerate,
-  roleLabel,
-} from "@/lib/roles";
+import { getNavForRole, type AdminNavItemDef } from "@/lib/admin-nav";
+import { roleLabel } from "@/lib/roles";
 
-const NAV = [
-  {
-    label: "Dashboard",
-    href: "/admin",
-    icon: LayoutDashboard,
-    visible: () => true,
-  },
-  {
-    label: "Users",
-    href: "/admin/users",
-    icon: Users,
-    visible: canManageUsers,
-  },
-  {
-    label: "News",
-    href: "/admin/news",
-    icon: Newspaper,
-    visible: canManageContent,
-  },
-  {
-    label: "Reviews",
-    href: "/admin/reviews",
-    icon: Star,
-    visible: canManageContent,
-  },
-  {
-    label: "Moderation",
-    href: "/admin/comments",
-    icon: MessageSquare,
-    visible: canModerate,
-  },
-];
+const ICONS: Record<AdminNavItemDef["icon"], LucideIcon> = {
+  users: Users,
+  settings: Settings,
+  shield: Shield,
+  "bar-chart": BarChart3,
+  "user-plus": UserPlus,
+  "file-text": FileText,
+  newspaper: Newspaper,
+  star: Star,
+  "message-square": MessageSquare,
+  "layout-dashboard": LayoutDashboard,
+};
 
 function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
@@ -81,12 +63,15 @@ function Shell({ children }: { children: ReactNode }) {
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
 
-  const visibleNav = NAV.filter((item) => item.visible(user?.role));
+  const visibleNav = getNavForRole(user?.role);
 
   return (
     <div className="flex min-h-screen bg-gray-100">
       <aside className="flex w-60 flex-col border-r border-gray-200 bg-zinc-950 text-white">
-        <Link href="/admin" className="px-5 py-4 text-xl font-extrabold">
+        <Link
+          href={visibleNav[0]?.href ?? "/admin"}
+          className="px-5 py-4 text-xl font-extrabold"
+        >
           Mobile<span className="text-red-600">Arena</span>
           <span className="ml-1 text-xs font-medium text-zinc-400">admin</span>
         </Link>
@@ -103,19 +88,22 @@ function Shell({ children }: { children: ReactNode }) {
         )}
 
         <nav className="flex-1 space-y-1 px-3 py-2">
-          {visibleNav.map(({ label, href, icon: Icon }) => (
-            <Link
-              key={href}
-              href={href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
-                isActive(href)
-                  ? "bg-red-600 text-white"
-                  : "text-zinc-300 hover:bg-zinc-800"
-              }`}
-            >
-              <Icon size={18} /> {label}
-            </Link>
-          ))}
+          {visibleNav.map(({ label, href, icon }) => {
+            const Icon = ICONS[icon];
+            return (
+              <Link
+                key={href}
+                href={href}
+                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  isActive(href)
+                    ? "bg-red-600 text-white"
+                    : "text-zinc-300 hover:bg-zinc-800"
+                }`}
+              >
+                <Icon size={18} /> {label}
+              </Link>
+            );
+          })}
         </nav>
         <button
           onClick={() => {

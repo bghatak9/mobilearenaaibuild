@@ -6,36 +6,63 @@ const SUPER_ADMIN_EMAIL =
 const SUPER_ADMIN_PASSWORD =
   process.env.SUPER_ADMIN_PASSWORD ?? 'SuperAdmin123!';
 
-export async function seedUsers(prisma: PrismaClient) {
+const EDITOR_EMAIL = process.env.EDITOR_EMAIL ?? 'editor@mobilearena.com';
+const EDITOR_PASSWORD = process.env.EDITOR_PASSWORD ?? 'Editor123!';
+
+async function upsertStaffUser(
+  prisma: PrismaClient,
+  opts: {
+    email: string;
+    password: string;
+    name: string;
+    role: UserRole;
+  },
+) {
+  const passwordHash = await bcrypt.hash(opts.password, 10);
   const existing = await prisma.user.findUnique({
-    where: { email: SUPER_ADMIN_EMAIL },
+    where: { email: opts.email },
   });
 
   if (existing) {
-    if (existing.role !== UserRole.SUPER_ADMIN) {
-      await prisma.user.update({
-        where: { id: existing.id },
-        data: { role: UserRole.SUPER_ADMIN, isVerified: true },
-      });
-      console.log(`  ↑ Promoted ${SUPER_ADMIN_EMAIL} to SUPER_ADMIN`);
-    } else {
-      console.log(`  ✓ SUPER_ADMIN already exists (${SUPER_ADMIN_EMAIL})`);
-    }
+    await prisma.user.update({
+      where: { id: existing.id },
+      data: {
+        role: opts.role,
+        passwordHash,
+        isVerified: true,
+        isActive: true,
+        isBlocked: false,
+      },
+    });
+    console.log(`  ✓ ${opts.role} synced (${opts.email})`);
     return;
   }
 
-  const passwordHash = await bcrypt.hash(SUPER_ADMIN_PASSWORD, 10);
-
   await prisma.user.create({
     data: {
-      email: SUPER_ADMIN_EMAIL,
-      name: 'Platform Owner',
+      email: opts.email,
+      name: opts.name,
       passwordHash,
-      role: UserRole.SUPER_ADMIN,
+      role: opts.role,
       isVerified: true,
       isActive: true,
     },
   });
+  console.log(`  ✓ Created ${opts.role} (${opts.email})`);
+}
 
-  console.log(`  ✓ Created SUPER_ADMIN (${SUPER_ADMIN_EMAIL})`);
+export async function seedUsers(prisma: PrismaClient) {
+  await upsertStaffUser(prisma, {
+    email: SUPER_ADMIN_EMAIL,
+    password: SUPER_ADMIN_PASSWORD,
+    name: 'Platform Owner',
+    role: UserRole.SUPER_ADMIN,
+  });
+
+  await upsertStaffUser(prisma, {
+    email: EDITOR_EMAIL,
+    password: EDITOR_PASSWORD,
+    name: 'Content Editor',
+    role: UserRole.EDITOR,
+  });
 }

@@ -54,7 +54,7 @@ export default function AdminLoginPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
-            placeholder="admin@mobilearena.com"
+            placeholder="superadmin@mobilearena.com"
           />
         </label>
 
