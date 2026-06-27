@@ -1,0 +1,73 @@
+name: Deploy
+
+# Builds and publishes container images to GitHub Container Registry (GHCR)
+# on every push to the default branch (and on demand). Wire the published
+# images into your host (Fly.io, Render, ECS, a VPS, etc.) — see README.
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  images:
+    name: Build & push images
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      matrix:
+        include:
+          - app: backend
+            context: apps/backend
+          - app: frontend
+            context: apps/frontend
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.app }}
+          tags: |
+            type=sha
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=${{ vars.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_SITE_URL=${{ vars.NEXT_PUBLIC_SITE_URL }}
+
+  # Placeholder deploy step. Replace with your provider's action/CLI and add
+  # the relevant secrets (e.g. FLY_API_TOKEN, RENDER_DEPLOY_HOOK, SSH creds).
+  deploy:
+    name: Deploy (configure target)
+    needs: images
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    steps:
+      - name: Notify deploy target
+        run: |
+          echo "Images published to ${REGISTRY}/${{ github.repository }}/{backend,frontend}:latest"
+          echo "Add your deploy command here (e.g. curl -fsS \"$RENDER_DEPLOY_HOOK\")."
+        env:
+          REGISTRY: ${{ env.REGISTRY }}
