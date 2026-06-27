@@ -27,6 +27,16 @@ export class CommentService {
     });
   }
 
+  findAll() {
+    return this.prisma.comment.findMany({
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, email: true } },
+        device: { select: { id: true, name: true, slug: true } },
+      },
+    });
+  }
+
   async remove(id: number) {
     const comment = await this.prisma.comment.findUnique({ where: { id } });
     if (!comment) {

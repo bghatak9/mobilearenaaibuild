@@ -8,11 +8,16 @@ import {
   Patch,
   Post,
   Query,
+  UseGuards,
 } from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { RolesGuard } from '../auth/roles.guard';
+import { Roles } from '../auth/roles.decorator';
 
 @Controller('reviews')
 export class ReviewController {
@@ -29,16 +34,22 @@ export class ReviewController {
   }
 
   @Post()
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.EDITOR)
   create(@Body() dto: CreateReviewDto) {
     return this.reviewService.create(dto);
   }
 
   @Patch(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.EDITOR)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateReviewDto) {
     return this.reviewService.update(id, dto);
   }
 
   @Delete(':id')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.EDITOR)
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.reviewService.remove(id);
   }
