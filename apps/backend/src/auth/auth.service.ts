@@ -1,21 +1,24 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
+import {
+  ForbiddenException,
+  Injectable,
+  UnauthorizedException,
+} from '@nestjs/common';
+import { UserRole } from '@prisma/client';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+
+import { PrismaService } from '../prisma/prisma.service';
+import { isStaff } from './role-permissions';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private prisma: PrismaService,
-    private jwtService: JwtService,
+    private readonly prisma: PrismaService,
+    private readonly jwtService: JwtService,
   ) {}
 
-  // =========================
-  // REGISTER
-  // =========================
-  async register(email: string, password: string) {
-    console.log("REGISTER START:", email);
-
+  /** Public signup — always creates a normal USER account. */
+  async register(email: string, password: string, name?: string) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email },
     });
@@ -24,18 +27,16 @@ export class AuthService {
       throw new UnauthorizedException('User already exists');
     }
 
-    console.log("HASHING PASSWORD...");
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    console.log("CREATING USER...");
     const user = await this.prisma.user.create({
       data: {
         email,
+        name: name ?? email.split('@')[0],
         passwordHash: hashedPassword,
+        role: UserRole.USER,
       },
     });
-
-    console.log("USER CREATED:", user.id);
 
     return {
       id: user.id,
@@ -44,42 +45,48 @@ export class AuthService {
     };
   }
 
-  // =========================
-  // LOGIN
-  // =========================
-  async login(email: string, password: string) {
-    console.log("LOGIN START:", email);
-
+  async login(email: string, password: string, staffOnly = false) {
     const user = await this.prisma.user.findUnique({
       where: { email },
     });
-
-    console.log("USER FOUND:", user ? "YES" : "NO");
 
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
+    if (user.isBlocked || !user.isActive) {
+      throw new ForbiddenException('Account is disabled');
+    }
+
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
-
-    console.log("PASSWORD VALID:", isPasswordValid);
-
     if (!isPasswordValid) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    console.log("GENERATING TOKEN...");
+    if (staffOnly && !isStaff(user.role)) {
+      throw new ForbiddenException('Staff access required');
+    }
+
+    await this.prisma.user.update({
+      where: { id: user.id },
+      data: { lastLogin: new Date() },
+    });
 
     const token = this.jwtService.sign({
       sub: user.id,
       email: user.email,
       role: user.role,
+      name: user.name,
     });
-
-    console.log("TOKEN GENERATED");
 
     return {
       access_token: token,
+      user: {
+        id: user.id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
+      },
     };
   }
 }

@@ -8,22 +8,55 @@ import {
   Newspaper,
   Star,
   MessageSquare,
+  Users,
   LogOut,
 } from "lucide-react";
 
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth";
+import {
+  canManageContent,
+  canManageUsers,
+  canModerate,
+  roleLabel,
+} from "@/lib/roles";
 
 const NAV = [
-  { label: "Dashboard", href: "/admin", icon: LayoutDashboard },
-  { label: "News", href: "/admin/news", icon: Newspaper },
-  { label: "Reviews", href: "/admin/reviews", icon: Star },
-  { label: "Moderation", href: "/admin/comments", icon: MessageSquare },
+  {
+    label: "Dashboard",
+    href: "/admin",
+    icon: LayoutDashboard,
+    visible: () => true,
+  },
+  {
+    label: "Users",
+    href: "/admin/users",
+    icon: Users,
+    visible: canManageUsers,
+  },
+  {
+    label: "News",
+    href: "/admin/news",
+    icon: Newspaper,
+    visible: canManageContent,
+  },
+  {
+    label: "Reviews",
+    href: "/admin/reviews",
+    icon: Star,
+    visible: canManageContent,
+  },
+  {
+    label: "Moderation",
+    href: "/admin/comments",
+    icon: MessageSquare,
+    visible: canModerate,
+  },
 ];
 
 function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { token, ready, signOut } = useAdminAuth();
+  const { token, user, ready, signOut } = useAdminAuth();
 
   const isLogin = pathname === "/admin/login";
 
@@ -43,10 +76,12 @@ function Shell({ children }: { children: ReactNode }) {
     );
   }
 
-  if (!token) return null; // redirecting
+  if (!token) return null;
 
   const isActive = (href: string) =>
     href === "/admin" ? pathname === "/admin" : pathname.startsWith(href);
+
+  const visibleNav = NAV.filter((item) => item.visible(user?.role));
 
   return (
     <div className="flex min-h-screen bg-gray-100">
@@ -55,8 +90,20 @@ function Shell({ children }: { children: ReactNode }) {
           Mobile<span className="text-red-600">Arena</span>
           <span className="ml-1 text-xs font-medium text-zinc-400">admin</span>
         </Link>
+
+        {user && (
+          <div className="border-b border-zinc-800 px-5 pb-3 text-xs text-zinc-400">
+            <p className="truncate font-medium text-zinc-200">
+              {user.name ?? user.email}
+            </p>
+            <p className="mt-0.5 uppercase tracking-wide text-zinc-500">
+              {roleLabel(user.role)}
+            </p>
+          </div>
+        )}
+
         <nav className="flex-1 space-y-1 px-3 py-2">
-          {NAV.map(({ label, href, icon: Icon }) => (
+          {visibleNav.map(({ label, href, icon: Icon }) => (
             <Link
               key={href}
               href={href}

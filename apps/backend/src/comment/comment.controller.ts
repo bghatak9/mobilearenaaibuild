@@ -37,7 +37,12 @@ export class CommentController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.EDITOR)
+  @Roles(
+    UserRole.SUPER_ADMIN,
+    UserRole.ADMIN,
+    UserRole.EDITOR,
+    UserRole.MODERATOR,
+  )
   remove(@Param('id', ParseIntPipe) id: number) {
     return this.commentService.remove(id);
   }

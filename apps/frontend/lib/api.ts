@@ -207,6 +207,91 @@ export async function login(
   return res.json();
 }
 
+export type AuthUser = {
+  id: number;
+  email: string;
+  name: string | null;
+  role: import("@/lib/roles").UserRole;
+};
+
+export async function adminLogin(
+  email: string,
+  password: string,
+): Promise<{ access_token: string; user: AuthUser }> {
+  const res = await fetch(`${API_URL}/admin/auth/login`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password }),
+  });
+  if (!res.ok) throw new Error("Invalid credentials");
+  return res.json();
+}
+
+/* ---- Users (admin) ---- */
+
+export type AdminUser = {
+  id: number;
+  name: string | null;
+  email: string;
+  role: AuthUser["role"];
+  isActive: boolean;
+  isVerified: boolean;
+  isBlocked: boolean;
+  lastLogin: string | null;
+  createdAt: string;
+};
+
+export async function getUsers(): Promise<AdminUser[]> {
+  const res = await fetch(`${API_URL}/users`, {
+    cache: "no-store",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to fetch users");
+  return res.json();
+}
+
+export async function createUser(input: {
+  email: string;
+  password: string;
+  name?: string;
+  role: AuthUser["role"];
+}): Promise<AdminUser> {
+  const res = await fetch(`${API_URL}/users`, {
+    method: "POST",
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to create user");
+  return res.json();
+}
+
+export async function updateUser(
+  id: number,
+  input: Partial<{
+    name: string;
+    role: AuthUser["role"];
+    isActive: boolean;
+    isVerified: boolean;
+    isBlocked: boolean;
+  }>,
+): Promise<AdminUser> {
+  const res = await fetch(`${API_URL}/users/${id}`, {
+    method: "PATCH",
+    headers: authHeaders(),
+    body: JSON.stringify(input),
+  });
+  if (!res.ok) throw new Error("Failed to update user");
+  return res.json();
+}
+
+export async function deleteUser(id: number): Promise<void> {
+  const res = await fetch(`${API_URL}/users/${id}`, {
+    method: "DELETE",
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error("Failed to delete user");
+}
+
 /* ---- News (admin) ---- */
 
 export type NewsInput = {

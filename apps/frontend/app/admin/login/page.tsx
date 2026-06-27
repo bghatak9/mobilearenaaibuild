@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { login } from "@/lib/api";
+import { adminLogin } from "@/lib/api";
 import { useAdminAuth } from "@/lib/admin-auth";
 
 export default function AdminLoginPage() {
@@ -18,11 +18,11 @@ export default function AdminLoginPage() {
     setError(null);
     setLoading(true);
     try {
-      const { access_token } = await login(email, password);
-      signIn(access_token);
+      const { access_token, user } = await adminLogin(email, password);
+      signIn(access_token, user);
       router.replace("/admin");
     } catch {
-      setError("Invalid email or password.");
+      setError("Invalid email or password, or account lacks staff access.");
     } finally {
       setLoading(false);
     }
