@@ -1,0 +1,64 @@
+/**
+ * Aurora Glass Design System — MobileArena signature theme
+ * Dark Space is default; light mode available for accessibility.
+ */
+
+:root {
+  --arena-blue: #2563eb;
+  --electric-cyan: #06b6d4;
+  --aurora-purple: #8b5cf6;
+  --emerald-success: #10b981;
+  --premium-gold: #f59e0b;
+  --rose-alert: #f43f5e;
+  --dark-space: #0b1220;
+  --surface-card: #131d31;
+  --surface-elevated: #1a2740;
+  --surface-glow: #1e2d4a;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --border-subtle: rgb(255 255 255 / 0.08);
+  --border-muted: rgb(255 255 255 / 0.05);
+  --border-accent: rgb(6 182 212 / 0.35);
+  --border-accent-purple: rgb(139 92 246 / 0.35);
+  --border-accent-gold: rgb(245 158 11 / 0.35);
+  --card-shadow: 0 8px 32px rgb(0 0 0 / 0.28);
+  --card-shadow-hover: 0 16px 48px rgb(37 99 235 / 0.18);
+  --gradient-arena: linear-gradient(135deg, var(--arena-blue), var(--electric-cyan));
+  --gradient-aurora: linear-gradient(135deg, var(--electric-cyan), var(--aurora-purple));
+  --gradient-gold: linear-gradient(135deg, var(--premium-gold), #fbbf24);
+
+  --background: var(--dark-space);
+  --foreground: var(--text-primary);
+  --card: var(--surface-card);
+  --muted: var(--text-secondary);
+  --border: var(--border-subtle);
+  --ma-brand: var(--arena-blue);
+  --ma-brand-hover: #3b82f6;
+  color-scheme: dark;
+}
+
+html:not(.dark) {
+  --dark-space: #eef2f8;
+  --surface-card: #ffffff;
+  --surface-elevated: #f8fafc;
+  --surface-glow: #f1f5f9;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --border-subtle: rgb(15 23 42 / 0.1);
+  --border-muted: rgb(15 23 42 / 0.06);
+  --border-accent: rgb(6 182 212 / 0.45);
+  --border-accent-purple: rgb(139 92 246 / 0.4);
+  --border-accent-gold: rgb(245 158 11 / 0.45);
+  --card-shadow: 0 8px 32px rgb(15 23 42 / 0.08);
+  --card-shadow-hover: 0 16px 48px rgb(37 99 235 / 0.12);
+  --background: var(--dark-space);
+  --foreground: var(--text-primary);
+  --card: var(--surface-card);
+  --muted: var(--text-secondary);
+  --border: var(--border-subtle);
+  color-scheme: light;
+}
+
+html.dark {
+  color-scheme: dark;
+}

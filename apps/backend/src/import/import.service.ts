@@ -1,102 +1,177 @@
 import { Injectable } from '@nestjs/common';
-import { PrismaService } from '../prisma/prisma.service';
-import { slugify } from '../common/slug';
-import * as XLSX from 'xlsx';
+import { UserRole } from '@prisma/client';
 
-type ImportRow = {
-  name?: string;
-  brand?: string;
-  category?: string;
-  manufacturer?: string;
-  price?: number | string;
-};
+import { ImportExecutor } from './import.executor';
+import { ImportJobService } from './import-job.service';
+import { ImportLifecycleService } from './import-lifecycle.service';
+import type { BulkImportKind, ImportActor } from './import.types';
 
+/** Facade for bulk upload — validate, run, and job status. */
 @Injectable()
 export class ImportService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly executor: ImportExecutor,
+    private readonly jobs: ImportJobService,
+    private readonly lifecycle: ImportLifecycleService,
+  ) {}
 
-  async importDevices(file: Express.Multer.File) {
-    if (!file) {
-      return { success: false, message: 'No file uploaded' };
-    }
+  validate(kind: BulkImportKind, file: Express.Multer.File, role: UserRole) {
+    return this.executor.validate(kind, file, role);
+  }
 
-    const workbook = XLSX.read(file.buffer, { type: 'buffer' });
-    const sheet = workbook.Sheets[workbook.SheetNames[0]];
-    const rows = XLSX.utils.sheet_to_json<ImportRow>(sheet);
+  run(
+    kind: BulkImportKind,
+    file: Express.Multer.File,
+    actor: ImportActor,
+    options?: { atomic?: boolean; background?: boolean },
+  ) {
+    return this.executor.run(kind, file, actor, options);
+  }
 
-    let inserted = 0;
-    let skipped = 0;
+  getJob(jobId: string) {
+    return this.jobs.getJob(jobId);
+  }
 
-    const errors: { row: ImportRow; reason: string }[] = [];
+  getErrorReportCsv(jobId: string) {
+    return this.jobs.getErrorReportCsv(jobId);
+  }
 
-    for (const row of rows) {
-      try {
-        if (!row.name || !row.brand || !row.category) {
-          skipped++;
-          errors.push({ row, reason: 'Missing required fields' });
-          continue;
-        }
+  listBatches(options: {
+    kind?: string;
+    includeDeleted?: boolean;
+    limit?: number;
+  }) {
+    return this.lifecycle.listBatches(options);
+  }
 
-        const price = Number(row.price ?? 0);
-        if (isNaN(price) || price < 0) {
-          skipped++;
-          errors.push({ row, reason: 'Invalid price' });
-          continue;
-        }
+  getBatch(id: number) {
+    return this.lifecycle.getBatch(id);
+  }
 
-        const existing = await this.prisma.device.findFirst({
-          where: { name: row.name },
-        });
+  softDeleteBatch(id: number, actor: ImportActor) {
+    return this.lifecycle.softDeleteBatch(id, actor);
+  }
 
-        if (existing) {
-          skipped++;
-          errors.push({ row, reason: 'Duplicate device' });
-          continue;
-        }
+  restoreBatch(id: number, actor: ImportActor) {
+    return this.lifecycle.restoreBatch(id, actor);
+  }
 
-        const brand = await this.prisma.brand.upsert({
-          where: { name: row.brand },
-          update: {},
-          create: { name: row.brand, slug: slugify(row.brand) },
-        });
+  purgeBatch(id: number, actor: ImportActor) {
+    return this.lifecycle.purgeBatch(id, actor);
+  }
 
-        const category = await this.prisma.category.upsert({
-          where: { name: row.category },
-          update: {},
-          create: { name: row.category, slug: slugify(row.category) },
-        });
+  softDeletePhones(ids: number[], actor: ImportActor) {
+    return this.lifecycle.softDeletePhones(ids, actor);
+  }
 
-        const manufacturerName = row.manufacturer ?? 'Unknown';
-        const manufacturer = await this.prisma.manufacturer.upsert({
-          where: { name: manufacturerName },
-          update: {},
-          create: { name: manufacturerName, slug: slugify(manufacturerName) },
-        });
+  softDeletePhone(id: number, actor: ImportActor) {
+    return this.lifecycle.softDeletePhone(id, actor);
+  }
 
-        await this.prisma.device.create({
-          data: {
-            name: row.name,
-            slug: slugify(row.name),
-            price,
-            brandId: brand.id,
-            categoryId: category.id,
-            manufacturerId: manufacturer.id,
-          },
-        });
+  softDeleteAdvertisements(ids: number[], actor: ImportActor) {
+    return this.lifecycle.softDeleteAdvertisements(ids, actor);
+  }
 
-        inserted++;
-      } catch {
-        skipped++;
-        errors.push({ row, reason: 'Unexpected error' });
-      }
-    }
+  softDeleteAdvertisement(id: number, actor: ImportActor) {
+    return this.lifecycle.softDeleteAdvertisement(id, actor);
+  }
 
-    return {
-      success: true,
-      totalRows: rows.length,
-      inserted,
-      skipped,
-      errors,
-    };
+  restoreAdvertisements(ids: number[], actor: ImportActor) {
+    return this.lifecycle.restoreAdvertisements(ids, actor);
+  }
+
+  restoreAdvertisement(id: number, actor: ImportActor) {
+    return this.lifecycle.restoreAdvertisement(id, actor);
+  }
+
+  softDeleteBrands(ids: number[], actor: ImportActor) {
+    return this.lifecycle.softDeleteBrands(ids, actor);
+  }
+
+  softDeleteBrand(id: number, actor: ImportActor) {
+    return this.lifecycle.softDeleteBrand(id, actor);
+  }
+
+  restoreBrands(ids: number[], actor: ImportActor) {
+    return this.lifecycle.restoreBrands(ids, actor);
+  }
+
+  restoreBrand(id: number, actor: ImportActor) {
+    return this.lifecycle.restoreBrand(id, actor);
+  }
+
+  clearDeletedImportHistory(actor: ImportActor) {
+    return this.lifecycle.clearDeletedImportHistory(actor);
+  }
+
+  /** Legacy direct import — delegates to run without background. */
+  importDevices(file: Express.Multer.File) {
+    return this.executor.run(
+      'phones',
+      file,
+      { userId: 0, role: UserRole.ADMIN },
+      { background: false },
+    );
+  }
+
+  importBrands(file: Express.Multer.File) {
+    return this.executor.run(
+      'brands',
+      file,
+      { userId: 0, role: UserRole.ADMIN },
+      { background: false },
+    );
+  }
+
+  importPrices(file: Express.Multer.File) {
+    return this.executor.run(
+      'prices',
+      file,
+      { userId: 0, role: UserRole.ADMIN },
+      { background: false },
+    );
+  }
+
+  importNews(file: Express.Multer.File) {
+    return this.executor.run(
+      'news',
+      file,
+      { userId: 0, role: UserRole.EDITOR },
+      { background: false },
+    );
+  }
+
+  importUsers(file: Express.Multer.File) {
+    return this.executor.run(
+      'users',
+      file,
+      { userId: 0, role: UserRole.SUPER_ADMIN },
+      { background: false },
+    );
+  }
+
+  importDeviceImages(file: Express.Multer.File) {
+    return this.executor.run(
+      'images',
+      file,
+      { userId: 0, role: UserRole.ADMIN },
+      { background: false },
+    );
+  }
+
+  importArticleImages(
+    file: Express.Multer.File,
+    actor: { userId: number; role: UserRole },
+  ) {
+    void file;
+    void actor;
+    return Promise.resolve({
+      success: false,
+      message: 'Use POST /import/news or /import/images for bulk uploads',
+      totalRows: 0,
+      inserted: 0,
+      skipped: 0,
+      errors: [],
+    });
   }
 }

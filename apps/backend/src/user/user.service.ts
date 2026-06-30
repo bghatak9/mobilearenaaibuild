@@ -5,7 +5,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
-import * as bcrypt from 'bcrypt';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
@@ -14,20 +13,12 @@ import {
   canManageUser,
   canManageUsers,
 } from '../auth/role-permissions';
-import { CreateUserDto, ResetPasswordDto, UpdateUserDto } from './dto/user.dto';
+import { assertPasswordMeetsPolicy } from '../auth/password-policy';
+import { hashPassword } from '../auth/password-crypto';
+import { CreateUserDto, UpdateUserDto } from './dto/user.dto';
+import { PUBLIC_USER_SELECT } from './user.select';
 
-const publicSelect = {
-  id: true,
-  name: true,
-  email: true,
-  role: true,
-  isActive: true,
-  isVerified: true,
-  isBlocked: true,
-  lastLogin: true,
-  createdAt: true,
-  updatedAt: true,
-} as const;
+const publicSelect = PUBLIC_USER_SELECT;
 
 @Injectable()
 export class UserService {
@@ -36,20 +27,17 @@ export class UserService {
     private readonly audit: AuditService,
   ) {}
 
-  findAll(actorRole: UserRole) {
-    const where =
-      actorRole === UserRole.SUPER_ADMIN
-        ? {}
-        : { role: { notIn: [UserRole.SUPER_ADMIN, UserRole.ADMIN] } };
-
+  findAll(_actorRole: UserRole) {
     return this.prisma.user.findMany({
-      where,
       select: publicSelect,
       orderBy: { createdAt: 'desc' },
     });
   }
 
   async findOne(id: number, actorRole: UserRole) {
+    if (!Number.isFinite(id) || id <= 0) {
+      throw new NotFoundException(`User with ID ${id} not found.`);
+    }
     const user = await this.prisma.user.findUnique({
       where: { id },
       select: publicSelect,
@@ -84,7 +72,15 @@ export class UserService {
       throw new UnauthorizedException('Email already in use');
     }
 
-    const passwordHash = await bcrypt.hash(dto.password, 10);
+    const plainPassword = dto.password?.trim();
+    if (plainPassword) {
+      assertPasswordMeetsPolicy(plainPassword, dto.role);
+    }
+
+    const passwordHash = plainPassword
+      ? await hashPassword(plainPassword)
+      : null;
+
     const user = await this.prisma.user.create({
       data: {
         email: dto.email,
@@ -160,32 +156,6 @@ export class UserService {
     return user;
   }
 
-  async resetPassword(
-    id: number,
-    dto: ResetPasswordDto,
-    actor: { userId: number; role: UserRole },
-    meta?: { ipAddress?: string; userAgent?: string },
-  ) {
-    await this.ensureManageable(id, actor.role);
-    const passwordHash = await bcrypt.hash(dto.password, 10);
-
-    await this.prisma.user.update({
-      where: { id },
-      data: { passwordHash },
-    });
-
-    await this.audit.log({
-      userId: actor.userId,
-      action: 'Reset password',
-      entity: 'User',
-      entityId: String(id),
-      ipAddress: meta?.ipAddress,
-      userAgent: meta?.userAgent,
-    });
-
-    return { message: 'Password reset successfully' };
-  }
-
   async remove(
     id: number,
     actor: { userId: number; role: UserRole },
@@ -207,8 +177,6 @@ export class UserService {
       ipAddress: meta?.ipAddress,
       userAgent: meta?.userAgent,
     });
-
-    return { message: 'User deleted successfully' };
   }
 
   private async ensureManageable(id: number, actorRole: UserRole) {

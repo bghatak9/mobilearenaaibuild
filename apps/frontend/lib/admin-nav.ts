@@ -1,4 +1,9 @@
 import type { UserRole } from "./roles";
+import {
+  getImportKindsForRole,
+  canImportPaidAds,
+  canViewRevenueAnalytics,
+} from "./content-permissions";
 
 export type AdminNavItemDef = {
   label: string;
@@ -14,7 +19,10 @@ export type AdminNavItemDef = {
     | "newspaper"
     | "star"
     | "message-square"
-    | "layout-dashboard";
+    | "layout-dashboard"
+    | "upload"
+    | "megaphone"
+    | "revenue";
 };
 
 /** Full nav catalogue; visibility is driven per-role below. */
@@ -35,7 +43,7 @@ export const ADMIN_NAV_CATALOG: AdminNavItemDef[] = [
     icon: "shield",
   },
   {
-    label: "Metrics Dashboard",
+    label: "Analytics Dashboard",
     href: "/admin/metrics",
     icon: "bar-chart",
   },
@@ -43,6 +51,21 @@ export const ADMIN_NAV_CATALOG: AdminNavItemDef[] = [
     label: "Admin Creation",
     href: "/admin/admins/new",
     icon: "user-plus",
+  },
+  {
+    label: "Bulk Upload",
+    href: "/admin/import",
+    icon: "upload",
+  },
+  {
+    label: "Paid Advertisements",
+    href: "/admin/advertisements",
+    icon: "megaphone",
+  },
+  {
+    label: "Revenue Analytics",
+    href: "/admin/revenue",
+    icon: "revenue",
   },
   {
     label: "Articles",
@@ -67,28 +90,48 @@ export const ADMIN_NAV_CATALOG: AdminNavItemDef[] = [
 export const ROLE_NAV_HREFS: Record<UserRole, string[]> = {
   SUPER_ADMIN: [
     "/admin/users",
+    "/admin/import",
+    "/admin/advertisements",
+    "/admin/revenue",
     "/admin/settings",
     "/admin/roles",
     "/admin/metrics",
     "/admin/admins/new",
   ],
   ADMIN: [
-    "/admin/users",
+    "/admin/import",
+    "/admin/advertisements",
     "/admin/news",
     "/admin/reviews",
     "/admin/comments",
   ],
-  EDITOR: ["/admin/articles", "/admin/news", "/admin/reviews"],
-  AUTHOR: ["/admin/articles", "/admin/news", "/admin/reviews"],
+  EDITOR: ["/admin/import", "/admin/articles", "/admin/news", "/admin/reviews"],
+  AUTHOR: ["/admin/import", "/admin/articles", "/admin/reviews"],
   MODERATOR: ["/admin/comments"],
   USER: [],
 };
+
+/** Nav hrefs allowed for a role (bulk upload only when role has upload kinds). */
+export function navHrefsForRole(role: UserRole): string[] {
+  const base = ROLE_NAV_HREFS[role] ?? [];
+  const hasImport = getImportKindsForRole(role).length > 0;
+  return base.filter((href) => {
+    if (href === "/admin/import" && !hasImport) return false;
+    if (href === "/admin/advertisements" && !canImportPaidAds(role)) {
+      return false;
+    }
+    if (href === "/admin/revenue" && !canViewRevenueAnalytics(role)) {
+      return false;
+    }
+    return true;
+  });
+}
 
 export function getNavForRole(
   role: UserRole | null | undefined,
 ): AdminNavItemDef[] {
   if (!role) return [];
-  const allowed = ROLE_NAV_HREFS[role] ?? [];
+  const allowed = navHrefsForRole(role);
   const byHref = new Map(ADMIN_NAV_CATALOG.map((item) => [item.href, item]));
   return allowed
     .map((href) => byHref.get(href))
@@ -103,9 +146,12 @@ export function getDefaultAdminPath(role: UserRole): string {
 export const EXPECTED_NAV_LABELS: Partial<Record<UserRole, string[]>> = {
   SUPER_ADMIN: [
     "User Management",
+    "Bulk Upload",
+    "Paid Advertisements",
+    "Revenue Analytics",
     "System Settings",
     "Role Management",
-    "Metrics Dashboard",
+    "Analytics Dashboard",
     "Admin Creation",
   ],
   EDITOR: ["Articles", "News", "Reviews"],

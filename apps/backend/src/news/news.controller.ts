@@ -23,6 +23,30 @@ import { Roles } from '../auth/roles.decorator';
 export class NewsController {
   constructor(private readonly newsService: NewsService) {}
 
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
+  findAllAdmin(
+    @Query('status') status?: PostStatus,
+    @Query('featured') featured?: string,
+  ) {
+    return this.newsService.findAll(
+      {
+        status,
+        featured:
+          featured === undefined ? undefined : featured === 'true',
+      },
+      { includeCatalogHidden: true },
+    );
+  }
+
+  @Get('admin/slug/:slug')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
+  findBySlugAdmin(@Param('slug') slug: string) {
+    return this.newsService.findBySlug(slug, { includeCatalogHidden: true });
+  }
+
   @Get()
   findAll(
     @Query('status') status?: PostStatus,
@@ -42,14 +66,14 @@ export class NewsController {
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR, UserRole.AUTHOR)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
   create(@Body() dto: CreateNewsDto) {
     return this.newsService.create(dto);
   }
 
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR, UserRole.AUTHOR)
+  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.EDITOR)
   update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateNewsDto) {
     return this.newsService.update(id, dto);
   }

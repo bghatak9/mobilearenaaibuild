@@ -20,6 +20,13 @@ import { RatingModule } from './rating/rating.module';
 import { CommentModule } from './comment/comment.module';
 import { CompareModule } from './compare/compare.module';
 import { UserModule } from './user/user.module';
+import { AnalyticsModule } from './analytics/analytics.module';
+import { AdvertisementModule } from './advertisement/advertisement.module';
+import { ProfileModule } from './profile/profile.module';
+import { NewsletterModule } from './newsletter/newsletter.module';
+import { ContactModule } from './contact/contact.module';
+import { CommunityModule } from './community/community.module';
+import { TranslateModule } from './translate/translate.module';
 
 @Module({
   imports: [
@@ -40,6 +47,13 @@ import { UserModule } from './user/user.module';
     CommentModule,
     CompareModule,
     UserModule,
+    AnalyticsModule,
+    AdvertisementModule,
+    ProfileModule,
+    NewsletterModule,
+    ContactModule,
+    CommunityModule,
+    TranslateModule,
   ],
   controllers: [AppController],
   providers: [

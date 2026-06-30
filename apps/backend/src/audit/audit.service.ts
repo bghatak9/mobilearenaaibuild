@@ -11,6 +11,21 @@ export type AuditEntry = {
   userAgent?: string;
 };
 
+/** Import-related audit actions (bulk upload lifecycle). */
+export const IMPORT_AUDIT_ACTIONS = [
+  'import.batch.created',
+  'phone.soft_delete',
+  'phone.bulk_soft_delete',
+  'brand.soft_delete',
+  'brand.bulk_soft_delete',
+  'brand.restore',
+  'import.batch.soft_delete',
+  'import.batch.restore',
+  'import.batch.purge',
+  'import.history.clear',
+  'audit.log.clear',
+] as const;
+
 @Injectable()
 export class AuditService {
   constructor(private readonly prisma: PrismaService) {}
@@ -36,5 +51,24 @@ export class AuditService {
         user: { select: { id: true, name: true, email: true, role: true } },
       },
     });
+  }
+
+  findImportRelated(limit = 100) {
+    return this.prisma.auditLog.findMany({
+      where: { action: { in: [...IMPORT_AUDIT_ACTIONS] } },
+      take: limit,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        user: { select: { id: true, name: true, email: true, role: true } },
+      },
+    });
+  }
+
+  async clearImportHistory(_clearedByUserId: number) {
+    const result = await this.prisma.auditLog.deleteMany({
+      where: { action: { in: [...IMPORT_AUDIT_ACTIONS] } },
+    });
+
+    return { cleared: result.count };
   }
 }

@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { ArenaShell } from "@/components/layout/ArenaShell";
 import JsonLd from "@/components/seo/JsonLd";
+import InArticleContent from "@/components/ads/InArticleContent";
+import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
+import { GlassPanel } from "@/design-system/glass/GlassPanel";
 import { absoluteUrl } from "@/lib/seo";
-import { getNewsBySlug, type NewsArticle } from "@/lib/api";
+import { getNewsBySlug, getActiveAdvertisements, type NewsArticle } from "@/lib/api";
 
 function formatDate(value?: string | null): string {
   if (!value) return "";
@@ -72,6 +74,8 @@ export default async function NewsArticlePage({
     notFound();
   }
 
+  const ads = await getActiveAdvertisements().catch(() => []);
+
   const published = article.publishedAt ?? article.createdAt;
   const jsonLd = {
     "@context": "https://schema.org",
@@ -85,35 +89,33 @@ export default async function NewsArticlePage({
       "@type": "WebPage",
       "@id": absoluteUrl(`/news/${article.slug}`),
     },
-    publisher: {
-      "@type": "Organization",
-      name: "MobileArena",
-    },
+    publisher: { "@type": "Organization", name: "MobileArena" },
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <ArenaShell>
       <JsonLd data={jsonLd} />
-      <Header />
 
-      <article className="mx-auto max-w-3xl px-5 py-10">
-        <nav className="mb-4 text-sm text-gray-500">
-          <Link href="/news" className="hover:underline">
-            News
-          </Link>{" "}
-          / <span className="text-gray-700">{article.title}</span>
-        </nav>
+      <Breadcrumbs
+        className="mb-6"
+        items={[
+          { label: "Home", href: "/" },
+          { label: "News", href: "/news" },
+          { label: article.title },
+        ]}
+      />
 
+      <GlassPanel className="p-6 md:p-10">
         {article.featured && (
-          <span className="mb-3 inline-block rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">
+          <span className="mb-3 inline-block rounded-full bg-[var(--premium-gold)]/20 px-2 py-0.5 text-xs font-semibold text-[var(--premium-gold)]">
             Featured
           </span>
         )}
 
-        <h1 className="text-4xl font-bold leading-tight text-gray-900">
+        <h1 className="text-3xl font-extrabold leading-tight text-[var(--text-primary)] md:text-4xl">
           {article.title}
         </h1>
-        <p className="mt-2 text-sm text-gray-400">
+        <p className="mt-2 text-sm text-[var(--text-secondary)]">
           {formatDate(article.publishedAt ?? article.createdAt)}
         </p>
 
@@ -122,16 +124,16 @@ export default async function NewsArticlePage({
           <img
             src={article.thumbnail}
             alt={article.title}
-            className="mt-6 w-full rounded-2xl object-cover"
+            className="mt-6 w-full rounded-[20px] object-cover"
           />
         )}
 
-        <div className="prose mt-8 max-w-none whitespace-pre-wrap text-gray-800">
-          {article.content}
-        </div>
-      </article>
-
-      <Footer />
-    </div>
+        <InArticleContent
+          content={article.content}
+          ads={ads}
+          className="prose prose-invert mt-8 max-w-none prose-p:text-[var(--text-secondary)] prose-headings:text-[var(--text-primary)]"
+        />
+      </GlassPanel>
+    </ArenaShell>
   );
 }

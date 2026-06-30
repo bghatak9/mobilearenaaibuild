@@ -1,0 +1,4 @@
+email,name,role,password,status
+editor.sample@mobilearena.com,Sample Editor,EDITOR,EditorSample123!,verified
+author.sample@mobilearena.com,Sample Author,AUTHOR,AuthorSample123!,active
+moderator.sample@mobilearena.com,Sample Moderator,MODERATOR,ModeratorSample123!,active

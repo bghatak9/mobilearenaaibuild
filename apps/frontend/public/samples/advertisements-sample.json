@@ -1,0 +1,38 @@
+{
+  "ads": [
+    {
+      "title": "Summer Phone Deals",
+      "link": "https://example.com/deals",
+      "image_url": "https://example.com/banner.jpg",
+      "placement": "display-leaderboard-970x90",
+      "ad_type": "display",
+      "width": 970,
+      "height": 90,
+      "advertiser": "Acme Mobile",
+      "budget": 5000,
+      "active": true,
+      "start_date": "2026-06-01",
+      "end_date": "2026-12-31"
+    },
+    {
+      "title": "Sticky Mobile Offer",
+      "link": "https://example.com/sticky",
+      "placement": "sticky-footer-mobile",
+      "ad_type": "sticky",
+      "sponsored": true,
+      "priority": 5,
+      "advertiser": "NetCarrier",
+      "active": true
+    },
+    {
+      "title": "Featured Nimbus Arc Ultra",
+      "link": "https://example.com/nimbus",
+      "placement": "featured-homepage-phone",
+      "ad_type": "featured",
+      "sponsored": true,
+      "priority": 9,
+      "advertiser": "Nimbus Tech",
+      "active": true
+    }
+  ]
+}

@@ -2,7 +2,7 @@
 
 import { use, useEffect, useState } from "react";
 import NewsForm from "@/components/admin/NewsForm";
-import { getNewsBySlug, updateNews, type NewsArticle } from "@/lib/api";
+import { getAdminNewsBySlug, updateNews, type NewsArticle } from "@/lib/api";
 
 export default function EditNewsPage({
   params,
@@ -16,7 +16,7 @@ export default function EditNewsPage({
   useEffect(() => {
     (async () => {
       try {
-        setArticle(await getNewsBySlug(slug));
+        setArticle(await getAdminNewsBySlug(slug));
       } catch {
         setError("Article not found.");
       }

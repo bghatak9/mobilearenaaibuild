@@ -10,6 +10,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { recordCompareSlug } from "@/features/phone-finder";
+
 export const MAX_COMPARE = 4;
 const STORAGE_KEY = "mobilearena:compare";
 
@@ -60,6 +62,7 @@ export function CompareProvider({ children }: { children: ReactNode }) {
         return prev.filter((i) => i.slug !== item.slug);
       }
       if (prev.length >= MAX_COMPARE) return prev;
+      recordCompareSlug(item.slug);
       return [...prev, item];
     });
   }, []);

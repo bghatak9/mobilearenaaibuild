@@ -93,6 +93,15 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     }
   }
 
+  async del(key: string) {
+    if (!this.client || !this.healthy) return;
+    try {
+      await this.client.del(this.withPrefix(key));
+    } catch {
+      // ignore
+    }
+  }
+
   async delByPrefix(prefix: string) {
     if (!this.client || !this.healthy) return;
     const match = `${this.withPrefix(prefix)}*`;
@@ -126,5 +135,30 @@ export class CacheService implements OnModuleInit, OnModuleDestroy {
     const fresh = await producer();
     await this.set(key, fresh, ttlSeconds);
     return fresh;
+  }
+
+  /** Mark a visitor as active for real-time "online now" counts. */
+  async markActiveVisitor(visitorId: string, windowSeconds = 300) {
+    if (!this.client || !this.healthy) return;
+    const key = this.withPrefix('analytics:live');
+    const now = Date.now();
+    try {
+      await this.client.zadd(key, now, visitorId);
+      await this.client.zremrangebyscore(key, 0, now - windowSeconds * 1000);
+    } catch {
+      // ignore
+    }
+  }
+
+  async countActiveVisitors(windowSeconds = 300): Promise<number> {
+    if (!this.client || !this.healthy) return 0;
+    const key = this.withPrefix('analytics:live');
+    const now = Date.now();
+    try {
+      await this.client.zremrangebyscore(key, 0, now - windowSeconds * 1000);
+      return this.client.zcard(key);
+    } catch {
+      return 0;
+    }
   }
 }

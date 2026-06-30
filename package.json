@@ -2,13 +2,14 @@
   "name": "mobilearena",
   "version": "1.0.0",
   "private": true,
-  "description": "MobileArena — GSMArena-style smartphone platform (monorepo)",
+  "description": "MobileArena — smartphone discovery platform (monorepo)",
   "workspaces": [
     "apps/backend",
     "apps/frontend",
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run dev:backend & npm run dev:frontend",
     "dev:backend": "npm run start:dev --workspace apps/backend",
     "dev:frontend": "npm run dev --workspace apps/frontend",
     "build:backend": "npm run build --workspace apps/backend",

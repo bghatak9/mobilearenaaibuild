@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { X, Scale } from "lucide-react";
 import { MAX_COMPARE, useCompare } from "@/lib/compare-context";
 
 export default function CompareBar() {
+  const pathname = usePathname();
   const { items, remove, clear, compareHref } = useCompare();
 
+  if (pathname.startsWith("/admin")) return null;
   if (items.length === 0) return null;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur">
+    <div className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-[var(--surface-card)]/95 backdrop-blur-xl md:bottom-0">
       <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3 px-5 py-3">
         <span className="flex items-center gap-2 text-sm font-semibold text-white">
           <Scale size={16} /> Compare ({items.length}/{MAX_COMPARE})

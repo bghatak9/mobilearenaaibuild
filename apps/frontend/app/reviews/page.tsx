@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { Star } from "lucide-react";
 
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
+import { ArenaShell } from "@/components/layout/ArenaShell";
+import { GlassPanel } from "@/design-system/glass/GlassPanel";
 import { getReviews, type Review } from "@/lib/api";
 
 export default async function ReviewsPage() {
@@ -15,45 +15,46 @@ export default async function ReviewsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
-      <Header />
+    <ArenaShell>
+      <header className="mb-8">
+        <p className="text-xs font-bold uppercase tracking-widest text-[var(--electric-cyan)]">
+          Editor&apos;s Arena
+        </p>
+        <h1 className="mt-2 text-3xl font-extrabold text-[var(--text-primary)]">
+          Reviews
+        </h1>
+      </header>
 
-      <section className="mx-auto max-w-5xl px-5 py-8">
-        <h1 className="mb-8 text-3xl font-bold text-gray-900">Reviews</h1>
-
-        {error ? (
-          <p className="text-red-500">Couldn&apos;t load reviews. Is the API running?</p>
-        ) : reviews.length === 0 ? (
-          <p className="text-gray-500">No reviews published yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <Link
-                key={review.id}
-                href={`/reviews/${review.slug}`}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:shadow-md"
-              >
+      {error ? (
+        <p className="text-red-400">Couldn&apos;t load reviews. Is the API running?</p>
+      ) : reviews.length === 0 ? (
+        <GlassPanel className="p-8 text-center text-[var(--text-secondary)]">
+          No reviews published yet.
+        </GlassPanel>
+      ) : (
+        <div className="space-y-4">
+          {reviews.map((review) => (
+            <Link key={review.id} href={`/reviews/${review.slug}`}>
+              <GlassPanel className="flex items-center justify-between gap-4 p-5 transition duration-200 hover:border-[var(--electric-cyan)]/30">
                 <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
+                  <h2 className="text-lg font-bold text-[var(--text-primary)]">
                     {review.title}
                   </h2>
                   {review.device && (
-                    <p className="text-sm text-gray-500">
+                    <p className="text-sm text-[var(--text-secondary)]">
                       {review.device.name}
                     </p>
                   )}
                 </div>
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-600">
-                  <Star size={15} className="fill-amber-400 stroke-amber-400" />
+                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[var(--premium-gold)]/15 px-3 py-1 font-bold text-[var(--premium-gold)]">
+                  <Star size={15} className="fill-current" />
                   {review.score.toFixed(1)}
                 </span>
-              </Link>
-            ))}
-          </div>
-        )}
-      </section>
-
-      <Footer />
-    </div>
+              </GlassPanel>
+            </Link>
+          ))}
+        </div>
+      )}
+    </ArenaShell>
   );
 }

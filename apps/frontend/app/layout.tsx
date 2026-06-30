@@ -3,6 +3,9 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Providers from "./providers";
 import Analytics from "@/components/analytics/Analytics";
+import PageViewTracker from "@/components/analytics/PageViewTracker";
+import { ThemeInitScript } from "@/components/theme/ThemeInitScript";
+import { catalogImportedOnlyFromEnv } from "@/lib/catalog-mode";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const geistSans = Geist({
@@ -15,9 +18,9 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const TITLE = "MobileArena — Smartphone Database, Finder & Compare";
+const TITLE = "MobileArena — Discover. Compare. Decide. Together.";
 const DESCRIPTION =
-  "Browse phone specs, compare up to 4 devices side by side, and read the latest reviews and news.";
+  "A premium, community-driven smartphone platform. Browse specs, compare devices, read reviews, and join the Arena.";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
@@ -59,13 +62,18 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const importedOnly = catalogImportedOnlyFromEnv();
+
   return (
     <html
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
+      suppressHydrationWarning
     >
-      <body className="min-h-full flex flex-col">
-        <Providers>{children}</Providers>
+      <body className="min-h-full flex flex-col bg-background text-foreground">
+        <ThemeInitScript />
+        <Providers importedOnly={importedOnly}>{children}</Providers>
+        <PageViewTracker />
         <Analytics />
       </body>
     </html>

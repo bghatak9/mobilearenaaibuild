@@ -1,6 +1,6 @@
 # MobileArena
 
-A full-scale, GSMArena-style smartphone platform: phone database, advanced finder,
+A full-scale smartphone discovery platform: phone database, advanced finder,
 side-by-side comparison engine, news + reviews CMS, ratings/comments, admin panel,
 and SEO-optimized public site.
 
@@ -88,20 +88,32 @@ Staff sign in at `/admin/login` via `POST /admin/auth/login` (normal `USER`
 accounts are rejected). Public signup (`POST /auth/register`) always creates
 `USER` accounts only.
 
-After seeding, a default **SUPER_ADMIN** is available:
+After seeding, default staff accounts are available:
 
-- Email: `superadmin@mobilearena.com`
-- Password: `SuperAdmin123!` (override with `SUPER_ADMIN_EMAIL` /
-  `SUPER_ADMIN_PASSWORD` env vars before `npm run prisma:seed`)
+| Role | Email / User ID | Password |
+|------|-----------------|----------|
+| SUPER_ADMIN | `superadmin@mobilearena.com` / `superadmin` | `SuperAdmin123!` |
+| ADMIN | `admin@mobilearena.com` / `admin` | `Admin123!` |
+| ADMIN (test) | `testadmi@mobilearena.com` / `testadmi` | `TestAdmi123!` |
+| EDITOR | `editor@mobilearena.com` / `editor` | `Editor123!` |
+
+Override with `SUPER_ADMIN_*`, `ADMIN_*`, `TEST_ADMIN_*`, or `EDITOR_*` env vars
+before `npm run prisma:seed --workspace apps/backend`.
 
 ### Features by role
 
 | Area | SUPER_ADMIN | ADMIN | EDITOR | AUTHOR | MODERATOR |
 |------|:-----------:|:-----:|:------:|:------:|:---------:|
-| User management | ✓ | ✓ (limited) | | | |
+| Phones | ✓ | ✓ | | | |
+| News | ✓ | ✓ | ✓ | | |
+| Brands | ✓ | ✓ | | | |
+| Images | ✓ | ✓ | ✓ (article) | ✓ (own article) | |
+| Prices | ✓ | ✓ | | | |
+| Users | ✓ | | | | |
+| User management UI | ✓ | | | | |
 | Devices (CRUD) | ✓ | ✓ | | | |
-| News / Reviews | ✓ | ✓ | ✓ | drafts | |
 | Comment moderation | ✓ | ✓ | ✓ | | ✓ |
+| Bulk upload | ✓ | ✓ | news + article images | article images | |
 | Audit logs | ✓ | ✓ | | | |
 
 Server-side JWT + `@Roles()` guards enforce every write endpoint; the admin

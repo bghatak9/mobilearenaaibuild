@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PostStatus, Prisma } from '@prisma/client';
 
+import { isImportedOnlyCatalog, catalogNewsWhere } from '../common/catalog-mode';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { slugify } from '../common/slug';
@@ -10,6 +11,10 @@ import { UpdateNewsDto } from './dto/update-news.dto';
 const CACHE_PREFIX = 'news:';
 const CACHE_TTL = 60;
 
+function catalogCacheScope() {
+  return isImportedOnlyCatalog() ? 'imported' : 'all';
+}
+
 @Injectable()
 export class NewsService {
   constructor(
@@ -17,13 +22,21 @@ export class NewsService {
     private readonly cache: CacheService,
   ) {}
 
-  findAll(params?: { status?: PostStatus; featured?: boolean }) {
-    const key = `${CACHE_PREFIX}list:${params?.status ?? 'any'}:${
+  findAll(
+    params?: { status?: PostStatus; featured?: boolean },
+    options?: { includeCatalogHidden?: boolean },
+  ) {
+    const scope = options?.includeCatalogHidden
+      ? 'admin'
+      : catalogCacheScope();
+    const key = `${CACHE_PREFIX}list:${scope}:${params?.status ?? 'any'}:${
       params?.featured ?? 'any'
     }`;
 
     return this.cache.wrap(key, CACHE_TTL, () => {
-      const where: Prisma.NewsWhereInput = {};
+      const where: Prisma.NewsWhereInput = options?.includeCatalogHidden
+        ? {}
+        : catalogNewsWhere();
       if (params?.status) where.status = params.status;
       if (params?.featured !== undefined) where.featured = params.featured;
 
@@ -34,12 +47,20 @@ export class NewsService {
     });
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(slug: string, options?: { includeCatalogHidden?: boolean }) {
+    const scope = options?.includeCatalogHidden
+      ? 'admin'
+      : catalogCacheScope();
+
     return this.cache.wrap(
-      `${CACHE_PREFIX}slug:${slug}`,
+      `${CACHE_PREFIX}slug:${scope}:${slug}`,
       CACHE_TTL,
       async () => {
-        const article = await this.prisma.news.findUnique({ where: { slug } });
+        const article = await this.prisma.news.findFirst({
+          where: options?.includeCatalogHidden
+            ? { slug }
+            : catalogNewsWhere({ slug }),
+        });
         if (!article) {
           throw new NotFoundException(`News article "${slug}" not found.`);
         }

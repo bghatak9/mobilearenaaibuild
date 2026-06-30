@@ -1,0 +1,3 @@
+title,content,excerpt,status
+How to bulk upload phones,"Upload phones with CSV or XLSX. Required columns: name, brand, category. Optional: manufacturer, price, os, weight, dimensions.","Phone upload reference guide.",published
+Bulk upload rollback policy,"If validation fails, fix the error report and re-upload. Atomic imports roll back the entire file when a row fails during import.","Safety and rollback overview.",published

@@ -12,11 +12,13 @@ import {
 import type { Request } from 'express';
 import { UserRole } from '@prisma/client';
 
+import { PasswordResetService } from '../auth/password-reset.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { AuditService } from '../audit/audit.service';
 import { UserService } from './user.service';
-import { CreateUserDto, ResetPasswordDto, UpdateUserDto } from './dto/user.dto';
+import { CreateUserDto, SendPasswordResetDto, UpdateUserDto } from './dto/user.dto';
 
 interface AuthRequest extends Request {
   user: { userId: number; email: string; role: UserRole };
@@ -24,13 +26,45 @@ interface AuthRequest extends Request {
 
 @Controller('users')
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
+@Roles(UserRole.SUPER_ADMIN)
 export class UserController {
-  constructor(private readonly users: UserService) {}
+  constructor(
+    private readonly users: UserService,
+    private readonly passwordReset: PasswordResetService,
+    private readonly audit: AuditService,
+  ) {}
 
   @Get()
   findAll(@Req() req: AuthRequest) {
     return this.users.findAll(req.user.role);
+  }
+
+  @Post(':id/send-password-reset')
+  @Roles(UserRole.SUPER_ADMIN)
+  async sendPasswordReset(
+    @Param('id') id: string,
+    @Body() dto: SendPasswordResetDto,
+    @Req() req: AuthRequest,
+  ) {
+    const result = await this.passwordReset.adminSendEmailReset(
+      +id,
+      req.user.role,
+    );
+
+    try {
+      await this.audit.log({
+        userId: req.user.userId,
+        action: 'Sent email password reset OTP',
+        entity: 'User',
+        entityId: id,
+        ipAddress: req.ip,
+        userAgent: req.headers['user-agent'],
+      });
+    } catch {
+      /* non-blocking */
+    }
+
+    return result;
   }
 
   @Get(':id')
@@ -50,15 +84,6 @@ export class UserController {
     @Req() req: AuthRequest,
   ) {
     return this.users.update(+id, dto, req.user, this.meta(req));
-  }
-
-  @Post(':id/reset-password')
-  resetPassword(
-    @Param('id') id: string,
-    @Body() dto: ResetPasswordDto,
-    @Req() req: AuthRequest,
-  ) {
-    return this.users.resetPassword(+id, dto, req.user, this.meta(req));
   }
 
   @Delete(':id')

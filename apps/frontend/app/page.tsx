@@ -1,44 +1,32 @@
-import Link from "next/link";
-
-import Header from "@/components/layout/Header";
-import Footer from "@/components/layout/Footer";
-import PhoneFinderBox from "@/components/home/PhoneFinderBox";
-import FeatureCard from "@/components/home/FeatureCard";
 import {
+  getCatalogStatus,
   getDevices,
+  getBulkUpcomingDevices,
+  getBrandsGrouped,
   getNews,
   getReviews,
-  type Device,
-  type NewsArticle,
-  type Review,
+  getActiveAdvertisements,
 } from "@/lib/api";
-
-const GRADIENTS = [
-  "bg-gradient-to-br from-teal-600 to-emerald-800",
-  "bg-gradient-to-br from-rose-600 to-red-900",
-  "bg-gradient-to-br from-amber-500 to-orange-700",
-  "bg-gradient-to-br from-indigo-600 to-violet-900",
-  "bg-gradient-to-br from-sky-600 to-blue-900",
-  "bg-gradient-to-br from-fuchsia-600 to-purple-900",
-];
-
-type Item = {
-  href: string;
-  title: string;
-  meta?: string;
-  image?: string | null;
-};
-
-function fmt(value?: string | null): string {
-  if (!value) return "";
-  return new Date(value)
-    .toLocaleDateString("en-GB", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })
-    .toUpperCase();
-}
+import { pickAdForPlacement } from "@/lib/ad-utils";
+import AdUnit from "@/components/ads/AdUnit";
+import { ArenaShell } from "@/components/layout/ArenaShell";
+import { HomeSpotlightGrid } from "@/components/home/arena/HomeSpotlightGrid";
+import { buildHomeSpotlight } from "@/lib/home-spotlight";
+import {
+  AiRecommendationsSection,
+  ArenaFooterEcosystem,
+  ArenaPulseSection,
+  CommunityStreamSection,
+  EditorsArenaSection,
+  EditorsChoiceSection,
+  LaunchTimelineSection,
+  TrendingArenaSection,
+  UpcomingDevicesSection,
+} from "@/components/home/arena/ArenaHomeSections";
+import { BrandUniverseSection } from "@/components/home/arena/BrandUniverseSection";
+import { HomePollWidget } from "@/components/home/arena/HomePollWidget";
+import { NewsletterSignupSection } from "@/components/home/arena/NewsletterSignupSection";
+import { ContactSection } from "@/components/home/arena/ContactSection";
 
 async function safe<T>(p: Promise<T>): Promise<T | null> {
   try {
@@ -48,137 +36,96 @@ async function safe<T>(p: Promise<T>): Promise<T | null> {
   }
 }
 
+export const dynamic = "force-dynamic";
+
 export default async function Home() {
-  const [news, reviews, devices] = await Promise.all([
+  const catalog = await safe(getCatalogStatus());
+  const importedOnly = catalog?.importedOnly ?? false;
+
+  const [news, reviews, devices, upcomingDevices, ads, brandGroups] =
+    await Promise.all([
     safe(getNews()),
-    safe(getReviews()),
+    importedOnly ? Promise.resolve(null) : safe(getReviews()),
     safe(getDevices()),
+    safe(getBulkUpcomingDevices()),
+    safe(getActiveAdvertisements()),
+    safe(getBrandsGrouped()),
   ]);
 
-  const reviewItems: Item[] = (reviews ?? []).map((r: Review) => ({
-    href: `/reviews/${r.slug}`,
-    title: r.title,
-    meta: fmt(r.publishedAt),
-  }));
+  const adList = ads ?? [];
+  const midAd =
+    pickAdForPlacement(adList, "homepage-mid") ??
+    pickAdForPlacement(adList, "native-sponsored-card") ??
+    null;
 
-  const newsItems: Item[] = (news ?? []).map((n: NewsArticle) => ({
-    href: `/news/${n.slug}`,
-    title: n.title,
-    meta: fmt(n.publishedAt ?? n.createdAt),
-    image: n.thumbnail,
-  }));
+  const deviceList = devices ?? [];
+  const upcomingList = upcomingDevices ?? [];
+  const reviewList = reviews ?? [];
+  const newsList = news ?? [];
 
-  const deviceItems: Item[] = (devices ?? []).map((d: Device) => ({
-    href: `/phones/${d.slug}`,
-    title: `${d.name} review`,
-    meta: d.brand?.name?.toUpperCase(),
-    image: d.images?.[0]?.url,
-  }));
-
-  const pool = [...reviewItems, ...newsItems, ...deviceItems];
-  const hero = reviewItems[0] ?? pool[0] ?? null;
-  const rest = pool.filter((i) => i.href !== hero?.href);
-  const rightCol = rest.slice(0, 2);
-  const bottom = rest.slice(2, 5);
+  const spotlight = buildHomeSpotlight(deviceList, reviewList, upcomingList);
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
-      <Header />
+    <ArenaShell>
+      <main className="space-y-14">
+        <HomeSpotlightGrid data={spotlight} />
 
-      <main className="mx-auto max-w-[1100px] px-4 py-5">
-        {/* Ad */}
-        <div className="mb-5">
-          <p className="mb-1 text-center text-[10px] uppercase tracking-widest text-gray-400">
-            Advertisement
-          </p>
-          <div className="flex h-24 items-center justify-center rounded border border-gray-200 bg-white text-sm text-gray-300">
-            Ad
-          </div>
+        {!importedOnly ? (
+          <>
+            <ArenaPulseSection />
+            <hr className="arena-home-divider" />
+          </>
+        ) : null}
+
+        <TrendingArenaSection devices={deviceList} />
+        <hr className="arena-home-divider" />
+
+        <EditorsChoiceSection devices={deviceList} />
+        <hr className="arena-home-divider" />
+
+        <UpcomingDevicesSection devices={upcomingList} />
+        <hr className="arena-home-divider" />
+
+        <AiRecommendationsSection devices={deviceList} />
+
+        {!importedOnly ? (
+          <>
+            <hr className="arena-home-divider" />
+            <CommunityStreamSection />
+          </>
+        ) : null}
+
+        <hr className="arena-home-divider" />
+        <div className="grid gap-8 lg:grid-cols-2 lg:gap-10">
+          {!importedOnly ? <LaunchTimelineSection /> : null}
+          <section aria-labelledby="reviews-polls">
+            <HomePollWidget
+              reviewsLink={reviewList[0] ? `/reviews/${reviewList[0].slug}` : "/reviews"}
+            />
+          </section>
         </div>
 
-        {/* Finder · Hero · Reviews */}
-        <div className="grid gap-4 lg:grid-cols-[230px_1fr_330px]">
-          <PhoneFinderBox />
+        <BrandUniverseSection
+          brandGroups={brandGroups ?? []}
+          devices={deviceList}
+        />
 
-          <div>
-            {hero ? (
-              <FeatureCard
-                size="hero"
-                href={hero.href}
-                title={hero.title}
-                meta={hero.meta}
-                image={hero.image}
-                gradient={GRADIENTS[0]}
-              />
-            ) : (
-              <div className="flex h-[300px] items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400">
-                No featured content yet
-              </div>
-            )}
-          </div>
+        <hr className="arena-home-divider" />
+        <EditorsArenaSection reviews={reviewList} news={newsList} />
 
-          <div className="flex flex-col gap-4">
-            {rightCol.length > 0 ? (
-              rightCol.map((item, i) => (
-                <FeatureCard
-                  key={item.href}
-                  size="md"
-                  href={item.href}
-                  title={item.title}
-                  meta={item.meta}
-                  image={item.image}
-                  gradient={GRADIENTS[(i + 1) % GRADIENTS.length]}
-                />
-              ))
-            ) : (
-              <div className="flex h-[150px] items-center justify-center rounded-md border border-gray-200 bg-white text-sm text-gray-400">
-                More reviews soon
-              </div>
-            )}
-            <Link
-              href="/reviews"
-              className="rounded border border-gray-200 bg-white py-2 text-center text-xs font-semibold text-zinc-600 hover:text-red-600"
-            >
-              ALL REVIEWS
-            </Link>
-          </div>
-        </div>
+        {midAd ? (
+          <section aria-label="Sponsored">
+            <AdUnit ad={midAd} variant="card" />
+          </section>
+        ) : null}
 
-        {/* Ad banner · News cards */}
-        <div className="mt-5 grid gap-4 lg:grid-cols-4">
-          <div className="flex h-[220px] flex-col items-start justify-center gap-3 rounded-md bg-gradient-to-br from-amber-300 to-yellow-200 p-5">
-            <span className="text-[10px] uppercase text-amber-700">
-              Advertisement
-            </span>
-            <p className="text-xl font-extrabold text-amber-900">
-              Smooth-sailing through 20+ apps.
-            </p>
-            <span className="rounded bg-red-600 px-4 py-1.5 text-sm font-semibold text-white">
-              Buy now
-            </span>
-          </div>
+        <NewsletterSignupSection />
 
-          {bottom.length > 0 ? (
-            bottom.map((item, i) => (
-              <FeatureCard
-                key={item.href}
-                size="sm"
-                href={item.href}
-                title={item.title}
-                meta={item.meta}
-                image={item.image}
-                gradient={GRADIENTS[(i + 3) % GRADIENTS.length]}
-              />
-            ))
-          ) : (
-            <div className="col-span-3 flex h-[220px] items-center justify-center rounded-md border border-gray-200 bg-white text-sm text-gray-400">
-              More stories soon
-            </div>
-          )}
-        </div>
+        <hr className="arena-home-divider" />
+        <ContactSection />
+
+        <ArenaFooterEcosystem />
       </main>
-
-      <Footer />
-    </div>
+    </ArenaShell>
   );
 }

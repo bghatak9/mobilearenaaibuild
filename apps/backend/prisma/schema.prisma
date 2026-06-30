@@ -27,11 +27,67 @@ enum PostStatus {
   PUBLISHED
 }
 
+enum ImportBatchStatus {
+  COMPLETED
+  PARTIALLY_DELETED
+  FULLY_DELETED
+  PURGED
+}
+
+enum AdCampaignStatus {
+  DRAFT
+  SCHEDULED
+  ACTIVE
+  PAUSED
+  COMPLETED
+}
+
+enum AdEventType {
+  IMPRESSION
+  CLICK
+}
+
+enum ReportStatus {
+  OPEN
+  REVIEWED
+  DISMISSED
+}
+
+enum ReportEntityType {
+  COMMENT
+  REVIEW
+  USER
+  DISCUSSION
+}
+
+enum CommentStatus {
+  PUBLISHED
+  PENDING_REVIEW
+  SPAM
+  REMOVED
+  APPROVED
+  HIDDEN
+}
+
+enum BookmarkEntityType {
+  DEVICE
+  NEWS
+  REVIEW
+}
+
+enum PollType {
+  DEVICE
+  WEEKLY
+  COMPARISON
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   name         String?
   email        String   @unique
-  passwordHash String
+  passwordHash String? /// bcrypt hash only — plain text is never persisted
+  googleId     String?  @unique
+  facebookId   String?  @unique
   role         UserRole @default(USER)
 
   isActive   Boolean @default(true)
@@ -39,7 +95,16 @@ model User {
   isBlocked  Boolean @default(false)
 
   avatar    String?
-  phone     String?
+  bio       String?
+  headline  String?
+  reputationPoints Int @default(0)
+
+  notifyReplies      Boolean @default(true)
+  notifyPriceAlerts  Boolean @default(true)
+  notifyNewsletter   Boolean @default(false)
+  profilePublic      Boolean @default(true)
+  twoFactorEnabled   Boolean @default(false)
+
   lastLogin DateTime?
 
   createdById Int?
@@ -48,13 +113,132 @@ model User {
 
   comments  Comment[]
   ratings   Rating[]
-  auditLogs AuditLog[]
+  auditLogs    AuditLog[]
+  importBatches ImportBatch[]
+  adCampaigns   AdCampaign[]
+  favoriteBrands UserFavoriteBrand[]
+  favoriteDevices UserFavoriteDevice[]
+  bookmarks      UserBookmark[]
+  wishlistItems  UserWishlistItem[]
+  notifications  UserNotification[]
+  pollVotes      UserPollVote[]
+  badges         UserBadge[]
+  newsletterSubscription NewsletterSubscriber?
+  savedComparisons UserSavedComparison[]
+  searchHistory    UserSearchHistory[]
+  emailVerification EmailVerificationToken?
+  contentReports    ContentReport[] @relation("ReportsMade")
+  discussions       Discussion[]
+  communityReviews  CommunityReview[]
+  reviewHelpfulVotes CommunityReviewHelpful[]
+  moderatedComments Comment[] @relation("CommentModerator")
+
+  commentRestrictedUntil DateTime?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([role])
   @@index([isBlocked])
+}
+
+model EmailVerificationToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @unique
+  token     String   @unique
+  expiresAt DateTime
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+}
+
+model Poll {
+  id        Int       @id @default(autoincrement())
+  slug      String    @unique
+  question  String
+  choices   Json
+  pollType  PollType  @default(DEVICE)
+  active    Boolean   @default(true)
+  endsAt    DateTime?
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@index([pollType])
+  @@index([active])
+}
+
+model CommunityReview {
+  id             Int      @id @default(autoincrement())
+  userId         Int
+  deviceId       Int
+  overallStars   Int
+  categoryScores Json
+  body           String
+  helpfulCount   Int      @default(0)
+  verifiedOwner  Boolean  @default(false)
+  photoUrls      Json     @default("[]")
+  videoUrls      Json     @default("[]")
+  parentId       Int?
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device   Device            @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  parent   CommunityReview?  @relation("ReviewReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies  CommunityReview[] @relation("ReviewReplies")
+  helpfulVotes CommunityReviewHelpful[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId])
+  @@index([userId])
+  @@index([helpfulCount])
+  @@index([parentId])
+}
+
+model CommunityReviewHelpful {
+  id       Int @id @default(autoincrement())
+  userId   Int
+  reviewId Int
+
+  user   User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  review CommunityReview @relation(fields: [reviewId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, reviewId])
+  @@index([reviewId])
+}
+
+model ContentReport {
+  id           Int              @id @default(autoincrement())
+  reporterId   Int
+  entityType   ReportEntityType
+  entityId     Int
+  reason       String
+  status       ReportStatus     @default(OPEN)
+  notes        String?
+  reporter     User             @relation("ReportsMade", fields: [reporterId], references: [id], onDelete: Cascade)
+  createdAt    DateTime         @default(now())
+  updatedAt    DateTime         @updatedAt
+
+  @@index([status])
+  @@index([entityType, entityId])
+  @@index([reporterId])
+}
+
+model Discussion {
+  id       Int     @id @default(autoincrement())
+  slug     String  @unique
+  title    String
+  body     String
+  userId   Int
+  deviceId Int?
+  user     User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device   Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId])
+  @@index([userId])
 }
 
 model AuditLog {
@@ -81,7 +265,181 @@ model Brand {
   slug String  @unique
   logo String?
 
-  devices Device[]
+  deletedAt DateTime?
+
+  devices          Device[]
+  favoritedBy      UserFavoriteBrand[]
+  importBatchItems ImportBatchItem[]
+
+  @@index([deletedAt])
+}
+
+model UserFavoriteBrand {
+  id      Int      @id @default(autoincrement())
+  userId  Int
+  brandId Int
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  brand   Brand    @relation(fields: [brandId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, brandId])
+  @@index([userId])
+  @@index([brandId])
+}
+
+model Badge {
+  id             Int      @id @default(autoincrement())
+  slug           String   @unique
+  name           String
+  description    String
+  icon           String
+  pointsRequired Int      @default(0)
+  category       String   @default("general")
+
+  userBadges UserBadge[]
+
+  createdAt DateTime @default(now())
+}
+
+model UserBadge {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  badgeId  Int
+  earnedAt DateTime @default(now())
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge Badge @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@index([badgeId])
+}
+
+model UserBookmark {
+  id         Int                @id @default(autoincrement())
+  userId     Int
+  entityType BookmarkEntityType
+  entityId   Int
+  title      String?
+  slug       String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, entityType, entityId])
+  @@index([userId])
+  @@index([entityType])
+}
+
+model UserFavoriteDevice {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  deviceId Int
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device   Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([deviceId])
+}
+
+model UserWishlistItem {
+  id           Int      @id @default(autoincrement())
+  userId       Int
+  deviceId     Int
+  targetPrice  Float?
+  alertEnabled Boolean  @default(true)
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, deviceId])
+  @@index([userId])
+  @@index([deviceId])
+}
+
+model UserNotification {
+  id     Int     @id @default(autoincrement())
+  userId Int
+  type   String
+  title  String
+  body   String
+  read   Boolean @default(false)
+  link   String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model UserPollVote {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  pollSlug  String
+  pollTitle String
+  choice    String
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+
+  @@unique([userId, pollSlug])
+  @@index([userId])
+}
+
+model NewsletterSubscriber {
+  id        Int      @id @default(autoincrement())
+  email     String   @unique
+  userId    Int?     @unique
+  active    Boolean  @default(true)
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  createdAt DateTime @default(now())
+
+  @@index([email])
+}
+
+model ContactMessage {
+  id        Int      @id @default(autoincrement())
+  name      String
+  email     String
+  subject   String?
+  message   String
+  createdAt DateTime @default(now())
+
+  @@index([email])
+  @@index([createdAt])
+}
+
+model UserSavedComparison {
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  name        String?
+  compareSlug String
+  deviceSlugs Json
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+
+  @@unique([userId, compareSlug])
+  @@index([userId])
+}
+
+model UserSearchHistory {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  query      String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  searchedAt DateTime @default(now())
+
+  @@index([userId, searchedAt])
 }
 
 model Manufacturer {
@@ -121,6 +479,8 @@ model Device {
   infrared      Boolean?
   fingerprint   String?
   rating        Float?
+  ramGb         Int?
+  storageGb     Int?
 
   brandId        Int
   categoryId     Int
@@ -139,6 +499,18 @@ model Device {
   reviews  Review[]
   ratings  Rating[]
   comments Comment[]
+  favoriteDevices UserFavoriteDevice[]
+  wishlistItems   UserWishlistItem[]
+  priceHistory    DevicePriceHistory[]
+  countryAvailability DeviceCountryAvailability[]
+  affiliateOffers DeviceAffiliateOffer[]
+  discussions     Discussion[]
+  communityReviews CommunityReview[]
+
+  deletedAt     DateTime?
+  importBatchId Int?
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  batchItems    ImportBatchItem[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -146,6 +518,8 @@ model Device {
   @@index([brandId])
   @@index([categoryId])
   @@index([manufacturerId])
+  @@index([deletedAt])
+  @@index([importBatchId])
 }
 
 model Display {
@@ -239,11 +613,18 @@ model News {
   status      PostStatus @default(DRAFT)
   publishedAt DateTime?
 
+  deletedAt     DateTime?
+  importBatchId Int?
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  batchItems    ImportBatchItem[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([status])
   @@index([featured])
+  @@index([deletedAt])
+  @@index([importBatchId])
 }
 
 model Rating {
@@ -270,8 +651,245 @@ model Comment {
   user     User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
 
+  status    CommentStatus @default(PUBLISHED)
+  spamScore Int           @default(0)
+  aiSpamScore Int?
+  spamReason String?
+  isDeleted Boolean       @default(false)
+
+  moderatedById Int?
+  moderatedBy   User?     @relation("CommentModerator", fields: [moderatedById], references: [id], onDelete: SetNull)
+  moderatedAt   DateTime?
+
   createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([deviceId])
   @@index([userId])
+  @@index([status])
+  @@index([spamScore])
+  @@index([createdAt])
+}
+
+model DevicePriceHistory {
+  id         Int      @id @default(autoincrement())
+  deviceId   Int
+  price      Float
+  currency   String   @default("USD")
+  recordedAt DateTime @default(now())
+  device     Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@index([deviceId, recordedAt])
+}
+
+model DeviceCountryAvailability {
+  id          Int     @id @default(autoincrement())
+  deviceId    Int
+  countryCode String
+  available   Boolean @default(true)
+  price       Float?
+  currency    String?
+  device      Device  @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  @@unique([deviceId, countryCode])
+  @@index([deviceId])
+}
+
+model DeviceAffiliateOffer {
+  id           Int     @id @default(autoincrement())
+  deviceId     Int
+  partner      String
+  price        Float
+  currency     String
+  affiliateUrl String
+  active       Boolean @default(true)
+  priority     Int     @default(0)
+
+  device Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([deviceId])
+  @@index([currency])
+  @@index([active])
+}
+
+model PageView {
+  id        Int      @id @default(autoincrement())
+  visitorId String
+  path      String
+  referrer  String?
+  country   String?
+  city      String?
+  device    String?
+  os        String?
+  browser   String?
+
+  createdAt DateTime @default(now())
+
+  @@index([createdAt])
+  @@index([path])
+  @@index([country])
+  @@index([city])
+  @@index([visitorId])
+}
+
+model PaidAdvertisement {
+  id         Int      @id @default(autoincrement())
+  title      String
+  slug       String   @unique
+  link       String
+  imageUrl   String?
+  placement  String   @default("homepage-top")
+  adType     String   @default("display")
+  format     String?
+  width      Int?
+  height     Int?
+  sponsored  Boolean  @default(false)
+  priority   Int      @default(0)
+  advertiser String?
+  budget     Float?
+  active     Boolean  @default(true)
+  startsAt   DateTime?
+  endsAt     DateTime?
+
+  campaignId Int?
+  campaign   AdCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  impressionCount Int @default(0)
+  clickCount      Int @default(0)
+
+  importBatchId Int?
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  deletedAt     DateTime?
+
+  importBatchItems ImportBatchItem[]
+  adEvents         AdEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([active])
+  @@index([placement])
+  @@index([adType])
+  @@index([sponsored])
+  @@index([deletedAt])
+  @@index([importBatchId])
+  @@index([campaignId])
+}
+
+model AdCampaign {
+  id          Int              @id @default(autoincrement())
+  name        String
+  slug        String           @unique
+  description String?
+  advertiser  String?
+  budget      Float?
+  cpm         Float?
+  cpc         Float?
+  revenueGoal Float?
+  status      AdCampaignStatus @default(DRAFT)
+  startsAt    DateTime?
+  endsAt      DateTime?
+
+  createdById Int?
+  createdBy   User? @relation(fields: [createdById], references: [id], onDelete: SetNull)
+
+  advertisements PaidAdvertisement[]
+  adEvents       AdEvent[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+  @@index([startsAt])
+  @@index([endsAt])
+  @@index([createdById])
+}
+
+model AdEvent {
+  id              Int         @id @default(autoincrement())
+  eventType       AdEventType
+  placement       String?
+  path            String?
+  visitorId       String?
+  countryCode     String?
+
+  advertisementId Int
+  advertisement   PaidAdvertisement @relation(fields: [advertisementId], references: [id], onDelete: Cascade)
+
+  campaignId Int?
+  campaign   AdCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  createdAt DateTime @default(now())
+
+  @@index([advertisementId])
+  @@index([campaignId])
+  @@index([eventType])
+  @@index([createdAt])
+  @@index([countryCode])
+}
+
+model ImportBatch {
+  id        Int               @id @default(autoincrement())
+  kind      String
+  fileName  String
+  jobId     String?           @unique
+  status    ImportBatchStatus @default(COMPLETED)
+  totalRows Int               @default(0)
+  inserted  Int               @default(0)
+  skipped   Int               @default(0)
+
+  importedById Int
+  importedBy   User @relation(fields: [importedById], references: [id])
+
+  items           ImportBatchItem[]
+  devices         Device[]
+  advertisements  PaidAdvertisement[]
+  news            News[]
+
+  deletedAt DateTime?
+  purgedAt  DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([kind])
+  @@index([status])
+  @@index([createdAt])
+  @@index([deletedAt])
+}
+
+model ImportBatchItem {
+  id         Int     @id @default(autoincrement())
+  entityType String
+  entityId   Int
+  entitySlug String?
+  entityName String?
+
+  batchId Int
+  batch   ImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  deviceId Int?
+  device   Device? @relation(fields: [deviceId], references: [id], onDelete: SetNull)
+
+  advertisementId Int?
+  advertisement   PaidAdvertisement? @relation(fields: [advertisementId], references: [id], onDelete: SetNull)
+
+  newsId Int?
+  news   News? @relation(fields: [newsId], references: [id], onDelete: SetNull)
+
+  brandId Int?
+  brand   Brand? @relation(fields: [brandId], references: [id], onDelete: SetNull)
+
+  deletedAt DateTime?
+
+  @@unique([batchId, entityType, entityId])
+  @@index([batchId])
+  @@index([deviceId])
+  @@index([advertisementId])
+  @@index([newsId])
+  @@index([brandId])
+  @@index([deletedAt])
 }

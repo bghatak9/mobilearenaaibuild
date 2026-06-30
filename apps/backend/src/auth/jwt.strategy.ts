@@ -1,7 +1,9 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
-import { ExtractJwt, Strategy } from 'passport-jwt';
 import { UserRole } from '@prisma/client';
+import { ExtractJwt, Strategy } from 'passport-jwt';
+
+import { PrismaService } from '../prisma/prisma.service';
 
 interface JwtPayload {
   sub: number;
@@ -11,18 +13,33 @@ interface JwtPayload {
 
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       secretOrKey: process.env.JWT_SECRET || 'secretKey',
     });
   }
 
-  validate(payload: JwtPayload) {
+  async validate(payload: JwtPayload) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: payload.sub },
+      select: {
+        id: true,
+        email: true,
+        role: true,
+        isActive: true,
+        isBlocked: true,
+      },
+    });
+
+    if (!user || !user.isActive || user.isBlocked) {
+      throw new UnauthorizedException('Invalid or disabled account');
+    }
+
     return {
-      userId: payload.sub,
-      email: payload.email,
-      role: payload.role,
+      userId: user.id,
+      email: user.email,
+      role: user.role,
     };
   }
 }

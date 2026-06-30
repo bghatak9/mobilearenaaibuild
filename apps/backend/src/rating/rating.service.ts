@@ -11,7 +11,7 @@ export class RatingService {
    * Create or update a user's rating for a device, then refresh the device's
    * cached average rating.
    */
-  async rate(dto: CreateRatingDto) {
+  async rate(dto: CreateRatingDto & { userId: number }) {
     const rating = await this.prisma.rating.upsert({
       where: {
         userId_deviceId: { userId: dto.userId, deviceId: dto.deviceId },

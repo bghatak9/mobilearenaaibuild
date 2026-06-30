@@ -1,29 +1,41 @@
+"use client";
+
+import { useMemo } from "react";
+
+import {
+  ChooseableFilterPicker,
+} from "@/components/phone-finder/FilterOptionPicker";
+import { buildBrandPickerOptions } from "@/lib/brand-categories";
+import type { Device } from "@/lib/api";
+
 type BrandFilterProps = {
   brands: string[];
-  selected: string | null;
+  devices?: Device[];
+  selected: string;
   onSelect: (brand: string) => void;
 };
 
 export default function BrandFilter({
   brands,
+  devices = [],
   selected,
   onSelect,
 }: BrandFilterProps) {
+  const options = useMemo(
+    () => buildBrandPickerOptions(devices, brands),
+    [devices, brands],
+  );
+
   return (
-    <div className="flex gap-2 flex-wrap">
-      {brands.map((brand: string) => (
-        <button
-          key={brand}
-          onClick={() => onSelect(brand)}
-          className={`px-4 py-2 rounded-full border ${
-            selected === brand
-              ? "bg-black text-white"
-              : ""
-          }`}
-        >
-          {brand}
-        </button>
-      ))}
-    </div>
+    <ChooseableFilterPicker
+      hideLabel
+      blankDefault
+      label="Brands"
+      options={options}
+      value={selected}
+      onChange={onSelect}
+      placeholder="Choose brands"
+      searchPlaceholder="Search brands…"
+    />
   );
 }

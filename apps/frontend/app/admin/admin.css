@@ -1,0 +1,160 @@
+/**
+ * Admin panel theme fixes — pages were built with light-only Tailwind utilities.
+ * These overrides make day/night mode readable without editing every admin page.
+ */
+
+/* ── Sidebar (layout handles structure; polish active states) ── */
+.admin-sidebar nav a:not([class*="bg-red-600"]):hover {
+  background-color: rgb(243 244 246);
+}
+
+.dark .admin-sidebar nav a:not([class*="bg-red-600"]):hover {
+  background-color: rgb(39 39 42);
+}
+
+/* ── Content area: text ── */
+.dark .admin-content .text-gray-900,
+.dark .admin-content .text-zinc-900,
+.dark .admin-content .text-zinc-800 {
+  color: rgb(244 244 245);
+}
+
+.dark .admin-content .text-gray-800,
+.dark .admin-content .text-gray-700,
+.dark .admin-content .text-zinc-700 {
+  color: rgb(212 212 216);
+}
+
+.dark .admin-content .text-gray-600,
+.dark .admin-content .text-zinc-600,
+.dark .admin-content .text-gray-500 {
+  color: rgb(161 161 170);
+}
+
+.dark .admin-content .text-gray-400 {
+  color: rgb(113 113 122);
+}
+
+/* ── Backgrounds ── */
+.dark .admin-content .bg-white {
+  background-color: rgb(39 39 42);
+}
+
+.dark .admin-content .bg-gray-50,
+.dark .admin-content thead.bg-gray-50,
+.dark .admin-content .bg-zinc-50 {
+  background-color: rgb(24 24 27);
+}
+
+.dark .admin-content .bg-zinc-100,
+.dark .admin-content .bg-gray-100,
+.dark .admin-content .bg-gray-200 {
+  background-color: rgb(39 39 42);
+}
+
+.dark .admin-content tbody tr:hover,
+.dark .admin-content tr.hover\:bg-gray-50:hover,
+.dark .admin-content .hover\:bg-gray-50:hover,
+.dark .admin-content .hover\:bg-white:hover {
+  background-color: rgb(39 39 42);
+}
+
+/* ── Borders ── */
+.dark .admin-content .border-gray-100,
+.dark .admin-content .border-gray-200,
+.dark .admin-content .border-gray-300,
+.dark .admin-content .border-zinc-200,
+.dark .admin-content .border-zinc-300 {
+  border-color: rgb(63 63 70);
+}
+
+.dark .admin-content .border-dashed.border-gray-200 {
+  border-color: rgb(82 82 91);
+}
+
+/* ── Form controls ── */
+.dark .admin-content input:not([type="checkbox"]):not([type="radio"]),
+.dark .admin-content textarea,
+.dark .admin-content select {
+  background-color: rgb(39 39 42);
+  border-color: rgb(82 82 91);
+  color: rgb(244 244 245);
+}
+
+.dark .admin-content input::placeholder,
+.dark .admin-content textarea::placeholder {
+  color: rgb(113 113 122);
+}
+
+.dark .admin-content input[type="checkbox"],
+.dark .admin-content input[type="radio"] {
+  accent-color: rgb(220 38 38);
+}
+
+/* ── Alerts & status chips ── */
+.dark .admin-content .bg-rose-50 {
+  background-color: rgb(76 29 29 / 0.45);
+}
+
+.dark .admin-content .text-rose-600,
+.dark .admin-content .text-rose-700 {
+  color: rgb(252 165 165);
+}
+
+.dark .admin-content .bg-emerald-50 {
+  background-color: rgb(6 78 59 / 0.35);
+}
+
+.dark .admin-content .bg-emerald-100 {
+  background-color: rgb(6 78 59 / 0.45);
+}
+
+.dark .admin-content .text-emerald-700,
+.dark .admin-content .text-emerald-800 {
+  color: rgb(167 243 208);
+}
+
+.dark .admin-content .bg-amber-100 {
+  background-color: rgb(120 53 15 / 0.45);
+}
+
+.dark .admin-content .text-amber-700,
+.dark .admin-content .text-amber-800 {
+  color: rgb(253 230 138);
+}
+
+.dark .admin-content .bg-gray-200.text-gray-600 {
+  background-color: rgb(63 63 70);
+  color: rgb(212 212 216);
+}
+
+.dark .admin-content .bg-gray-100.text-gray-700 {
+  background-color: rgb(63 63 70);
+  color: rgb(212 212 216);
+}
+
+.dark .admin-content .border-rose-200,
+.dark .admin-content .border-amber-200,
+.dark .admin-content .border-emerald-200 {
+  border-color: rgb(82 82 91);
+}
+
+.dark .admin-content .hover\:bg-rose-50:hover {
+  background-color: rgb(76 29 29 / 0.35);
+}
+
+.dark .admin-content .shadow-sm,
+.dark .admin-content .shadow-lg {
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.35);
+}
+
+/* ── Code / pre blocks in settings & roles ── */
+.dark .admin-content code.bg-emerald-100 {
+  background-color: rgb(6 78 59 / 0.45);
+  color: rgb(167 243 208);
+}
+
+.dark .admin-content pre,
+.dark .admin-content .bg-zinc-900 {
+  background-color: rgb(24 24 27);
+}

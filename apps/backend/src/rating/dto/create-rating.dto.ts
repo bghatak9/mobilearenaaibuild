@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsInt, IsNumber, Max, Min } from 'class-validator';
 
 export class CreateRatingDto {
@@ -6,9 +7,7 @@ export class CreateRatingDto {
   @Max(10)
   score!: number;
 
-  @IsInt()
-  userId!: number;
-
+  @Type(() => Number)
   @IsInt()
   deviceId!: number;
 }

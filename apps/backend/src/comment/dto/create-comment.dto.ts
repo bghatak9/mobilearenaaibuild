@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer';
 import { IsInt, IsString, MaxLength, MinLength } from 'class-validator';
 
 export class CreateCommentDto {
@@ -6,9 +7,7 @@ export class CreateCommentDto {
   @MaxLength(2000)
   body!: string;
 
-  @IsInt()
-  userId!: number;
-
+  @Type(() => Number)
   @IsInt()
   deviceId!: number;
 }

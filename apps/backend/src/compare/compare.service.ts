@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
 
+import { catalogDeviceWhere } from '../common/catalog-mode';
 import { PrismaService } from '../prisma/prisma.service';
 
 const deviceInclude = {
@@ -34,8 +35,8 @@ export class CompareService {
 
     const found = await Promise.all(
       slugs.map((s) =>
-        this.prisma.device.findUnique({
-          where: { slug: s },
+        this.prisma.device.findFirst({
+          where: catalogDeviceWhere({ slug: s }),
           include: deviceInclude,
         }),
       ),
@@ -50,9 +51,29 @@ export class CompareService {
 
     const devices = found as ComparedDevice[];
 
+    const ratingAgg = await Promise.all(
+      devices.map((d) =>
+        this.prisma.rating.aggregate({
+          where: { deviceId: d.id },
+          _avg: { score: true },
+          _count: { score: true },
+        }),
+      ),
+    );
+
+    const enriched = devices.map((d, i) => {
+      const avg = ratingAgg[i]?._avg.score;
+      const count = ratingAgg[i]?._count.score ?? 0;
+      return {
+        ...d,
+        rating: avg ?? d.rating,
+        communityRatingCount: count,
+      };
+    });
+
     return {
-      devices,
-      winners: this.computeWinners(devices),
+      devices: enriched,
+      winners: this.computeWinners(enriched),
     };
   }
 

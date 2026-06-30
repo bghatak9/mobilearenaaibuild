@@ -7,6 +7,7 @@ import {
   Patch,
   Post,
   Query,
+  Req,
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
@@ -14,17 +15,30 @@ import { UserRole } from '@prisma/client';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
+import { ImportLifecycleService } from '../import/import-lifecycle.service';
 import { DeviceService } from './device.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 
+interface AuthRequest {
+  user: { userId: number; email: string; role: UserRole };
+}
+
 @Controller('devices')
 export class DeviceController {
-  constructor(private readonly deviceService: DeviceService) {}
+  constructor(
+    private readonly deviceService: DeviceService,
+    private readonly importLifecycle: ImportLifecycleService,
+  ) {}
 
   @Get()
   findAll(@Query('search') search?: string) {
     return this.deviceService.findAll(search);
+  }
+
+  @Get('upcoming')
+  findBulkUpcoming() {
+    return this.deviceService.findBulkUpcoming();
   }
 
   @Get('slug/:slug')
@@ -44,6 +58,16 @@ export class DeviceController {
     return this.deviceService.create(dto);
   }
 
+  @Post('bulk-delete')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.SUPER_ADMIN)
+  bulkRemove(@Body() body: { ids: number[] }, @Req() req: AuthRequest) {
+    return this.importLifecycle.softDeletePhones(body.ids ?? [], {
+      userId: req.user.userId,
+      role: req.user.role,
+    });
+  }
+
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
@@ -53,8 +77,11 @@ export class DeviceController {
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.SUPER_ADMIN, UserRole.ADMIN)
-  remove(@Param('id') id: string) {
-    return this.deviceService.remove(+id);
+  @Roles(UserRole.SUPER_ADMIN)
+  remove(@Param('id') id: string, @Req() req: AuthRequest) {
+    return this.importLifecycle.softDeletePhone(+id, {
+      userId: req.user.userId,
+      role: req.user.role,
+    });
   }
 }

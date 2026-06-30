@@ -1,5 +1,17 @@
 import { UserRole } from '@prisma/client';
 
+import { canAccessArea } from './content-permissions';
+
+export {
+  canAccessArea,
+  canImport,
+  contentAccessMatrix,
+  getImportKindsForRole,
+  ROLE_RESPONSIBILITIES,
+  type ContentArea,
+  type ImportKind,
+} from './content-permissions';
+
 /** Roles that may access the admin panel at all. */
 export const STAFF_ROLES: UserRole[] = [
   UserRole.SUPER_ADMIN,
@@ -22,14 +34,12 @@ export function assignableRoles(actor: UserRole): UserRole[] {
         UserRole.EDITOR,
         UserRole.AUTHOR,
         UserRole.MODERATOR,
-        UserRole.USER,
       ];
     case UserRole.ADMIN:
       return [
         UserRole.EDITOR,
         UserRole.AUTHOR,
         UserRole.MODERATOR,
-        UserRole.USER,
       ];
     default:
       return [];
@@ -49,11 +59,23 @@ export function canManageUser(actor: UserRole, target: UserRole): boolean {
 }
 
 export function canManageUsers(actor: UserRole): boolean {
-  return actor === UserRole.SUPER_ADMIN || actor === UserRole.ADMIN;
+  return canAccessArea(actor, 'users');
 }
 
 export function canManageDevices(actor: UserRole): boolean {
-  return actor === UserRole.SUPER_ADMIN || actor === UserRole.ADMIN;
+  return canAccessArea(actor, 'phones');
+}
+
+export function canManageBrands(actor: UserRole): boolean {
+  return canAccessArea(actor, 'brands');
+}
+
+export function canManagePrices(actor: UserRole): boolean {
+  return canAccessArea(actor, 'prices');
+}
+
+export function canManageNewsArea(actor: UserRole): boolean {
+  return canAccessArea(actor, 'news');
 }
 
 export function canPublishContent(actor: UserRole): boolean {

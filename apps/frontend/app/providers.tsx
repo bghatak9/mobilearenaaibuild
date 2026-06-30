@@ -1,14 +1,32 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { CatalogProvider } from "@/lib/catalog-context";
 import { CompareProvider } from "@/lib/compare-context";
+import { SiteAuthProvider } from "@/lib/site-auth";
+import { ThemeProvider } from "@/lib/theme";
+import { ToastProvider } from "@/design-system/feedback/Toast";
 import CompareBar from "@/components/compare/CompareBar";
 
-export default function Providers({ children }: { children: ReactNode }) {
+export default function Providers({
+  children,
+  importedOnly = false,
+}: {
+  children: ReactNode;
+  importedOnly?: boolean;
+}) {
   return (
-    <CompareProvider>
-      {children}
-      <CompareBar />
-    </CompareProvider>
+    <ThemeProvider>
+      <ToastProvider>
+        <CatalogProvider importedOnly={importedOnly}>
+          <SiteAuthProvider>
+            <CompareProvider>
+              {children}
+              <CompareBar />
+            </CompareProvider>
+          </SiteAuthProvider>
+        </CatalogProvider>
+      </ToastProvider>
+    </ThemeProvider>
   );
 }

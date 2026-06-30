@@ -33,6 +33,10 @@ services:
       DATABASE_URL: postgresql://mobilearena:mobilearena123@postgres:5432/mobilearena_db?schema=public
       JWT_SECRET: change-me-in-production
       REDIS_URL: redis://redis:6379
+      SOCIAL_AUTH_DEV_MODE: ${SOCIAL_AUTH_DEV_MODE:-true}
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
+      FACEBOOK_APP_SECRET: ${FACEBOOK_APP_SECRET:-}
       # Optional error tracking — passed through from the host if set.
       SENTRY_DSN: ${SENTRY_DSN:-}
     ports:

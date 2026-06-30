@@ -26,7 +26,7 @@ export function RoleGate({
 
   if (!ready || !user || !allowed.includes(user.role)) {
     return (
-      <div className="flex min-h-[40vh] items-center justify-center text-gray-400">
+      <div className="flex min-h-[40vh] items-center justify-center text-gray-400 dark:text-zinc-500">
         Loading…
       </div>
     );

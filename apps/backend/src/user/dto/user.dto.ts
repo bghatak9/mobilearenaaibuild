@@ -4,17 +4,22 @@ import {
   IsEnum,
   IsOptional,
   IsString,
-  MinLength,
+  ValidateIf,
 } from 'class-validator';
 import { UserRole } from '@prisma/client';
+
+import { IsStrongPassword } from '../../auth/validators/is-strong-password.validator';
 
 export class CreateUserDto {
   @IsEmail()
   email!: string;
 
+  @IsOptional()
   @IsString()
-  @MinLength(8)
-  password!: string;
+  /** Accepted only at creation; stored as bcrypt hash — never returned or viewable. */
+  @ValidateIf((dto: CreateUserDto) => Boolean(dto.password?.trim()))
+  @IsStrongPassword()
+  password?: string;
 
   @IsOptional()
   @IsString()
@@ -46,8 +51,4 @@ export class UpdateUserDto {
   isBlocked?: boolean;
 }
 
-export class ResetPasswordDto {
-  @IsString()
-  @MinLength(8)
-  password!: string;
-}
+export class SendPasswordResetDto {}

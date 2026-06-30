@@ -2,82 +2,127 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { adminLogin } from "@/lib/api";
+
+import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
+import { useSocialAuthAvailable } from "@/components/auth/SocialAuthBlock";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
+import { adminGoogleSignIn, adminLogin } from "@/lib/api";
 import { useAdminAuth } from "@/lib/admin-auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const { signIn } = useAdminAuth();
-  const [email, setEmail] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const { available: socialAvailable, loading: socialLoading } =
+    useSocialAuthAvailable();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     setLoading(true);
     try {
-      const { access_token, user } = await adminLogin(email, password);
+      const { access_token, user } = await adminLogin(identifier, password);
       signIn(access_token, user);
       router.replace("/admin");
-    } catch {
-      setError("Invalid email or password, or account lacks staff access.");
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Invalid credentials or not staff.",
+      );
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleGoogle(idToken: string) {
+    setError(null);
+    setLoading(true);
+    try {
+      const { access_token, user } = await adminGoogleSignIn(idToken);
+      signIn(access_token, user);
+      router.replace("/admin");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Google sign-in failed.");
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl"
-      >
-        <h1 className="text-2xl font-extrabold text-zinc-900">
+    <div className="relative flex min-h-screen items-center justify-center bg-zinc-100 px-4 dark:bg-zinc-950">
+      <div className="absolute left-4 top-4">
+        <ThemeToggle variant="light" showLabel />
+      </div>
+
+      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+        <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
           Mobile<span className="text-red-600">Arena</span>
           <span className="ml-1 text-sm font-medium text-zinc-400">admin</span>
         </h1>
-        <p className="mt-1 text-sm text-gray-500">Sign in to manage content.</p>
+        <p className="mt-1 text-sm text-gray-500 dark:text-zinc-400">
+          Staff sign in — SUPER ADMIN, ADMIN, EDITOR, AUTHOR, or MODERATOR.
+          Passwords are bcrypt-hashed; administrators cannot view them.
+        </p>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">
+          <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600 dark:bg-rose-950/40 dark:text-rose-400">
             {error}
           </p>
         )}
 
-        <label className="mt-5 block text-sm font-medium text-gray-700">
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
-            placeholder="superadmin@mobilearena.com"
-          />
-        </label>
+        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+          <label className="block text-sm">
+            <span className="font-medium text-gray-700 dark:text-zinc-300">
+              Email / User ID <span className="text-red-600">*</span>
+            </span>
+            <input
+              type="text"
+              required
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+              placeholder="superadmin@mobilearena.com"
+            />
+          </label>
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">
-          Password
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
-            placeholder="••••••••"
-          />
-        </label>
+          <label className="block text-sm">
+            <span className="font-medium text-gray-700 dark:text-zinc-300">
+              Password <span className="text-red-600">*</span>
+            </span>
+            <input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm dark:border-zinc-600 dark:bg-zinc-800 dark:text-zinc-100"
+            />
+          </label>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-6 w-full rounded-lg bg-red-600 py-2.5 font-semibold text-white transition hover:bg-red-500 disabled:opacity-60"
-        >
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-lg bg-red-600 py-2.5 font-semibold text-white hover:bg-red-500 disabled:opacity-60"
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </button>
+        </form>
+
+        {!socialLoading && socialAvailable && (
+          <>
+            <div className="my-4 flex items-center gap-3 text-xs text-gray-400 dark:text-zinc-500">
+              <span className="h-px flex-1 bg-gray-200 dark:bg-zinc-700" />
+              or
+              <span className="h-px flex-1 bg-gray-200 dark:bg-zinc-700" />
+            </div>
+            <GoogleSignInButton
+              onCredential={(token) => void handleGoogle(token)}
+              onError={() => setError("Google Sign-In failed.")}
+            />
+          </>
+        )}
+      </div>
     </div>
   );
 }

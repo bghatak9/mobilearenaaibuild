@@ -20,6 +20,8 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const staticRoutes: MetadataRoute.Sitemap = [
     "",
     "/phones",
+    "/phone-finder",
+    "/community",
     "/compare",
     "/news",
     "/reviews",
@@ -37,11 +39,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }));
 
   const newsRoutes: MetadataRoute.Sitemap = (news ?? []).map((n) => ({
-    url: `${SITE_URL}/news/${n.slug}`,
-    lastModified: n.publishedAt ? new Date(n.publishedAt) : undefined,
-    changeFrequency: "monthly",
-    priority: 0.6,
-  }));
+        url: `${SITE_URL}/news/${n.slug}`,
+        lastModified: n.publishedAt ? new Date(n.publishedAt) : undefined,
+        changeFrequency: "monthly",
+        priority: 0.6,
+      }));
 
   const reviewRoutes: MetadataRoute.Sitemap = (reviews ?? []).map((r) => ({
     url: `${SITE_URL}/reviews/${r.slug}`,

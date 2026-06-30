@@ -8,7 +8,7 @@ Enterprise-grade phone specification platform built with NestJS, Prisma, and Pos
 - Brand management
 - Category management
 - Manufacturer management
-- Bulk import support
+- Bulk upload support
 - Swagger API documentation
 - Prisma ORM
 - PostgreSQL database

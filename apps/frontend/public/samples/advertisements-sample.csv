@@ -1,0 +1,5 @@
+title,link,image_url,placement,ad_type,format,width,height,sponsored,priority,advertiser,budget,active,start_date,end_date
+Summer Phone Deals,https://example.com/deals,https://example.com/banner.jpg,homepage-top,display,Header Banner,728,90,false,10,Acme Mobile,5000,true,2026-06-01,2026-12-31
+5G Unlimited Plan,https://example.com/5g,,homepage-mid,native,Native card,,,false,5,NetCarrier,2500,true,,
+Sponsored Volt Review,https://example.com/volt,,in-article-middle,sponsored,Sponsored in-article,,,true,8,Volt Mobile,3000,true,,
+Buy Orbit Prism Mini,https://example.com/orbit,,affiliate-buy-now,affiliate,Buy Now,,,true,7,Orbit Store,,true,,
