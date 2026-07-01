@@ -33,49 +33,51 @@ export default function FeatureCard({
     <Link
       href={href}
       className={cn(
-        "group relative block overflow-hidden rounded-[var(--radius-card)] shadow-card transition hover:-translate-y-1 hover:shadow-card-hover",
+        "group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-border-soft bg-surface-1 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover",
         HEIGHTS[size],
       )}
     >
-      {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={image}
-          alt={title}
-          className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105"
-        />
-      ) : (
-        <div className={cn("absolute inset-0", gradient)} />
-      )}
-
-      <div className="absolute inset-0 bg-gradient-to-t from-bg-primary/90 via-bg-primary/30 to-transparent" />
-
-      {premium && (
-        <Badge premium className="absolute right-3 top-3">
-          Premium
-        </Badge>
-      )}
-
-      {meta && (
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] bg-surface-1/80 px-2 py-1 text-[11px] font-medium text-text-primary">
-          <Clock size={12} /> {meta}
-        </span>
-      )}
-
-      {comments != null && (
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] bg-surface-1/80 px-2 py-1 text-[11px] font-medium text-text-primary">
-          <MessageSquare size={12} /> {comments}
-        </span>
-      )}
-
-      <h3
-        className={cn(
-          "titan-display absolute bottom-0 left-0 right-0 p-4 leading-tight text-text-primary",
-          size === "hero" ? "text-2xl md:text-3xl" : "text-base",
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt={title}
+            className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105"
+          />
+        ) : (
+          <div className={cn("absolute inset-0", gradient)} />
         )}
-      >
-        {title}
-      </h3>
+
+        {premium && (
+          <Badge premium className="absolute right-3 top-3">
+            Premium
+          </Badge>
+        )}
+
+        {meta && (
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] border border-border-soft bg-surface-2 px-2 py-1 text-[11px] font-medium text-text-primary">
+            <Clock size={12} /> {meta}
+          </span>
+        )}
+
+        {comments != null && (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] border border-border-soft bg-surface-2 px-2 py-1 text-[11px] font-medium text-text-primary">
+            <MessageSquare size={12} /> {comments}
+          </span>
+        )}
+      </div>
+
+      <div className="border-t border-border-soft bg-bg-primary px-4 py-3">
+        <h3
+          className={cn(
+            "titan-display leading-tight text-text-primary",
+            size === "hero" ? "text-2xl md:text-3xl" : "text-base",
+          )}
+        >
+          {title}
+        </h3>
+      </div>
     </Link>
   );
 }

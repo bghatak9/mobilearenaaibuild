@@ -156,9 +156,17 @@
   --shadow-card-hover: 0 12px 40px rgba(59, 130, 246, 0.18);
 }
 
-/* ── Card system (no glassmorphism) ── */
+/* Block glass/frosted effects site-wide */
+*,
+*::before,
+*::after {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+/* ── Card system (solid surfaces — no glassmorphism) ── */
 .titan-card {
-  background: rgba(17, 24, 39, 0.92);
+  background: var(--surface-1);
   border: 1px solid var(--border-soft);
   border-radius: var(--radius-card);
   box-shadow: var(--shadow-card);

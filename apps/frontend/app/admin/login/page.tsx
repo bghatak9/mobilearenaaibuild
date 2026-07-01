@@ -40,7 +40,7 @@ export default function AdminLoginPage() {
         <p className="mt-1 text-sm text-text-muted">Sign in to manage content.</p>
 
         {error && (
-          <p className="mt-4 rounded-[var(--radius-button)] bg-danger/10 px-3 py-2 text-sm text-danger">
+          <p className="mt-4 rounded-[var(--radius-button)] border border-danger/30 bg-surface-2 px-3 py-2 text-sm text-danger">
             {error}
           </p>
         )}
