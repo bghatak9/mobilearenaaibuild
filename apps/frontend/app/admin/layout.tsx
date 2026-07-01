@@ -21,6 +21,7 @@ import type { LucideIcon } from "lucide-react";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth";
 import { getNavForRole, type AdminNavItemDef } from "@/lib/admin-nav";
 import { roleLabel } from "@/lib/roles";
+import { TitanLogo, cn } from "@mobilearena/ui";
 
 const ICONS: Record<AdminNavItemDef["icon"], LucideIcon> = {
   users: Users,
@@ -52,7 +53,7 @@ function Shell({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="flex min-h-screen items-center justify-center text-gray-400">
+      <div className="flex min-h-screen items-center justify-center bg-bg-primary text-text-muted">
         Loading…
       </div>
     );
@@ -66,22 +67,23 @@ function Shell({ children }: { children: ReactNode }) {
   const visibleNav = getNavForRole(user?.role);
 
   return (
-    <div className="flex min-h-screen bg-gray-100">
-      <aside className="flex w-60 flex-col border-r border-gray-200 bg-zinc-950 text-white">
+    <div className="flex min-h-screen bg-bg-secondary">
+      <aside className="flex w-60 flex-col border-r border-border-soft bg-surface-1 text-text-primary">
         <Link
           href={visibleNav[0]?.href ?? "/admin"}
-          className="px-5 py-4 text-xl font-extrabold"
+          className="flex items-center gap-2 px-5 py-4 titan-display text-xl"
         >
-          Mobile<span className="text-red-600">Arena</span>
-          <span className="ml-1 text-xs font-medium text-zinc-400">admin</span>
+          <TitanLogo className="h-7 w-7" />
+          Mobile<span className="text-blue">Arena</span>
+          <span className="ml-1 text-xs font-medium text-text-muted">admin</span>
         </Link>
 
         {user && (
-          <div className="border-b border-zinc-800 px-5 pb-3 text-xs text-zinc-400">
-            <p className="truncate font-medium text-zinc-200">
+          <div className="border-b border-border-soft px-5 pb-3 text-xs text-text-muted">
+            <p className="truncate font-medium text-text-primary">
               {user.name ?? user.email}
             </p>
-            <p className="mt-0.5 uppercase tracking-wide text-zinc-500">
+            <p className="mt-0.5 uppercase tracking-wide text-text-muted">
               {roleLabel(user.role)}
             </p>
           </div>
@@ -94,11 +96,12 @@ function Shell({ children }: { children: ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={cn(
+                  "flex items-center gap-3 rounded-[var(--radius-button)] px-3 py-2 text-sm font-medium transition",
                   isActive(href)
-                    ? "bg-red-600 text-white"
-                    : "text-zinc-300 hover:bg-zinc-800"
-                }`}
+                    ? "titan-btn-primary text-white"
+                    : "text-text-secondary hover:bg-surface-2",
+                )}
               >
                 <Icon size={18} /> {label}
               </Link>
@@ -110,13 +113,13 @@ function Shell({ children }: { children: ReactNode }) {
             signOut();
             router.replace("/admin/login");
           }}
-          className="m-3 flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-zinc-300 hover:bg-zinc-800"
+          className="m-3 flex items-center gap-3 rounded-[var(--radius-button)] px-3 py-2 text-sm font-medium text-text-secondary hover:bg-surface-2 transition"
         >
           <LogOut size={18} /> Sign out
         </button>
         <Link
           href="/"
-          className="border-t border-zinc-800 px-5 py-3 text-xs text-zinc-500 hover:text-zinc-300"
+          className="border-t border-border-soft px-5 py-3 text-xs text-text-muted hover:text-blue transition"
         >
           ← Back to site
         </Link>

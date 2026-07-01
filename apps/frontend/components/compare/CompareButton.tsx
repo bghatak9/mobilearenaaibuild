@@ -1,7 +1,8 @@
 "use client";
 
-import { Check, Plus, Scale } from "lucide-react";
+import { Check, Plus } from "lucide-react";
 import { useCompare, type CompareItem } from "@/lib/compare-context";
+import { CompareScaleIcon, cn } from "@mobilearena/ui";
 
 export default function CompareButton({
   device,
@@ -24,13 +25,15 @@ export default function CompareButton({
       }}
       disabled={disabled}
       title={disabled ? `You can compare up to 4 phones` : undefined}
-      className={`inline-flex items-center justify-center gap-1.5 rounded-lg border px-3 py-1.5 text-sm font-medium transition ${
+      className={cn(
+        "inline-flex items-center justify-center gap-1.5 rounded-[var(--radius-button)] border px-3 py-1.5 text-sm font-medium transition",
         active
-          ? "border-indigo-600 bg-indigo-600 text-white"
+          ? "titan-btn-primary border-transparent text-white"
           : disabled
-            ? "border-gray-200 text-gray-300 cursor-not-allowed"
-            : "border-gray-300 text-gray-700 hover:border-indigo-500 hover:text-indigo-600"
-      } ${className}`}
+            ? "border-border-soft text-text-muted cursor-not-allowed"
+            : "border-border-soft text-text-secondary hover:border-blue hover:text-blue",
+        className,
+      )}
     >
       {active ? (
         <>
@@ -41,7 +44,7 @@ export default function CompareButton({
           <Plus size={15} /> Compare
         </>
       )}
-      <Scale size={14} className="opacity-60" />
+      <CompareScaleIcon className="h-3.5 w-3.5 opacity-60" />
     </button>
   );
 }

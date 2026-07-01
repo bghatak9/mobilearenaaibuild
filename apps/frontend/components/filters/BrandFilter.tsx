@@ -1,3 +1,5 @@
+"use client";
+
 type BrandFilterProps = {
   brands: string[];
   selected: string | null;
@@ -10,15 +12,16 @@ export default function BrandFilter({
   onSelect,
 }: BrandFilterProps) {
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex flex-wrap gap-2">
       {brands.map((brand: string) => (
         <button
           key={brand}
+          type="button"
           onClick={() => onSelect(brand)}
-          className={`px-4 py-2 rounded-full border ${
+          className={`rounded-[var(--radius-chip)] border px-4 py-2 text-sm font-medium transition ${
             selected === brand
-              ? "bg-black text-white"
-              : ""
+              ? "titan-btn-primary border-transparent text-white"
+              : "border-border-soft text-text-secondary hover:border-blue hover:text-blue"
           }`}
         >
           {brand}
