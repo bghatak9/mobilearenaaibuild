@@ -27,7 +27,8 @@ async function bootstrap() {
     process.env.NEXT_PUBLIC_SITE_URL,
   ].filter((origin): origin is string => Boolean(origin));
 
-  const localDevOrigin = /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/;
+  const localDevOrigin =
+    /^https?:\/\/(localhost|127\.0\.0\.1|192\.168\.\d{1,3}\.\d{1,3}|10\.\d{1,3}\.\d{1,3}\.\d{1,3})(:\d+)?$/;
 
   app.enableCors({
     origin: (origin, callback) => {
@@ -51,9 +52,9 @@ async function bootstrap() {
     credentials: true,
   });
 
-  await app.listen(process.env.PORT ? Number(process.env.PORT) : 4000);
-
   const port = process.env.PORT ? Number(process.env.PORT) : 4000;
+  await app.listen(port, '0.0.0.0');
+
   if (process.env.CATALOG_IMPORTED_ONLY === 'true') {
     console.log('📦 Catalog mode: imported devices only');
   }
