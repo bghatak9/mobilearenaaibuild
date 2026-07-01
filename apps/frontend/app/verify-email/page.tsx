@@ -4,10 +4,10 @@ import { Suspense, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
-import { ClientArenaShell } from "@/components/layout/ClientArenaShell";
+import { AuthPageLayout } from "@/components/auth/AuthPageLayout";
+import { AuthCard } from "@/components/auth/AuthCard";
 import { Button } from "@/design-system/buttons/Button";
 import { Input } from "@/design-system/forms/Input";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
 import { resendVerification, verifyEmail } from "@/lib/api";
 
 function VerifyEmailForm() {
@@ -50,15 +50,20 @@ function VerifyEmailForm() {
   }
 
   return (
-    <GlassPanel className="mx-auto max-w-md p-8">
-      <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">
-        Verify your email
-      </h1>
-      <p className="mt-2 text-sm text-[var(--text-secondary)]">
-        Confirm your address to unlock comments, polls, and profile features.
-      </p>
-
-      <form onSubmit={(e) => void handleVerify(e)} className="mt-6 space-y-4">
+    <AuthCard
+      title="Verify your email"
+      subtitle="Confirm your address to unlock comments, polls, and profile features."
+      error={error}
+      info={msg}
+      footer={
+        <p className="text-center text-sm text-[var(--text-secondary)]">
+          <Link href="/login" className="text-[var(--electric-cyan)] hover:underline">
+            Back to sign in
+          </Link>
+        </p>
+      }
+    >
+      <form onSubmit={(e) => void handleVerify(e)} className="arena-auth-form space-y-4">
         <Input
           label="Email"
           type="email"
@@ -73,8 +78,6 @@ function VerifyEmailForm() {
           onChange={(e) => setToken(e.target.value)}
           hint="Check your inbox — in dev, OTP_DEV_EXPOSE returns the token on register."
         />
-        {error && <p className="text-sm text-[var(--rose-alert)]">{error}</p>}
-        {msg && <p className="text-sm text-[var(--emerald-success)]">{msg}</p>}
         <Button type="submit" disabled={loading} className="w-full">
           {loading ? "Verifying…" : "Verify email"}
         </Button>
@@ -88,22 +91,16 @@ function VerifyEmailForm() {
       >
         Resend verification email
       </button>
-
-      <p className="mt-6 text-center text-sm text-[var(--text-secondary)]">
-        <Link href="/login" className="text-[var(--electric-cyan)] hover:underline">
-          Back to sign in
-        </Link>
-      </p>
-    </GlassPanel>
+    </AuthCard>
   );
 }
 
 export default function VerifyEmailPage() {
   return (
-    <ClientArenaShell>
-      <Suspense fallback={<GlassPanel className="mx-auto max-w-md p-8">Loading…</GlassPanel>}>
+    <AuthPageLayout>
+      <Suspense fallback={<div className="arena-auth-card p-6 text-center">Loading…</div>}>
         <VerifyEmailForm />
       </Suspense>
-    </ClientArenaShell>
+    </AuthPageLayout>
   );
 }

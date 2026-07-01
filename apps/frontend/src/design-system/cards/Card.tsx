@@ -4,7 +4,7 @@ import { cn } from "@/design-system/utils/cn";
 
 type CardProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
-  glass?: boolean;
+  panel?: boolean;
   hover?: boolean;
   padding?: "none" | "sm" | "md" | "lg";
 };
@@ -19,7 +19,7 @@ const paddingMap = {
 export function Card({
   children,
   className,
-  glass = true,
+  panel = true,
   hover = false,
   padding = "md",
   ...props
@@ -28,8 +28,8 @@ export function Card({
     <div
       className={cn(
         "rounded-[20px] border border-[var(--border-subtle)]",
-        glass && "glass-panel",
-        !glass && "bg-[var(--surface-card)]",
+        panel && "spectrum-panel",
+        !panel && "bg-[var(--surface-card)]",
         hover &&
           "transition duration-200 hover:-translate-y-1 hover:shadow-lg hover:shadow-black/20",
         paddingMap[padding],

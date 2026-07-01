@@ -22,7 +22,7 @@ export function Skeleton({ className, variant = "rectangular" }: SkeletonProps) 
 
 export function SkeletonCard() {
   return (
-    <div className="glass-panel space-y-4 rounded-[20px] p-6">
+    <div className="spectrum-panel space-y-4 rounded-[24px] p-6">
       <Skeleton className="h-40 w-full" />
       <Skeleton variant="text" className="w-3/4" />
       <Skeleton variant="text" className="w-1/2" />

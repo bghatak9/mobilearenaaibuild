@@ -48,7 +48,7 @@ export function Dropdown({
       </summary>
       <div
         className={cn(
-          "glass-panel absolute z-50 mt-2 min-w-[10rem] overflow-hidden rounded-xl py-1 shadow-lg",
+          "spectrum-panel absolute z-50 mt-2 min-w-[10rem] overflow-hidden rounded-xl py-1 shadow-lg",
           align === "right" ? "right-0" : "left-0",
         )}
         role="menu"

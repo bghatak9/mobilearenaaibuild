@@ -1,20 +1,11 @@
 import { countryName } from "@/lib/countries";
 
+import { browserApiBase, serverApiBase } from "@/lib/api-base";
 import { catalogImportedOnlyFromEnv } from "@/lib/catalog-mode";
 
-function stripEnvQuotes(value: string | undefined): string | undefined {
-  if (!value) return undefined;
-  return value.replace(/^["']|["']$/g, "");
-}
-
-const PUBLIC_API = stripEnvQuotes(process.env.NEXT_PUBLIC_API_URL);
-const BACKEND_API = stripEnvQuotes(process.env.BACKEND_URL);
-
-/** Browser calls the API directly; SSR uses BACKEND_URL. */
+/** Browser uses same-origin /api proxy; SSR uses BACKEND_URL. */
 export const API_URL =
-  typeof window !== "undefined"
-    ? PUBLIC_API || "http://localhost:4000"
-    : BACKEND_API || PUBLIC_API || "http://localhost:4000";
+  typeof window !== "undefined" ? browserApiBase() : serverApiBase();
 
 export type Device = {
   id: number;

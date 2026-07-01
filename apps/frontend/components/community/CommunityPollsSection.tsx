@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import type { CommunityPoll, PollType } from "@/lib/community-types";
 import { POLL_TYPE_LABELS } from "@/lib/community-types";
 import { getToken, voteOnPoll } from "@/lib/api";
@@ -36,7 +36,7 @@ function PollCard({
   }
 
   return (
-    <GlassPanel className="p-5">
+    <SpectrumPanel className="p-5">
       <h3 className="font-bold text-[var(--text-primary)]">{poll.question}</h3>
       <p className="mt-1 text-xs text-[var(--text-secondary)]">
         {poll.totalVotes.toLocaleString()} votes
@@ -74,7 +74,7 @@ function PollCard({
           )}
         </p>
       )}
-    </GlassPanel>
+    </SpectrumPanel>
   );
 }
 

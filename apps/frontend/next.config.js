@@ -8,6 +8,8 @@ const backendUrl =
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
+  // Allow phone/tablet on LAN to use HMR during dev (e.g. 192.168.x.x:3000).
+  allowedDevOrigins: ["192.168.7.117", "192.168.0.0/16", "10.0.0.0/8"],
   // Emit a self-contained server bundle for slim Docker images.
   output: "standalone",
   // Monorepo: resolve deps from this app, not the repo root lockfile.

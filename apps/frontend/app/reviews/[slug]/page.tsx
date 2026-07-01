@@ -8,10 +8,15 @@ import JsonLd from "@/components/seo/JsonLd";
 import InArticleContent from "@/components/ads/InArticleContent";
 import AdUnit from "@/components/ads/AdUnit";
 import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { absoluteUrl } from "@/lib/seo";
 import { getReviewBySlug, getActiveAdvertisements, type Review } from "@/lib/api";
-import { pickAdForPlacement } from "@/lib/ad-utils";
+import {
+  AFFILIATE_PLACEMENTS,
+  pickFirstAdForPlacements,
+  reservedAdIds,
+  resolveSiteAdSlots,
+} from "@/lib/ad-utils";
 
 function summarize(review: Review): string {
   return review.content.replace(/\s+/g, " ").slice(0, 160).trim();
@@ -54,9 +59,9 @@ export default async function ReviewDetailPage({
   }
 
   const ads = await getActiveAdvertisements().catch(() => []);
-  const affiliateAd =
-    pickAdForPlacement(ads, "affiliate-buy-now") ??
-    pickAdForPlacement(ads, "affiliate-amazon");
+  const siteSlots = resolveSiteAdSlots(ads);
+  const reserved = reservedAdIds(siteSlots);
+  const affiliateAd = pickFirstAdForPlacements(ads, AFFILIATE_PLACEMENTS, reserved);
 
   const pros = Array.isArray(review.pros) ? review.pros : [];
   const cons = Array.isArray(review.cons) ? review.cons : [];
@@ -80,7 +85,7 @@ export default async function ReviewDetailPage({
   };
 
   return (
-    <ArenaShell>
+    <ArenaShell ads={ads}>
       <JsonLd data={jsonLd} />
 
       <Breadcrumbs
@@ -92,7 +97,7 @@ export default async function ReviewDetailPage({
         ]}
       />
 
-      <GlassPanel className="p-6 md:p-10">
+      <SpectrumPanel className="p-6 md:p-10">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <h1 className="text-3xl font-extrabold text-[var(--text-primary)] md:text-4xl">
             {review.title}
@@ -115,12 +120,13 @@ export default async function ReviewDetailPage({
         <InArticleContent
           content={review.content}
           ads={ads}
+          reservedAdIds={reserved}
           className="prose prose-invert mt-8 max-w-none prose-p:text-[var(--text-secondary)]"
         />
 
         {affiliateAd ? (
           <div className="mt-6">
-            <AdUnit ad={affiliateAd} variant="affiliate" />
+            <AdUnit ad={affiliateAd} />
           </div>
         ) : null}
 
@@ -152,7 +158,7 @@ export default async function ReviewDetailPage({
             )}
           </div>
         )}
-      </GlassPanel>
+      </SpectrumPanel>
     </ArenaShell>
   );
 }

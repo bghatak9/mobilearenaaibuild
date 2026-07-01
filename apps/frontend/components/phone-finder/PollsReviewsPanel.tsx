@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { MessageSquare, Star, Vote } from "lucide-react";
 
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   getActivePoll,
   getToken,
@@ -49,7 +49,7 @@ export function PollsReviewsPanel({
   }
 
   return (
-    <GlassPanel className="mb-6 p-5">
+    <SpectrumPanel className="mb-6 p-5">
       <div className="mb-4">
         <p className="text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">
           Polls & reviews
@@ -156,6 +156,6 @@ export function PollsReviewsPanel({
           </ul>
         </div>
       </div>
-    </GlassPanel>
+    </SpectrumPanel>
   );
 }

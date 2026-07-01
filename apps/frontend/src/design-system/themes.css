@@ -1,59 +1,102 @@
 /**
- * Aurora Glass Design System — MobileArena signature theme
- * Dark Space is default; light mode available for accessibility.
+ * Titan Spectrum — MobileArena premium gadget specification design system
+ * Dark luxury default · category-driven accents · WCAG AA contrast pairs
  */
 
 :root {
-  --arena-blue: #2563eb;
-  --electric-cyan: #06b6d4;
-  --aurora-purple: #8b5cf6;
-  --emerald-success: #10b981;
-  --premium-gold: #f59e0b;
-  --rose-alert: #f43f5e;
-  --dark-space: #0b1220;
-  --surface-card: #131d31;
-  --surface-elevated: #1a2740;
-  --surface-glow: #1e2d4a;
-  --text-primary: #f8fafc;
-  --text-secondary: #94a3b8;
-  --border-subtle: rgb(255 255 255 / 0.08);
-  --border-muted: rgb(255 255 255 / 0.05);
-  --border-accent: rgb(6 182 212 / 0.35);
-  --border-accent-purple: rgb(139 92 246 / 0.35);
-  --border-accent-gold: rgb(245 158 11 / 0.35);
-  --card-shadow: 0 8px 32px rgb(0 0 0 / 0.28);
-  --card-shadow-hover: 0 16px 48px rgb(37 99 235 / 0.18);
-  --gradient-arena: linear-gradient(135deg, var(--arena-blue), var(--electric-cyan));
-  --gradient-aurora: linear-gradient(135deg, var(--electric-cyan), var(--aurora-purple));
-  --gradient-gold: linear-gradient(135deg, var(--premium-gold), #fbbf24);
+  /* ── Titan Spectrum core palette ── */
+  --titan-void: #0d0c12;
+  --titan-surface: #16141f;
+  --titan-elevated: #1e1c2a;
+  --titan-muted: #252333;
+  --titan-blue: #5b8aff;
+  --titan-purple: #a67bff;
+  --titan-cyan: #3dd9c8;
+  --titan-green: #4ade80;
+  --titan-orange: #ffa04d;
+  --titan-pink: #ff7eb3;
 
-  --background: var(--dark-space);
+  /* ── Legacy aliases (incremental migration) ── */
+  --arena-blue: var(--titan-blue);
+  --electric-cyan: var(--titan-cyan);
+  --aurora-purple: var(--titan-purple);
+  --emerald-success: var(--titan-green);
+  --premium-gold: var(--titan-orange);
+  --rose-alert: var(--titan-pink);
+  --dark-space: var(--titan-void);
+  --surface-card: var(--titan-surface);
+  --surface-elevated: var(--titan-elevated);
+  --surface-glow: var(--titan-muted);
+
+  /* ── Typography colors ── */
+  --text-primary: #edeaf5;
+  --text-secondary: #9b97ad;
+  --text-muted: #6f6b82;
+
+  /* ── Borders ── */
+  --border-subtle: rgb(237 234 245 / 0.08);
+  --border-muted: rgb(237 234 245 / 0.05);
+  --border-accent: color-mix(in srgb, var(--titan-cyan) 38%, transparent);
+  --border-accent-purple: color-mix(in srgb, var(--titan-purple) 38%, transparent);
+  --border-accent-gold: color-mix(in srgb, var(--titan-orange) 38%, transparent);
+
+  /* ── Layout tokens ── */
+  --titan-radius-card: 24px;
+  --titan-radius-control: 12px;
+  --titan-shadow-ambient: 0 12px 40px rgb(0 0 0 / 0.38);
+  --titan-shadow-ambient-hover: 0 20px 56px rgb(0 0 0 / 0.48);
+  --titan-shadow-accent: 0 8px 32px color-mix(in srgb, var(--titan-accent, var(--titan-cyan)) 22%, transparent);
+  --card-shadow: var(--titan-shadow-ambient);
+  --card-shadow-hover: var(--titan-shadow-ambient-hover);
+
+  /* ── Gradients (subtle animated via CSS) ── */
+  --gradient-arena: linear-gradient(135deg, var(--titan-blue), var(--titan-cyan));
+  --gradient-aurora: linear-gradient(135deg, var(--titan-cyan), var(--titan-purple));
+  --gradient-gold: linear-gradient(135deg, var(--titan-orange), #ffc078);
+  --gradient-spectrum: linear-gradient(
+    120deg,
+    var(--titan-blue),
+    var(--titan-purple),
+    var(--titan-cyan),
+    var(--titan-green),
+    var(--titan-orange),
+    var(--titan-pink)
+  );
+
+  /* ── Active category accent (set per-route) ── */
+  --titan-accent: var(--titan-cyan);
+  --titan-accent-soft: color-mix(in srgb, var(--titan-accent) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--titan-accent) 36%, transparent);
+
+  /* ── Semantic app tokens ── */
+  --background: var(--titan-void);
   --foreground: var(--text-primary);
-  --card: var(--surface-card);
+  --card: var(--titan-surface);
   --muted: var(--text-secondary);
   --border: var(--border-subtle);
-  --ma-brand: var(--arena-blue);
-  --ma-brand-hover: #3b82f6;
+  --ma-brand: var(--titan-blue);
+  --ma-brand-hover: #7aa0ff;
   color-scheme: dark;
 }
 
 html:not(.dark) {
-  --dark-space: #eef2f8;
-  --surface-card: #ffffff;
-  --surface-elevated: #f8fafc;
-  --surface-glow: #f1f5f9;
-  --text-primary: #0f172a;
-  --text-secondary: #64748b;
-  --border-subtle: rgb(15 23 42 / 0.1);
-  --border-muted: rgb(15 23 42 / 0.06);
-  --border-accent: rgb(6 182 212 / 0.45);
-  --border-accent-purple: rgb(139 92 246 / 0.4);
-  --border-accent-gold: rgb(245 158 11 / 0.45);
-  --card-shadow: 0 8px 32px rgb(15 23 42 / 0.08);
-  --card-shadow-hover: 0 16px 48px rgb(37 99 235 / 0.12);
-  --background: var(--dark-space);
+  --titan-void: #f4f2f8;
+  --titan-surface: #ffffff;
+  --titan-elevated: #f8f6fc;
+  --titan-muted: #ece9f4;
+  --text-primary: #12101a;
+  --text-secondary: #5c586c;
+  --text-muted: #8a8699;
+  --border-subtle: rgb(18 16 26 / 0.1);
+  --border-muted: rgb(18 16 26 / 0.06);
+  --border-accent: color-mix(in srgb, var(--titan-cyan) 45%, transparent);
+  --border-accent-purple: color-mix(in srgb, var(--titan-purple) 42%, transparent);
+  --border-accent-gold: color-mix(in srgb, var(--titan-orange) 45%, transparent);
+  --titan-shadow-ambient: 0 12px 40px rgb(18 16 26 / 0.08);
+  --titan-shadow-ambient-hover: 0 20px 56px rgb(18 16 26 / 0.12);
+  --background: var(--titan-void);
   --foreground: var(--text-primary);
-  --card: var(--surface-card);
+  --card: var(--titan-surface);
   --muted: var(--text-secondary);
   --border: var(--border-subtle);
   color-scheme: light;
@@ -62,3 +105,11 @@ html:not(.dark) {
 html.dark {
   color-scheme: dark;
 }
+
+/* Category accent modifiers */
+[data-titan-accent="blue"] { --titan-accent: var(--titan-blue); }
+[data-titan-accent="purple"] { --titan-accent: var(--titan-purple); }
+[data-titan-accent="cyan"] { --titan-accent: var(--titan-cyan); }
+[data-titan-accent="green"] { --titan-accent: var(--titan-green); }
+[data-titan-accent="orange"] { --titan-accent: var(--titan-orange); }
+[data-titan-accent="pink"] { --titan-accent: var(--titan-pink); }

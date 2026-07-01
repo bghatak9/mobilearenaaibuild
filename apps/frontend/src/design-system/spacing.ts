@@ -18,7 +18,7 @@ export const radius = {
   md: "0.5rem",
   lg: "0.75rem",
   xl: "1rem",
-  card: "0.375rem",
+  card: "1.5rem",
   pill: "9999px",
 } as const;
 

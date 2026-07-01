@@ -1,7 +1,7 @@
 "use client";
 
 import { countryName } from "@/lib/countries";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 
 type PricePoint = {
   price: number;
@@ -35,7 +35,7 @@ export function DevicePricingPanel({
   return (
     <div className="mt-8 grid gap-6 lg:grid-cols-2">
       {history.length > 0 && (
-        <GlassPanel className="p-6">
+        <SpectrumPanel className="p-6">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">Price history</h2>
           <p className="mt-1 text-sm text-[var(--text-secondary)]">
             Recent MSRP trends (USD)
@@ -60,11 +60,11 @@ export function DevicePricingPanel({
               );
             })}
           </div>
-        </GlassPanel>
+        </SpectrumPanel>
       )}
 
       {availability.length > 0 && (
-        <GlassPanel className="p-6">
+        <SpectrumPanel className="p-6">
           <h2 className="text-xl font-bold text-[var(--text-primary)]">
             Availability by country
           </h2>
@@ -93,7 +93,7 @@ export function DevicePricingPanel({
               </li>
             ))}
           </ul>
-        </GlassPanel>
+        </SpectrumPanel>
       )}
     </div>
   );

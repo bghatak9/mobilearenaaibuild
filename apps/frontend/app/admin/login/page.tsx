@@ -52,7 +52,7 @@ export default function AdminLoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center bg-zinc-100 px-4 dark:bg-zinc-950">
-      <div className="absolute left-4 top-4">
+      <div className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))]">
         <ThemeToggle variant="light" showLabel />
       </div>
 

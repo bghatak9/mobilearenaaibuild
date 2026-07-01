@@ -17,7 +17,7 @@ import {
   TriSlide,
 } from "@/components/phone-finder/FilterSliders";
 import { Badge } from "@/design-system/badges/Badge";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   BATTERY_BUCKET_OPTIONS,
   BLUETOOTH_OPTIONS,
@@ -93,7 +93,7 @@ export function PhoneFinderFilterPanel(props: Props) {
 
   return (
     <div className="space-y-4">
-      <GlassPanel className="p-5">
+      <SpectrumPanel className="p-5">
         <div className="mb-4 flex items-center justify-between gap-2">
           <div className="flex items-center gap-2">
             <SlidersHorizontal size={18} className="text-[var(--electric-cyan)]" />
@@ -449,7 +449,7 @@ export function PhoneFinderFilterPanel(props: Props) {
             </ul>
           </FilterListItem>
         </FilterListSection>
-      </GlassPanel>
+      </SpectrumPanel>
     </div>
   );
 }

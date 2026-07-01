@@ -6,7 +6,7 @@ import { Flag, Pencil, Trash2 } from "lucide-react";
 
 import { Avatar } from "@/design-system/feedback/Avatar";
 import { Button } from "@/design-system/buttons/Button";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   createComment,
   deleteComment,
@@ -138,7 +138,7 @@ export function DeviceCommentsPanel({
   }
 
   return (
-    <GlassPanel className="mt-8 p-6">
+    <SpectrumPanel className="mt-8 p-6">
       <h2 className="text-xl font-bold text-[var(--text-primary)]">
         Community comments
       </h2>
@@ -276,6 +276,6 @@ export function DeviceCommentsPanel({
           })
         )}
       </ul>
-    </GlassPanel>
+    </SpectrumPanel>
   );
 }

@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   LayoutDashboard,
+  Menu,
   Newspaper,
   Star,
   MessageSquare,
@@ -48,8 +49,13 @@ function Shell({ children }: { children: ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { token, user, ready, signOut } = useAdminAuth();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   const isLogin = pathname === "/admin/login";
+
+  useEffect(() => {
+    setSidebarOpen(false);
+  }, [pathname]);
 
   useEffect(() => {
     if (!ready) return;
@@ -84,7 +90,20 @@ function Shell({ children }: { children: ReactNode }) {
 
   return (
     <div className="admin-shell flex min-h-screen bg-gray-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
-      <aside className="admin-sidebar flex w-60 flex-col border-r border-gray-200 bg-white text-zinc-900 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white">
+      {sidebarOpen ? (
+        <button
+          type="button"
+          className="fixed inset-0 z-40 bg-black/40 lg:hidden"
+          aria-label="Close menu"
+          onClick={() => setSidebarOpen(false)}
+        />
+      ) : null}
+
+      <aside
+        className={`admin-sidebar fixed inset-y-0 left-0 z-50 flex w-60 flex-col border-r border-gray-200 bg-white text-zinc-900 transition-transform duration-200 dark:border-zinc-800 dark:bg-zinc-950 dark:text-white lg:static lg:translate-x-0 ${
+          sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        }`}
+      >
         <div className="flex items-center border-b border-gray-200 px-4 py-3 dark:border-zinc-800">
           <ThemeToggle variant="admin" showLabel />
         </div>
@@ -146,7 +165,20 @@ function Shell({ children }: { children: ReactNode }) {
         </Link>
       </aside>
 
-      <main className="admin-content flex-1 overflow-x-hidden bg-gray-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
+      <main className="admin-content min-w-0 flex-1 overflow-x-hidden bg-gray-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
+        <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
+          <button
+            type="button"
+            onClick={() => setSidebarOpen(true)}
+            className="rounded-lg border border-gray-200 p-2 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"
+            aria-label="Open menu"
+          >
+            <Menu size={20} />
+          </button>
+          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+            Mobile<span className="text-red-600">Arena</span> admin
+          </p>
+        </div>
         {children}
       </main>
     </div>

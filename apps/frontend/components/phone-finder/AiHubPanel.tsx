@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 
 import { ArPreviewModal } from "@/components/phone-finder/ArPreviewModal";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   aiMatchFromProfile,
   budgetOptimizerRanked,
@@ -209,7 +209,7 @@ export function AiHubPanel({
   }
 
   return (
-    <GlassPanel className="mb-6 overflow-hidden p-0">
+    <SpectrumPanel className="mb-6 overflow-hidden p-0">
       <div className="border-b border-white/10 bg-gradient-to-r from-[var(--arena-blue)]/20 to-[var(--aurora-purple)]/20 px-5 py-4">
         <p className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Sparkles size={18} className="text-[var(--aurora-purple)]" />
@@ -685,7 +685,7 @@ export function AiHubPanel({
       {arDevice && (
         <ArPreviewModal device={arDevice} onClose={() => setArDevice(null)} />
       )}
-    </GlassPanel>
+    </SpectrumPanel>
   );
 }
 

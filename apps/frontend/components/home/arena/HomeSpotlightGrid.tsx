@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   HOME_SPOTLIGHT_LIMIT,
   type HomeSpotlightData,
@@ -44,9 +44,20 @@ export function HomeSpotlightGrid({ data }: HomeSpotlightGridProps) {
   const slots = data.slots.slice(0, HOME_SPOTLIGHT_LIMIT);
 
   return (
-    <section aria-label="Featured devices" className="arena-home-section">
+    <section
+      aria-label="Featured devices"
+      className="arena-home-section w-full min-w-0 overflow-x-clip"
+    >
+      <header className="mb-4 lg:mb-6">
+        <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-[var(--electric-cyan)]">
+          Arena picks
+        </p>
+        <h2 className="mt-1 text-xl font-extrabold tracking-tight text-[var(--text-primary)] md:text-2xl">
+          Featured devices
+        </h2>
+      </header>
       {slots.length > 0 ? (
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full min-w-0 grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
           {slots.map((slot) => {
             const Icon = slotIcon(slot);
             const device = slot.device;
@@ -64,7 +75,7 @@ export function HomeSpotlightGrid({ data }: HomeSpotlightGridProps) {
                     {slot.title}
                   </p>
 
-                  <div className="mt-3 flex items-center gap-3">
+                  <div className="arena-spotlight-card-body mt-3 flex items-center gap-3">
                     <div className="arena-spotlight-thumb arena-spotlight-thumb-lg">
                       {device.image ? (
                         // eslint-disable-next-line @next/next/no-img-element
@@ -100,12 +111,12 @@ export function HomeSpotlightGrid({ data }: HomeSpotlightGridProps) {
           })}
         </div>
       ) : (
-        <GlassPanel variant="accent" className="p-10 text-center text-[var(--text-secondary)]">
+        <SpectrumPanel variant="accent" className="p-10 text-center text-[var(--text-secondary)]">
           Devices will appear here once the catalog is populated.{" "}
           <Link href="/phones" className="font-semibold text-[var(--electric-cyan)] hover:underline">
             Browse phones
           </Link>
-        </GlassPanel>
+        </SpectrumPanel>
       )}
     </section>
   );

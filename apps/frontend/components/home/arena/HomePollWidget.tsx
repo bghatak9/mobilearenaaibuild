@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   getActivePoll,
   voteOnPoll,
@@ -45,27 +45,27 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
 
   if (loading) {
     return (
-      <GlassPanel variant="purple" className="p-6">
+      <SpectrumPanel variant="purple" className="p-6">
         <div className="h-4 w-48 animate-pulse rounded bg-white/10" />
         <div className="mt-4 space-y-3">
           {[1, 2, 3].map((i) => (
             <div key={i} className="h-8 animate-pulse rounded bg-white/5" />
           ))}
         </div>
-      </GlassPanel>
+      </SpectrumPanel>
     );
   }
 
   if (!poll) {
     return (
-      <GlassPanel variant="purple" className="p-6 text-sm text-[var(--text-secondary)]">
+      <SpectrumPanel variant="purple" className="p-6 text-sm text-[var(--text-secondary)]">
         Community polls appear here soon.
-      </GlassPanel>
+      </SpectrumPanel>
     );
   }
 
   return (
-    <GlassPanel variant="purple" className="p-6">
+    <SpectrumPanel variant="purple" className="p-6">
       <p className="text-xs font-bold uppercase tracking-widest text-[var(--aurora-purple)]">
         Community poll
       </p>
@@ -116,6 +116,6 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
           Read latest reviews
         </Link>
       )}
-    </GlassPanel>
+    </SpectrumPanel>
   );
 }

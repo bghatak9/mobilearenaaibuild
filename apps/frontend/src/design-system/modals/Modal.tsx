@@ -46,7 +46,7 @@ export function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[70] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[70] flex items-end justify-center p-0 sm:items-center sm:p-4"
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
@@ -59,11 +59,11 @@ export function Modal({
       />
       <div
         className={cn(
-          "glass-panel relative z-10 w-full rounded-[24px] p-6 shadow-xl",
+          "spectrum-panel relative z-10 flex max-h-[min(90dvh,100%)] w-full flex-col overflow-hidden rounded-t-[24px] p-4 shadow-xl sm:max-h-[90dvh] sm:rounded-[24px] sm:p-6",
           sizes[size],
         )}
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="mb-3 flex shrink-0 items-start justify-between gap-4 sm:mb-4">
           <h2 id="modal-title" className="text-lg font-bold text-[var(--text-primary)]">
             {title}
           </h2>
@@ -76,8 +76,14 @@ export function Modal({
             <X size={18} />
           </button>
         </div>
-        <div className="text-[var(--text-secondary)]">{children}</div>
-        {footer && <div className="mt-6 flex justify-end gap-2">{footer}</div>}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain text-[var(--text-secondary)]">
+          {children}
+        </div>
+        {footer ? (
+          <div className="mt-4 shrink-0 border-t border-white/10 pt-4 sm:mt-6 sm:flex sm:justify-end sm:gap-2 sm:border-0 sm:pt-0">
+            {footer}
+          </div>
+        ) : null}
       </div>
     </div>
   );

@@ -107,7 +107,7 @@ export default function SpecsTable({ device }: { device: Device }) {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5">
       {sections
         .map((s) => ({
           ...s,
@@ -115,26 +115,19 @@ export default function SpecsTable({ device }: { device: Device }) {
         }))
         .filter((s) => s.rows.length > 0)
         .map((section) => (
-          <div
-            key={section.title}
-            className="overflow-hidden rounded-2xl border border-gray-200 bg-white"
-          >
-            <h3 className="border-b border-gray-100 bg-gray-50 px-4 py-3 font-semibold text-gray-900">
-              {section.title}
-            </h3>
-            <table className="w-full text-sm">
+          <section key={section.title} className="titan-spec-section">
+            <h3 className="titan-spec-section-title">{section.title}</h3>
+            <table className="titan-spec-table">
               <tbody>
                 {section.rows.map((row) => (
-                  <tr key={row.label} className="border-b border-gray-100 last:border-0">
-                    <td className="w-1/3 px-4 py-3 font-medium text-gray-500">
-                      {row.label}
-                    </td>
-                    <td className="px-4 py-3 text-gray-900">{row.value}</td>
+                  <tr key={row.label}>
+                    <td className="titan-spec-label">{row.label}</td>
+                    <td className="titan-spec-value">{row.value}</td>
                   </tr>
                 ))}
               </tbody>
             </table>
-          </div>
+          </section>
         ))}
     </div>
   );

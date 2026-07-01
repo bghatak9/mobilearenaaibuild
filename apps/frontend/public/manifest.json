@@ -1,0 +1,25 @@
+{
+  "name": "MobileArena",
+  "short_name": "Arena",
+  "description": "Discover. Compare. Decide. Together.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#0d0c12",
+  "theme_color": "#0d0c12",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/file.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "/file.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ]
+}

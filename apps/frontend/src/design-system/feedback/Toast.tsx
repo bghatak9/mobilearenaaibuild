@@ -56,7 +56,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           <div
             key={t.id}
             className={cn(
-              "glass-panel pointer-events-auto flex max-w-sm items-start gap-3 rounded-xl px-4 py-3 shadow-lg",
+              "spectrum-panel pointer-events-auto flex max-w-sm items-start gap-3 rounded-xl px-4 py-3 shadow-lg",
               variantStyles[t.variant],
             )}
             role="status"

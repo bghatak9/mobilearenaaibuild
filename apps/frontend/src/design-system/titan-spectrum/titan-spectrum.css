@@ -1,0 +1,404 @@
+/**
+ * Titan Spectrum — presentation layer
+ * Solid luxury surfaces · no glassmorphism · 24px cards · ambient shadows
+ */
+
+/* ── Page atmosphere ── */
+.spectrum-page-bg,
+.aurora-page-bg {
+  background:
+    radial-gradient(ellipse 70% 45% at 12% -8%, color-mix(in srgb, var(--titan-blue) 18%, transparent), transparent),
+    radial-gradient(ellipse 55% 38% at 88% 2%, color-mix(in srgb, var(--titan-purple) 14%, transparent), transparent),
+    radial-gradient(ellipse 48% 32% at 50% 100%, color-mix(in srgb, var(--titan-cyan) 10%, transparent), transparent),
+    var(--titan-void);
+  animation: titan-bg-drift 24s ease-in-out infinite alternate;
+}
+
+html:not(.dark) .spectrum-page-bg,
+html:not(.dark) .aurora-page-bg {
+  background:
+    radial-gradient(ellipse 70% 45% at 12% -8%, color-mix(in srgb, var(--titan-blue) 10%, transparent), transparent),
+    radial-gradient(ellipse 55% 38% at 88% 2%, color-mix(in srgb, var(--titan-purple) 8%, transparent), transparent),
+    var(--titan-void);
+}
+
+@keyframes titan-bg-drift {
+  0% { filter: hue-rotate(0deg); }
+  100% { filter: hue-rotate(8deg); }
+}
+
+/* ── Solid panels ── */
+.spectrum-panel {
+  background: var(--titan-surface);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--titan-radius-card);
+  box-shadow: var(--titan-shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.04);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html:not(.dark) .spectrum-panel {
+  background: var(--titan-surface);
+  box-shadow: var(--titan-shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.9);
+}
+
+.spectrum-panel-accent {
+  border-color: var(--titan-accent-border);
+  box-shadow: var(--titan-shadow-ambient), var(--titan-shadow-accent);
+}
+
+.spectrum-panel-purple {
+  border-color: var(--border-accent-purple);
+  box-shadow: var(--titan-shadow-ambient), 0 8px 32px color-mix(in srgb, var(--titan-purple) 18%, transparent);
+}
+
+.spectrum-panel-gold {
+  border-color: var(--border-accent-gold);
+  box-shadow: var(--titan-shadow-ambient), 0 8px 32px color-mix(in srgb, var(--titan-orange) 18%, transparent);
+}
+
+.spectrum-panel-elevated {
+  background: var(--titan-elevated);
+  border-color: color-mix(in srgb, var(--text-primary) 12%, transparent);
+}
+
+/* ── Gradient text & hero ── */
+.spectrum-text,
+.aurora-text {
+  background: var(--gradient-spectrum);
+  background-size: 200% 200%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: titan-gradient-shift 8s ease infinite;
+}
+
+@keyframes titan-gradient-shift {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+}
+
+.spectrum-hero-bg,
+.aurora-hero-bg {
+  background:
+    radial-gradient(circle at 18% 28%, color-mix(in srgb, var(--titan-blue) 28%, transparent), transparent 44%),
+    radial-gradient(circle at 82% 20%, color-mix(in srgb, var(--titan-purple) 22%, transparent), transparent 40%),
+    radial-gradient(circle at 62% 82%, color-mix(in srgb, var(--titan-cyan) 18%, transparent), transparent 42%),
+    linear-gradient(155deg, var(--titan-elevated), var(--titan-void));
+  animation: titan-hero-shift 16s ease-in-out infinite alternate;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html:not(.dark) .spectrum-hero-bg,
+html:not(.dark) .aurora-hero-bg {
+  background:
+    radial-gradient(circle at 18% 28%, color-mix(in srgb, var(--titan-blue) 12%, transparent), transparent 44%),
+    radial-gradient(circle at 82% 20%, color-mix(in srgb, var(--titan-purple) 10%, transparent), transparent 40%),
+    linear-gradient(155deg, #ffffff, var(--titan-void));
+}
+
+@keyframes titan-hero-shift {
+  0% { filter: hue-rotate(0deg); opacity: 1; }
+  100% { filter: hue-rotate(6deg); opacity: 0.96; }
+}
+
+.aurora-hero-device-card,
+.spectrum-hero-device-card {
+  border: 1px solid var(--titan-accent-border);
+  background: linear-gradient(160deg, var(--titan-elevated), var(--titan-surface));
+  box-shadow: var(--titan-shadow-ambient);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.aurora-hero-stat,
+.spectrum-hero-stat {
+  border: 1px solid var(--border-subtle);
+  background: var(--titan-muted);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html:not(.dark) .aurora-hero-stat,
+html:not(.dark) .spectrum-hero-stat {
+  background: var(--titan-elevated);
+}
+
+/* ── Nav ring — solid inner, animated spectrum border ── */
+.arena-gradient-ring-nav {
+  padding: 2px;
+  background: var(--gradient-spectrum);
+  background-size: 240% 240%;
+  animation: titan-gradient-shift 10s ease infinite;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--titan-accent) 28%, transparent),
+    var(--titan-shadow-ambient);
+}
+
+.arena-floating-nav {
+  background:
+    radial-gradient(circle at 8% 20%, color-mix(in srgb, var(--titan-blue) 14%, transparent), transparent 42%),
+    radial-gradient(circle at 92% 15%, color-mix(in srgb, var(--titan-purple) 12%, transparent), transparent 38%),
+    radial-gradient(circle at 55% 110%, color-mix(in srgb, var(--titan-cyan) 10%, transparent), transparent 45%),
+    linear-gradient(145deg, var(--titan-surface), var(--titan-elevated) 52%, var(--titan-muted));
+  box-shadow: var(--titan-shadow-ambient), inset 0 1px 0 rgb(255 255 255 / 0.06);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+html:not(.dark) .arena-floating-nav {
+  background:
+    radial-gradient(circle at 6% 25%, color-mix(in srgb, var(--titan-blue) 8%, transparent), transparent 40%),
+    radial-gradient(circle at 94% 18%, color-mix(in srgb, var(--titan-purple) 7%, transparent), transparent 36%),
+    linear-gradient(145deg, #ffffff, var(--titan-elevated));
+}
+
+.arena-floating-nav::before {
+  background: var(--gradient-spectrum);
+  background-size: 200% 100%;
+  animation: titan-gradient-shift 6s linear infinite;
+}
+
+/* ── Mobile chrome — solid surfaces ── */
+@media (max-width: 1023px) {
+  .arena-mobile-site-header {
+    background: var(--titan-surface);
+    border-bottom: 1px solid var(--border-subtle);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 4px 24px rgb(0 0 0 / 0.22);
+  }
+
+  .arena-mobile-header-logo-mobile {
+    color: var(--titan-blue);
+    text-shadow: none;
+    font-family: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
+  }
+
+  .arena-mobile-header-logo-arena {
+    background: var(--gradient-spectrum);
+    background-size: 200% 200%;
+    animation: titan-gradient-shift 6s ease infinite;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .arena-mobile-header-btn:active {
+    background: var(--titan-accent-soft);
+  }
+
+  .arena-mobile-header-theme:focus-visible {
+    outline: 2px solid var(--titan-accent);
+    outline-offset: 1px;
+  }
+
+  .arena-mobile-header-signin:active {
+    color: var(--titan-accent);
+    background: var(--titan-accent-soft);
+  }
+
+  .arena-mobile-category-link-active {
+    color: var(--titan-accent);
+    font-weight: 700;
+  }
+
+  .arena-mobile-category-more {
+    color: var(--titan-accent);
+  }
+
+  .arena-mobile-drawer-panel {
+    background: var(--titan-surface);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .arena-mobile-drawer-link-active {
+    background: var(--titan-accent-soft);
+    color: var(--titan-accent);
+  }
+
+  .arena-mobile-drawer-action:active,
+  .arena-mobile-drawer-link:active {
+    background: var(--titan-accent-soft);
+    color: var(--titan-accent);
+  }
+
+  .arena-mobile-drawer-utility:active {
+    color: var(--titan-accent);
+  }
+}
+
+/* Category link accent via data attribute */
+.arena-mobile-category-link[data-titan-accent] {
+  transition: color 150ms ease;
+}
+
+.arena-floating-nav-link-active {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--titan-accent) 88%, #000),
+    color-mix(in srgb, var(--titan-accent) 72%, var(--titan-purple))
+  );
+  box-shadow: var(--titan-shadow-accent);
+}
+
+/* ── Typography roles ── */
+.titan-display {
+  font-family: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.titan-body {
+  font-family: var(--font-inter), system-ui, sans-serif;
+}
+
+.titan-mono,
+.titan-spec-value {
+  font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Dense specification tables ── */
+.titan-spec-section {
+  overflow: hidden;
+  border-radius: var(--titan-radius-card);
+  border: 1px solid var(--border-subtle);
+  background: var(--titan-surface);
+  box-shadow: var(--titan-shadow-ambient);
+}
+
+.titan-spec-section-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--titan-elevated);
+  padding: 0.75rem 1rem;
+  font-family: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-primary);
+}
+
+.titan-spec-section-title::before {
+  content: "";
+  width: 3px;
+  height: 0.875rem;
+  border-radius: 2px;
+  background: var(--titan-accent);
+  flex-shrink: 0;
+}
+
+.titan-spec-table {
+  width: 100%;
+  font-size: 0.875rem;
+  border-collapse: collapse;
+}
+
+.titan-spec-table tbody tr {
+  border-bottom: 1px solid var(--border-muted);
+}
+
+.titan-spec-table tbody tr:last-child {
+  border-bottom: 0;
+}
+
+.titan-spec-label {
+  width: 38%;
+  padding: 0.625rem 1rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  vertical-align: top;
+}
+
+.titan-spec-value {
+  padding: 0.625rem 1rem;
+  color: var(--text-primary);
+  vertical-align: top;
+}
+
+@media (max-width: 639px) {
+  .titan-spec-table tbody tr {
+    display: block;
+    padding-bottom: 0.25rem;
+  }
+
+  .titan-spec-label,
+  .titan-spec-value {
+    display: block;
+    width: 100%;
+    padding-inline: 1rem;
+  }
+
+  .titan-spec-label {
+    padding-top: 0.75rem;
+    padding-bottom: 0.15rem;
+    font-size: 0.6875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+
+  .titan-spec-value {
+    padding-top: 0;
+    padding-bottom: 0.75rem;
+  }
+}
+
+/* ── Cards & buttons ── */
+.arena-card,
+.arena-device-card {
+  border-radius: var(--titan-radius-card);
+}
+
+.arena-btn-primary {
+  background: linear-gradient(135deg, var(--titan-blue), var(--titan-cyan));
+  box-shadow: 0 6px 20px color-mix(in srgb, var(--titan-blue) 28%, transparent);
+}
+
+.arena-btn-primary:hover {
+  box-shadow: 0 10px 28px color-mix(in srgb, var(--titan-blue) 36%, transparent);
+}
+
+.arena-btn-secondary {
+  border: 1px solid var(--border-subtle);
+  background: var(--titan-muted);
+}
+
+.arena-btn-secondary:hover {
+  background: var(--titan-elevated);
+}
+
+.arena-score-fill {
+  background: linear-gradient(90deg, var(--titan-blue), var(--titan-cyan));
+}
+
+.arena-floating-nav-logo-mobile {
+  color: var(--titan-blue);
+  text-shadow: none;
+  font-family: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
+}
+
+.arena-floating-nav-logo-arena {
+  background: var(--gradient-spectrum);
+  background-size: 200% 200%;
+  animation: titan-gradient-shift 5s ease infinite;
+}
+
+.arena-floating-nav-search-icon {
+  color: var(--titan-cyan);
+  filter: none;
+}
+
+.arena-floating-nav-search-btn:hover {
+  color: var(--titan-cyan);
+}
+
+.arena-spotlight-card {
+  border-radius: var(--titan-radius-card);
+}

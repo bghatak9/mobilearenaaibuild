@@ -1,43 +1,66 @@
 "use client";
 
-import type { PaidAdvertisement } from "@/lib/api";
+import { Suspense } from "react";
 import AdUnit, { StickyAdBar } from "@/components/ads/AdUnit";
 import { FloatingNav } from "@/design-system/navigation/FloatingNav";
-import { MobileBottomNav } from "@/design-system/navigation/MobileBottomNav";
+import { accentForPathname } from "@/design-system/titan-spectrum/category-accents";
+import type { SiteAdSlots } from "@/lib/ad-utils";
+import { hideMobileChrome } from "@/lib/mobile-routes";
+import { usePathname } from "next/navigation";
 
 type ArenaShellClientProps = {
   children: React.ReactNode;
   auth?: boolean;
-  topAd?: PaidAdvertisement | null;
-  stickyFooterAd?: PaidAdvertisement | null;
+  showAds?: boolean;
+  slots?: SiteAdSlots;
+};
+
+const EMPTY_SLOTS: SiteAdSlots = {
+  topAd: null,
+  stickyFooterAd: null,
+  nativeCardAd: null,
 };
 
 export function ArenaShellClient({
   children,
   auth = false,
-  topAd = null,
-  stickyFooterAd = null,
+  showAds = true,
+  slots = EMPTY_SLOTS,
 }: ArenaShellClientProps) {
+  const pathname = usePathname();
+  const { topAd, stickyFooterAd } = slots;
+  const minimalChrome = auth || hideMobileChrome(pathname);
+  const routeAccent = accentForPathname(pathname);
+
   return (
-    <div className="arena-theme min-h-screen bg-[var(--dark-space)] text-[var(--text-primary)]">
-      <div className="aurora-page-bg fixed inset-0 -z-10" aria-hidden />
-      <FloatingNav />
+    <div
+      className="arena-theme min-h-screen min-h-[100dvh] overflow-x-clip bg-[var(--dark-space)] text-[var(--text-primary)]"
+      data-titan-accent={routeAccent}
+    >
+      <div className="spectrum-page-bg aurora-page-bg fixed inset-0 -z-10" aria-hidden />
+
+      {!minimalChrome ? (
+        <Suspense fallback={null}>
+          <FloatingNav />
+        </Suspense>
+      ) : null}
+
       <div
         className={
           auth
-            ? "mx-auto w-full min-w-0 max-w-[1120px] px-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] pt-24 sm:px-4 sm:pb-12 sm:pt-28 md:pt-32"
-            : "mx-auto max-w-[1120px] px-4 pb-28 pt-36 md:pb-12 md:pt-40"
+            ? "arena-mobile-main-pad mx-auto w-full min-w-0 max-w-[1120px] px-3 pb-8 sm:px-4 lg:pb-12 lg:pt-40"
+            : "arena-mobile-main-pad arena-mobile-content-pad mx-auto w-full min-w-0 max-w-[1120px] px-3 pb-8 sm:px-4 md:px-6 lg:px-4 lg:pb-12 lg:pt-40"
         }
       >
-        {topAd ? (
+        {showAds && topAd ? (
           <section aria-label="Sponsored banner" className="mb-6">
-            <AdUnit ad={topAd} variant="banner" />
+            <AdUnit ad={topAd} />
           </section>
         ) : null}
         {children}
       </div>
-      <StickyAdBar ad={stickyFooterAd} />
-      <MobileBottomNav />
+
+      {showAds ? <StickyAdBar ad={stickyFooterAd} /> : null}
     </div>
   );
 }

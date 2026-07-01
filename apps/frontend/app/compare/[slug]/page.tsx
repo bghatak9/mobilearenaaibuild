@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArenaShell } from "@/components/layout/ArenaShell";
 import { ArenaCompareExperience } from "@/components/compare/ArenaCompareExperience";
 import { CompareActions } from "@/components/compare/CompareActions";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
 import { absoluteUrl } from "@/lib/seo";
 import { compareDevices, type CompareResult } from "@/lib/api";
@@ -42,7 +42,7 @@ export default async function CompareResultPage({
   if (!result || result.devices.length < 2) {
     return (
       <ArenaShell>
-        <GlassPanel className="mx-auto max-w-lg p-10 text-center">
+        <SpectrumPanel className="mx-auto max-w-lg p-10 text-center">
           <h1 className="text-2xl font-extrabold text-[var(--text-primary)]">
             Couldn&apos;t build this comparison
           </h1>
@@ -52,7 +52,7 @@ export default async function CompareResultPage({
           <Link href="/compare" className="arena-btn-primary mt-6 inline-flex">
             Back to comparison tools
           </Link>
-        </GlassPanel>
+        </SpectrumPanel>
       </ArenaShell>
     );
   }
@@ -74,7 +74,7 @@ export default async function CompareResultPage({
         <p className="text-xs font-bold uppercase tracking-widest text-[var(--electric-cyan)]">
           Comparison Tools
         </p>
-        <h1 className="mt-2 text-3xl font-extrabold text-[var(--text-primary)] md:text-4xl">
+        <h1 className="arena-page-title mt-2 font-extrabold text-[var(--text-primary)] md:text-4xl">
           {devices.map((d) => d.name).join(" vs ")}
         </h1>
         <p className="mt-2 text-sm text-[var(--text-secondary)]">
@@ -95,7 +95,7 @@ export default async function CompareResultPage({
 
       <div className="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {devices.map((d) => (
-          <GlassPanel key={d.id} className="p-4 text-center">
+          <SpectrumPanel key={d.id} className="p-4 text-center">
             {d.images?.[0]?.url ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
@@ -113,7 +113,7 @@ export default async function CompareResultPage({
               {d.name}
             </Link>
             <p className="text-xs text-[var(--text-secondary)]">{d.brand?.name}</p>
-          </GlassPanel>
+          </SpectrumPanel>
         ))}
       </div>
 

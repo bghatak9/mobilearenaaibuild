@@ -1,12 +1,15 @@
 "use client";
 
 import Link from "next/link";
+import { Filter } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import PhoneGrid from "@/components/phone/PhoneGrid";
 import BrandFilter from "@/components/filters/BrandFilter";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { Button } from "@/design-system/buttons/Button";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
+import { Modal } from "@/design-system/modals/Modal";
 import { SearchBar } from "@/design-system/forms/SearchBar";
 import { Skeleton } from "@/design-system/feedback/Skeleton";
 import { getDevices, getBulkUpcomingDevices, getBrandsGrouped, getFavoriteDevices, getToken, getWishlist, type Device } from "@/lib/api";
@@ -36,6 +39,7 @@ export default function PhonesPageInner() {
   const [search, setSearch] = useState(initialSearch);
   const [brand, setBrand] = useState("All");
   const [sort, setSort] = useState<Sort>("newest");
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
   useEffect(() => {
     if (favoritesOnly && !getToken()) {
@@ -171,6 +175,36 @@ export default function PhonesPageInner() {
     return list;
   }, [all, search, brand, sort]);
 
+  const activeFilterCount = (brand !== "All" ? 1 : 0) + (sort !== "newest" ? 1 : 0);
+
+  const filterPanel = (
+    <>
+      <SpectrumPanel className="p-5">
+        <h2 className="mb-3 font-bold text-[var(--text-primary)]">Sort by</h2>
+        <select
+          value={sort}
+          onChange={(e) => setSort(e.target.value as Sort)}
+          className="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-sm text-[var(--text-primary)]"
+        >
+          <option value="newest">Newest</option>
+          <option value="price-asc">Price: Low to High</option>
+          <option value="price-desc">Price: High to Low</option>
+          <option value="rating">Best rated</option>
+        </select>
+      </SpectrumPanel>
+
+      <SpectrumPanel className="mt-5 p-5">
+        <h2 className="mb-4 font-bold text-[var(--text-primary)]">Brands</h2>
+        <BrandFilter
+          brands={brands}
+          devices={all}
+          selected={brand}
+          onSelect={setBrand}
+        />
+      </SpectrumPanel>
+    </>
+  );
+
   return (
     <>
       <header className="mb-8">
@@ -215,32 +249,28 @@ export default function PhonesPageInner() {
         </p>
       </header>
 
-      <div className="grid gap-6 lg:grid-cols-4">
-        <aside className="space-y-5">
-          <GlassPanel className="p-5">
-            <h2 className="mb-3 font-bold text-[var(--text-primary)]">Sort by</h2>
-            <select
-              value={sort}
-              onChange={(e) => setSort(e.target.value as Sort)}
-              className="w-full rounded-xl border border-white/10 bg-white/5 p-2 text-sm text-[var(--text-primary)]"
-            >
-              <option value="newest">Newest</option>
-              <option value="price-asc">Price: Low to High</option>
-              <option value="price-desc">Price: High to Low</option>
-              <option value="rating">Best rated</option>
-            </select>
-          </GlassPanel>
+      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center lg:hidden">
+        <SearchBar
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+          onSubmit={(q) => setSearch(q)}
+          onVoiceQuery={(q) => setSearch(q)}
+          placeholder="Search phones..."
+          className="flex-1"
+        />
+        <Button
+          type="button"
+          variant="secondary"
+          className="shrink-0"
+          onClick={() => setMobileFiltersOpen(true)}
+        >
+          <Filter size={16} />
+          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+        </Button>
+      </div>
 
-          <GlassPanel className="p-5">
-            <h2 className="mb-4 font-bold text-[var(--text-primary)]">Brands</h2>
-            <BrandFilter
-              brands={brands}
-              devices={all}
-              selected={brand}
-              onSelect={setBrand}
-            />
-          </GlassPanel>
-        </aside>
+      <div className="grid gap-6 lg:grid-cols-4">
+        <aside className="hidden space-y-5 lg:block">{filterPanel}</aside>
 
         <div className="lg:col-span-3">
           <SearchBar
@@ -249,7 +279,7 @@ export default function PhonesPageInner() {
             onSubmit={(q) => setSearch(q)}
             onVoiceQuery={(q) => setSearch(q)}
             placeholder="Search phones..."
-            className="mb-6"
+            className="mb-6 hidden lg:block"
           />
 
           {loading ? (
@@ -261,16 +291,30 @@ export default function PhonesPageInner() {
           ) : error ? (
             <p className="text-red-400">{error}</p>
           ) : filtered.length === 0 ? (
-            <GlassPanel className="p-8 text-center text-[var(--text-secondary)]">
+            <SpectrumPanel className="p-8 text-center text-[var(--text-secondary)]">
               {favoritesOnly
                 ? "No favorite phones yet. Save phones with the heart on search results or add them from your profile."
                 : "No phones match your filters."}
-            </GlassPanel>
+            </SpectrumPanel>
           ) : (
             <PhoneGrid devices={filtered} />
           )}
         </div>
       </div>
+
+      <Modal
+        open={mobileFiltersOpen}
+        onClose={() => setMobileFiltersOpen(false)}
+        title="Filter phones"
+        size="lg"
+        footer={
+          <Button type="button" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
+            Show {loading ? "…" : filtered.length} phones
+          </Button>
+        }
+      >
+        {filterPanel}
+      </Modal>
     </>
   );
 }

@@ -1,29 +1,48 @@
 /**
- * MobileArena Aurora Glass — official palette
- * @see Brand Identity manifesto
+ * Titan Spectrum — official palette
  */
 export const colors = {
-  arenaBlue: "#2563EB",
-  electricCyan: "#06B6D4",
-  auroraPurple: "#8B5CF6",
-  emeraldSuccess: "#10B981",
-  premiumGold: "#F59E0B",
-  darkSpace: "#0B1220",
-  surfaceCard: "#131D31",
-  surfaceElevated: "#1A2740",
-  textPrimary: "#F8FAFC",
-  textSecondary: "#94A3B8",
+  titanVoid: "#0D0C12",
+  titanSurface: "#16141F",
+  titanElevated: "#1E1C2A",
+  titanBlue: "#5B8AFF",
+  titanPurple: "#A67BFF",
+  titanCyan: "#3DD9C8",
+  titanGreen: "#4ADE80",
+  titanOrange: "#FFA04D",
+  titanPink: "#FF7EB3",
+  textPrimary: "#EDEAF5",
+  textSecondary: "#9B97AD",
+  /** @deprecated use titanBlue */
+  arenaBlue: "#5B8AFF",
+  /** @deprecated use titanCyan */
+  electricCyan: "#3DD9C8",
+  /** @deprecated use titanPurple */
+  auroraPurple: "#A67BFF",
+  emeraldSuccess: "#4ADE80",
+  premiumGold: "#FFA04D",
+  darkSpace: "#0D0C12",
+  surfaceCard: "#16141F",
+  surfaceElevated: "#1E1C2A",
 } as const;
 
 export const cssColorVars = {
-  "--arena-blue": colors.arenaBlue,
-  "--electric-cyan": colors.electricCyan,
-  "--aurora-purple": colors.auroraPurple,
-  "--emerald-success": colors.emeraldSuccess,
-  "--premium-gold": colors.premiumGold,
-  "--dark-space": colors.darkSpace,
-  "--surface-card": colors.surfaceCard,
-  "--surface-elevated": colors.surfaceElevated,
+  "--titan-void": colors.titanVoid,
+  "--titan-surface": colors.titanSurface,
+  "--titan-blue": colors.titanBlue,
+  "--titan-purple": colors.titanPurple,
+  "--titan-cyan": colors.titanCyan,
+  "--titan-green": colors.titanGreen,
+  "--titan-orange": colors.titanOrange,
+  "--titan-pink": colors.titanPink,
+  "--arena-blue": colors.titanBlue,
+  "--electric-cyan": colors.titanCyan,
+  "--aurora-purple": colors.titanPurple,
+  "--emerald-success": colors.titanGreen,
+  "--premium-gold": colors.titanOrange,
+  "--dark-space": colors.titanVoid,
+  "--surface-card": colors.titanSurface,
+  "--surface-elevated": colors.titanElevated,
   "--text-primary": colors.textPrimary,
   "--text-secondary": colors.textSecondary,
 } as const;

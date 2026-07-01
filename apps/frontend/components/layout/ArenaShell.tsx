@@ -1,26 +1,39 @@
+import type { PaidAdvertisement } from "@/lib/api";
 import { getActiveAdvertisements } from "@/lib/api";
-import {
-  pickAdForPlacement,
-  pickFirstAdForPlacements,
-  SITE_TOP_BANNER_PLACEMENTS,
-  STICKY_FOOTER_PLACEMENT,
-} from "@/lib/ad-utils";
+import { resolveSiteAdSlots } from "@/lib/ad-utils";
 
 import { ArenaShellClient } from "./ArenaShellClient";
+
+const EMPTY_SLOTS = {
+  topAd: null,
+  stickyFooterAd: null,
+  nativeCardAd: null,
+} as const;
 
 type ArenaShellProps = {
   children: React.ReactNode;
   /** Tighter vertical spacing for sign-in / sign-up flows on small screens */
   auth?: boolean;
+  /** Hide all ad slots (auth pages default to false) */
+  showAds?: boolean;
+  /** Preloaded ads — avoids a second fetch when the page already loaded them */
+  ads?: PaidAdvertisement[];
 };
 
-export async function ArenaShell({ children, auth = false }: ArenaShellProps) {
-  const ads = await getActiveAdvertisements().catch(() => []);
-  const topAd = pickFirstAdForPlacements(ads, SITE_TOP_BANNER_PLACEMENTS) ?? null;
-  const stickyFooterAd = pickAdForPlacement(ads, STICKY_FOOTER_PLACEMENT) ?? null;
+export async function ArenaShell({
+  children,
+  auth = false,
+  showAds,
+  ads: preloadedAds,
+}: ArenaShellProps) {
+  const adsEnabled = showAds ?? !auth;
+  const ads = adsEnabled
+    ? (preloadedAds ?? (await getActiveAdvertisements().catch(() => [])))
+    : [];
+  const slots = adsEnabled ? resolveSiteAdSlots(ads) : EMPTY_SLOTS;
 
   return (
-    <ArenaShellClient topAd={topAd} stickyFooterAd={stickyFooterAd} auth={auth}>
+    <ArenaShellClient slots={slots} auth={auth} showAds={adsEnabled}>
       {children}
     </ArenaShellClient>
   );

@@ -2,7 +2,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 
 import { ArenaShell } from "@/components/layout/ArenaShell";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { getCatalogStatus, getNews, type NewsArticle } from "@/lib/api";
 
 function formatDate(value?: string | null): string {
@@ -42,16 +42,16 @@ export default async function NewsPage() {
       {error ? (
         <p className="text-red-400">Couldn&apos;t load news. Is the API running?</p>
       ) : news.length === 0 ? (
-        <GlassPanel className="p-8 text-center text-[var(--text-secondary)]">
+        <SpectrumPanel className="p-8 text-center text-[var(--text-secondary)]">
           {catalog.importedOnly
             ? "No uploaded articles yet. Upload news via Admin → Bulk Upload."
             : "No published articles yet."}
-        </GlassPanel>
+        </SpectrumPanel>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {news.map((article) => (
             <Link key={article.id} href={`/news/${article.slug}`} className="group">
-              <GlassPanel className="flex h-full flex-col overflow-hidden p-0 transition duration-200 hover:border-[var(--electric-cyan)]/30">
+              <SpectrumPanel className="flex h-full flex-col overflow-hidden p-0 transition duration-200 hover:border-[var(--electric-cyan)]/30">
                 <div className="flex h-40 items-center justify-center bg-gradient-to-br from-[var(--arena-blue)]/10 to-[var(--aurora-purple)]/10">
                   {article.thumbnail ? (
                     // eslint-disable-next-line @next/next/no-img-element
@@ -82,7 +82,7 @@ export default async function NewsPage() {
                     {formatDate(article.publishedAt ?? article.createdAt)}
                   </p>
                 </div>
-              </GlassPanel>
+              </SpectrumPanel>
             </Link>
           ))}
         </div>

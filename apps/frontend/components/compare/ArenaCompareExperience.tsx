@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { ChevronDown, ChevronUp, Trophy } from "lucide-react";
 
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import type { CompareResult, Device } from "@/lib/api";
 
 type MetricDef = {
@@ -111,7 +111,7 @@ export function ArenaCompareExperience({ devices, winners }: Props) {
         const open = expanded[category] ?? true;
 
         return (
-          <GlassPanel key={category} className="overflow-hidden p-0">
+          <SpectrumPanel key={category} className="overflow-hidden p-0">
             <button
               type="button"
               onClick={() =>
@@ -188,11 +188,11 @@ export function ArenaCompareExperience({ devices, winners }: Props) {
                 })}
               </div>
             )}
-          </GlassPanel>
+          </SpectrumPanel>
         );
       })}
 
-      <GlassPanel className="p-6">
+      <SpectrumPanel className="p-6">
         <h3 className="text-sm font-bold uppercase tracking-widest text-[var(--aurora-purple)]">
           AI Summary · Arena Labs
         </h3>
@@ -214,7 +214,7 @@ export function ArenaCompareExperience({ devices, winners }: Props) {
         >
           Save comparison to profile
         </Link>
-      </GlassPanel>
+      </SpectrumPanel>
     </div>
   );
 }

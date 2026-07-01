@@ -3,7 +3,7 @@ import { MessageCircle } from "lucide-react";
 
 import { ContactForm } from "@/components/contact/ContactForm";
 import { ArenaShell } from "@/components/layout/ArenaShell";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
 import { CONTACT_EMAIL } from "@/lib/contact";
 
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
   return (
-    <ArenaShell>
+    <ArenaShell showAds={false}>
       <Breadcrumbs
         className="mb-6"
         items={[
@@ -23,14 +23,14 @@ export default function ContactPage() {
           { label: "Contact" },
         ]}
       />
-      <GlassPanel className="mx-auto max-w-3xl p-8">
+      <SpectrumPanel className="mx-auto max-w-3xl p-4 sm:p-8">
         <div className="mb-6 flex items-center gap-2 text-[var(--electric-cyan)]">
           <MessageCircle size={22} />
           <span className="text-xs font-bold uppercase tracking-widest">
             Contact
           </span>
         </div>
-        <h1 className="text-3xl font-extrabold text-[var(--text-primary)]">
+        <h1 className="text-2xl font-extrabold text-[var(--text-primary)] sm:text-3xl">
           Contact MobileArena
         </h1>
         <p className="mt-2 max-w-2xl text-sm leading-relaxed text-[var(--text-secondary)]">
@@ -47,7 +47,7 @@ export default function ContactPage() {
         <div className="mt-8">
           <ContactForm variant="page" />
         </div>
-      </GlassPanel>
+      </SpectrumPanel>
     </ArenaShell>
   );
 }

@@ -2,23 +2,23 @@ import { colors, cssColorVars } from "./colors";
 
 export type ThemeMode = "light" | "dark";
 
-/** Aurora Glass — dark is the signature Arena experience */
+/** Titan Spectrum — dark luxury is the signature Arena experience */
 export const themes = {
   dark: {
     background: colors.darkSpace,
     foreground: colors.textPrimary,
     card: colors.surfaceCard,
     muted: colors.textSecondary,
-    border: "rgb(255 255 255 / 0.08)",
-    brand: colors.arenaBlue,
+    border: "rgb(237 234 245 / 0.08)",
+    brand: colors.titanBlue,
   },
   light: {
-    background: "#f1f5f9",
-    foreground: "#0f172a",
+    background: "#f4f2f8",
+    foreground: "#12101a",
     card: "#ffffff",
-    muted: "#64748b",
-    border: "rgb(15 23 42 / 0.08)",
-    brand: colors.arenaBlue,
+    muted: "#5c586c",
+    border: "rgb(18 16 26 / 0.1)",
+    brand: colors.titanBlue,
   },
 } as const;
 

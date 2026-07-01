@@ -1,10 +1,19 @@
-import { ArenaShell } from "@/components/layout/ArenaShell";
+"use client";
 
-export async function AuthPageLayout({ children }: { children: React.ReactNode }) {
+import { ArenaShellClient } from "@/components/layout/ArenaShellClient";
+import type { SiteAdSlots } from "@/lib/ad-utils";
+
+const AUTH_SLOTS: SiteAdSlots = {
+  topAd: null,
+  stickyFooterAd: null,
+  nativeCardAd: null,
+};
+
+export function AuthPageLayout({ children }: { children: React.ReactNode }) {
   return (
-    <ArenaShell auth>
+    <ArenaShellClient slots={AUTH_SLOTS} auth showAds={false}>
       <div id="fb-root" />
       <div className="arena-auth-shell py-3 sm:py-5">{children}</div>
-    </ArenaShell>
+    </ArenaShellClient>
   );
 }

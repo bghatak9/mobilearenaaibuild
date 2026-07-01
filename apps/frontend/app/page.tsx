@@ -7,9 +7,9 @@ import {
   getReviews,
   getActiveAdvertisements,
 } from "@/lib/api";
-import { pickAdForPlacement } from "@/lib/ad-utils";
 import AdUnit from "@/components/ads/AdUnit";
 import { ArenaShell } from "@/components/layout/ArenaShell";
+import { resolveSiteAdSlots } from "@/lib/ad-utils";
 import { HomeSpotlightGrid } from "@/components/home/arena/HomeSpotlightGrid";
 import { buildHomeSpotlight } from "@/lib/home-spotlight";
 import {
@@ -44,19 +44,16 @@ export default async function Home() {
 
   const [news, reviews, devices, upcomingDevices, ads, brandGroups] =
     await Promise.all([
-    safe(getNews()),
-    importedOnly ? Promise.resolve(null) : safe(getReviews()),
-    safe(getDevices()),
-    safe(getBulkUpcomingDevices()),
-    safe(getActiveAdvertisements()),
-    safe(getBrandsGrouped()),
-  ]);
+      safe(getNews()),
+      importedOnly ? Promise.resolve(null) : safe(getReviews()),
+      safe(getDevices()),
+      safe(getBulkUpcomingDevices()),
+      safe(getActiveAdvertisements()),
+      safe(getBrandsGrouped()),
+    ]);
 
   const adList = ads ?? [];
-  const midAd =
-    pickAdForPlacement(adList, "homepage-mid") ??
-    pickAdForPlacement(adList, "native-sponsored-card") ??
-    null;
+  const { nativeCardAd } = resolveSiteAdSlots(adList);
 
   const deviceList = devices ?? [];
   const upcomingList = upcomingDevices ?? [];
@@ -66,7 +63,7 @@ export default async function Home() {
   const spotlight = buildHomeSpotlight(deviceList, reviewList, upcomingList);
 
   return (
-    <ArenaShell>
+    <ArenaShell ads={adList}>
       <main className="space-y-14">
         <HomeSpotlightGrid data={spotlight} />
 
@@ -113,9 +110,9 @@ export default async function Home() {
         <hr className="arena-home-divider" />
         <EditorsArenaSection reviews={reviewList} news={newsList} />
 
-        {midAd ? (
-          <section aria-label="Sponsored">
-            <AdUnit ad={midAd} variant="card" />
+        {nativeCardAd ? (
+          <section aria-label="Sponsored" className="arena-home-section">
+            <AdUnit ad={nativeCardAd} />
           </section>
         ) : null}
 

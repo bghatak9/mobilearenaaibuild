@@ -11,7 +11,7 @@ import { DevicePricingPanel } from "@/components/phone/DevicePricingPanel";
 import { RecentDeviceTracker } from "@/components/phone/RecentDeviceTracker";
 import JsonLd from "@/components/seo/JsonLd";
 import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { absoluteUrl } from "@/lib/seo";
 import { getDeviceBySlug, type Device } from "@/lib/api";
 
@@ -119,8 +119,8 @@ export default async function PhoneDetailPage({
         ]}
       />
 
-      <div className="grid gap-8 lg:grid-cols-[380px_1fr]">
-        <GlassPanel className="p-4">
+      <div className="grid gap-8 lg:grid-cols-[minmax(0,380px)_1fr]">
+        <SpectrumPanel className="p-4">
           <div className="flex h-72 items-center justify-center overflow-hidden rounded-[20px] bg-gradient-to-br from-[var(--arena-blue)]/10 to-[var(--aurora-purple)]/10">
             {gallery[0]?.url ? (
               // eslint-disable-next-line @next/next/no-img-element
@@ -146,13 +146,13 @@ export default async function PhoneDetailPage({
               ))}
             </div>
           )}
-        </GlassPanel>
+        </SpectrumPanel>
 
         <div>
           <p className="text-xs font-bold uppercase tracking-widest text-[var(--electric-cyan)]">
             {device.brand?.name}
           </p>
-          <h1 className="mt-2 text-3xl font-extrabold text-[var(--text-primary)]">
+          <h1 className="mt-2 text-2xl font-extrabold text-[var(--text-primary)] sm:text-3xl">
             {device.name}
           </h1>
 
@@ -171,32 +171,32 @@ export default async function PhoneDetailPage({
             />
           </div>
 
-          <GlassPanel className="mt-8 p-6">
+          <SpectrumPanel className="mt-8 p-4 sm:p-6">
             <SpecsTable device={device} />
-          </GlassPanel>
+          </SpectrumPanel>
 
           {device.reviews && device.reviews.length > 0 && (
-            <GlassPanel className="mt-8 p-6">
+            <SpectrumPanel className="mt-8 p-4 sm:p-6">
               <h2 className="mb-3 text-xl font-bold text-[var(--text-primary)]">Reviews</h2>
               <ul className="space-y-2">
                 {device.reviews.map((r) => (
                   <li
                     key={r.id}
-                    className="flex items-center justify-between rounded-xl border border-white/5 bg-white/5 px-4 py-3"
+                    className="flex items-center justify-between gap-3 rounded-xl border border-white/5 bg-white/5 px-3 py-3 sm:px-4"
                   >
                     <Link
                       href={`/reviews/${r.slug}`}
-                      className="font-medium text-[var(--text-primary)] hover:text-[var(--electric-cyan)]"
+                      className="min-w-0 flex-1 break-words font-medium text-[var(--text-primary)] hover:text-[var(--electric-cyan)]"
                     >
                       {r.title}
                     </Link>
-                    <span className="text-sm text-[var(--premium-gold)]">
+                    <span className="shrink-0 text-sm text-[var(--premium-gold)]">
                       {r.score.toFixed(1)}/10
                     </span>
                   </li>
                 ))}
               </ul>
-            </GlassPanel>
+            </SpectrumPanel>
           )}
 
           <DevicePricingPanel

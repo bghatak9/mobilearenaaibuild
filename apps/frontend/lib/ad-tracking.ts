@@ -1,15 +1,19 @@
 import type { MouseEvent } from "react";
 
+import { apiPath } from "@/lib/api-base";
 import { API_URL } from "@/lib/api";
 import { getCachedVisitorCountryCode } from "@/lib/visitor-geo";
 
 const VISITOR_KEY = "ma_visitor_id";
 const IMPRESSION_SENT = new Set<string>();
 
-/** Public API base for href attributes — stable across SSR and hydration. */
-const PUBLIC_CLICK_API =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/^["']|["']$/g, "") ||
-  "http://localhost:4000";
+/** SSR-safe click URL — relative path works on every device/host. */
+export function getAdClickUrl(adId: number, placement?: string): string {
+  const params = new URLSearchParams();
+  if (placement) params.set("placement", placement);
+  const qs = params.toString();
+  return `${apiPath(`advertisements/click/${adId}`)}${qs ? `?${qs}` : ""}`;
+}
 
 export function getVisitorId(): string {
   if (typeof window === "undefined") return "";
@@ -24,18 +28,10 @@ export function getVisitorId(): string {
   return id;
 }
 
-/** SSR-safe click URL — omits client-only geo so hydration matches. */
-export function getAdClickUrl(adId: number, placement?: string): string {
-  const params = new URLSearchParams();
-  if (placement) params.set("placement", placement);
-  const qs = params.toString();
-  return `${PUBLIC_CLICK_API}/advertisements/click/${adId}${qs ? `?${qs}` : ""}`;
-}
-
 function withClientGeo(url: string): string {
   const countryCode = getCachedVisitorCountryCode();
   if (!countryCode) return url;
-  const parsed = new URL(url);
+  const parsed = new URL(url, window.location.origin);
   parsed.searchParams.set("countryCode", countryCode);
   return parsed.toString();
 }

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ArrowRight, Calendar, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
 
 import { ArenaCard } from "@/design-system/cards/ArenaCard";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   formatDeviceLaunchLabel,
   getUpcomingDevices,
@@ -86,9 +86,9 @@ export function TrendingArenaSection({ devices }: { devices: Device[] }) {
             />
           ))
         ) : (
-          <GlassPanel variant="accent" className="col-span-full p-10 text-center text-[var(--text-secondary)]">
+          <SpectrumPanel variant="accent" className="col-span-full p-10 text-center text-[var(--text-secondary)]">
             Trending devices appear here as the catalog grows.
-          </GlassPanel>
+          </SpectrumPanel>
         )}
       </div>
     </section>
@@ -123,9 +123,9 @@ export function EditorsChoiceSection({ devices }: { devices: Device[] }) {
             />
           ))
         ) : (
-          <GlassPanel variant="gold" className="col-span-full p-10 text-center text-[var(--text-secondary)]">
+          <SpectrumPanel variant="gold" className="col-span-full p-10 text-center text-[var(--text-secondary)]">
             Editor picks appear as reviews are published.
-          </GlassPanel>
+          </SpectrumPanel>
         )}
       </div>
     </section>
@@ -171,13 +171,13 @@ export function UpcomingDevicesSection({ devices }: { devices: Device[] }) {
             />
           ))
         ) : (
-          <GlassPanel
+          <SpectrumPanel
             variant="accent"
             className="col-span-full flex flex-col items-center gap-3 p-10 text-center text-[var(--text-secondary)]"
           >
             <Calendar size={28} className="text-[var(--electric-cyan)]" />
             <p>Upload upcoming devices via Admin → Bulk Upload to show launches here.</p>
-          </GlassPanel>
+          </SpectrumPanel>
         )}
       </div>
     </section>
@@ -192,7 +192,7 @@ export function AiRecommendationsSection({ devices }: { devices: Device[] }) {
         title="AI Device Recommendations"
         subtitle="Arena Labs — personalized picks based on trends"
       />
-      <GlassPanel variant="purple" className="grid gap-4 p-6 md:grid-cols-3">
+      <SpectrumPanel variant="purple" className="grid gap-4 p-6 md:grid-cols-3">
         {picks.map((d) => (
           <Link
             key={d.id}
@@ -219,7 +219,7 @@ export function AiRecommendationsSection({ devices }: { devices: Device[] }) {
             Sign in and browse devices to unlock AI recommendations.
           </p>
         )}
-      </GlassPanel>
+      </SpectrumPanel>
     </section>
   );
 }
@@ -238,7 +238,7 @@ export function CommunityStreamSection() {
         subtitle="Live participation across the Arena"
         href="/community"
       />
-      <GlassPanel variant="accent" className="overflow-hidden">
+      <SpectrumPanel variant="accent" className="overflow-hidden">
         {items.map((item, index) => (
           <div
             key={item.user + item.time}
@@ -258,7 +258,7 @@ export function CommunityStreamSection() {
             </div>
           </div>
         ))}
-      </GlassPanel>
+      </SpectrumPanel>
     </section>
   );
 }
@@ -272,7 +272,7 @@ export function LaunchTimelineSection() {
   return (
     <section aria-labelledby="launch-timeline" className="arena-home-section">
       <SectionHeader title="Upcoming Launch Timeline" subtitle="The release calendar" />
-      <GlassPanel variant="elevated" className="p-6">
+      <SpectrumPanel variant="elevated" className="p-6">
         <div className="relative ml-3 border-l-2 border-[var(--border-accent)] pl-8">
           {launches.map((l) => (
             <div key={l.name} className="relative mb-8 last:mb-0">
@@ -286,7 +286,7 @@ export function LaunchTimelineSection() {
             </div>
           ))}
         </div>
-      </GlassPanel>
+      </SpectrumPanel>
     </section>
   );
 }
@@ -345,7 +345,7 @@ export function ReviewsPollsSection({ reviews }: { reviews: Review[] }) {
   return (
     <section aria-labelledby="reviews-polls" className="arena-home-section">
       <SectionHeader title="User Reviews & Polls" href="/reviews" />
-      <GlassPanel variant="purple" className="p-6">
+      <SpectrumPanel variant="purple" className="p-6">
         <p className="text-sm font-medium text-[var(--text-secondary)]">
           Community poll · Which camera king wins in 2026?
         </p>
@@ -377,7 +377,7 @@ export function ReviewsPollsSection({ reviews }: { reviews: Review[] }) {
             Read latest review: {reviews[0].title}
           </Link>
         )}
-      </GlassPanel>
+      </SpectrumPanel>
     </section>
   );
 }
@@ -426,7 +426,7 @@ export function ArenaFooterEcosystem() {
       <div className="grid gap-8 md:grid-cols-4">
         <div className="md:col-span-2">
           <p className="text-2xl font-extrabold text-[var(--text-primary)]">
-            Mobile<span className="aurora-text">Arena</span>
+            Mobile<span className="spectrum-text">Arena</span>
           </p>
           <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--text-secondary)]">
             Discover. Compare. Decide. Together. A premium, community-driven
@@ -483,7 +483,7 @@ export function ArenaFooterEcosystem() {
         </div>
       </div>
       <p className="mt-10 text-center text-xs text-[var(--text-secondary)]">
-        © {new Date().getFullYear()} MobileArena · Aurora Glass Design System
+        © {new Date().getFullYear()} MobileArena · Titan Spectrum Design System
       </p>
     </footer>
   );

@@ -134,7 +134,7 @@ export function PhoneFinderSearch({
   }, [loadHistory]);
 
   useEffect(() => {
-    const mq = window.matchMedia("(max-width: 639px)");
+    const mq = window.matchMedia("(max-width: 1023px)");
     const update = () => setIsMobile(mq.matches);
     update();
     mq.addEventListener("change", update);

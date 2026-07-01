@@ -31,8 +31,9 @@ export function Breadcrumbs({ items, className }: BreadcrumbsProps) {
               {last || !item.href ? (
                 <span
                   className={cn(
+                    "min-w-0 max-w-full",
                     last
-                      ? "font-medium text-[var(--text-primary)]"
+                      ? "line-clamp-2 font-medium break-words text-[var(--text-primary)]"
                       : "text-[var(--text-secondary)]",
                   )}
                   aria-current={last ? "page" : undefined}

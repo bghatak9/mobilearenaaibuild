@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Skeleton } from "@/design-system/feedback/Skeleton";
 import {
   clearAllNotifications,
@@ -243,9 +243,9 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
 
   if (error) {
     return (
-      <GlassPanel className="p-8 text-center text-red-400">
+      <SpectrumPanel className="p-8 text-center text-red-400">
         {error}
-      </GlassPanel>
+      </SpectrumPanel>
     );
   }
 
@@ -334,7 +334,7 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
       )}
 
       {items.length === 0 ? (
-        <GlassPanel className="flex flex-col items-center px-6 py-14 text-center">
+        <SpectrumPanel className="flex flex-col items-center px-6 py-14 text-center">
           <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-2xl bg-gradient-to-br from-[var(--electric-cyan)]/20 to-[var(--aurora-purple)]/20">
             <Bell size={28} className="text-[var(--electric-cyan)]" />
           </div>
@@ -346,7 +346,7 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
               ? "No reply or alert notifications yet."
               : "No notifications yet. Replies, price alerts, and updates will show up here."}
           </p>
-        </GlassPanel>
+        </SpectrumPanel>
       ) : (
         <ul className="space-y-3">
           {items.map((n) => {
@@ -354,7 +354,7 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
             const Icon = meta.icon;
             return (
               <li key={n.id}>
-                <GlassPanel
+                <SpectrumPanel
                   className={`group relative overflow-hidden p-4 transition duration-200 sm:p-5 ${
                     !n.read
                       ? "border-[var(--electric-cyan)]/25 shadow-lg shadow-[var(--electric-cyan)]/5"
@@ -430,7 +430,7 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
                       </div>
                     </div>
                   </div>
-                </GlassPanel>
+                </SpectrumPanel>
               </li>
             );
           })}

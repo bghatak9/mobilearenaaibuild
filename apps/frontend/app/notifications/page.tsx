@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 
-import { ArenaShell } from "@/components/layout/ArenaShell";
+import { ClientArenaShell } from "@/components/layout/ClientArenaShell";
 import { NotificationsView } from "@/components/notifications/NotificationsView";
 import { ProfileLoading } from "@/components/profile/ProfileShell";
 import { useSiteAuth } from "@/lib/site-auth";
@@ -21,17 +21,17 @@ export default function NotificationsPage() {
 
   if (!ready || !user) {
     return (
-      <ArenaShell>
+      <ClientArenaShell>
         <ProfileLoading />
-      </ArenaShell>
+      </ClientArenaShell>
     );
   }
 
   return (
-    <ArenaShell>
+    <ClientArenaShell>
       <div className="mx-auto max-w-3xl">
         <NotificationsView />
       </div>
-    </ArenaShell>
+    </ClientArenaShell>
   );
 }

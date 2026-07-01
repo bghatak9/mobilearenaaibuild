@@ -7,6 +7,7 @@ import { SiteAuthProvider } from "@/lib/site-auth";
 import { ThemeProvider } from "@/lib/theme";
 import { ToastProvider } from "@/design-system/feedback/Toast";
 import CompareBar from "@/components/compare/CompareBar";
+import { MobileChromeSync } from "@/components/layout/MobileChromeSync";
 
 export default function Providers({
   children,
@@ -21,6 +22,7 @@ export default function Providers({
         <CatalogProvider importedOnly={importedOnly}>
           <SiteAuthProvider>
             <CompareProvider>
+              <MobileChromeSync />
               {children}
               <CompareBar />
             </CompareProvider>

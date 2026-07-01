@@ -32,7 +32,24 @@ export { DataTable } from "./data/DataTable";
 
 /* Phase 3+ — available but not wired into main layout yet */
 export { FloatingNav, trackRecentDevice } from "./navigation/FloatingNav";
-export { MobileBottomNav } from "./navigation/MobileBottomNav";
 export { AuroraHero } from "./animations/AuroraHero";
 export { ArenaCard } from "./cards/ArenaCard";
-export { GlassPanel } from "./glass/GlassPanel";
+export { SpectrumPanel } from "./panels/SpectrumPanel";
+export type { SpectrumPanelVariant } from "./panels/SpectrumPanel";
+
+/* Titan Spectrum */
+export {
+  TITAN_ACCENTS,
+  NAV_LINK_ACCENTS,
+  accentForNavHref,
+  accentForPathname,
+  type TitanAccent,
+} from "./titan-spectrum/category-accents";
+export {
+  SpectrumBatteryIcon,
+  SpectrumChipIcon,
+  SpectrumCompareIcon,
+  SpectrumGridIcon,
+  SpectrumLensIcon,
+  SpectrumSignalIcon,
+} from "./titan-spectrum/SpectrumIcons";

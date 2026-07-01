@@ -38,11 +38,11 @@ export function ProfileShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 lg:flex-row lg:items-start">
-      <aside className="w-full shrink-0 glass-panel p-4 lg:w-64 lg:sticky lg:top-36">
-        <p className="px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)]">
+      <aside className="w-full shrink-0 spectrum-panel p-4 lg:sticky lg:top-36 lg:w-64">
+        <p className="hidden px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] lg:block">
           👤 My Profile
         </p>
-        <nav className="mt-3 space-y-0.5">
+        <nav className="mt-0 flex gap-2 overflow-x-auto pb-1 lg:mt-3 lg:block lg:space-y-0.5 lg:overflow-visible">
           {PROFILE_NAV.map((item) => {
             const active = isActive(item.href);
             const count =
@@ -54,13 +54,13 @@ export function ProfileShell({ children }: { children: ReactNode }) {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition duration-150 ${
+                className={`flex shrink-0 items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm font-medium transition duration-150 lg:shrink lg:justify-between ${
                   active
                     ? "bg-[var(--arena-blue)]/20 text-[var(--electric-cyan)]"
-                    : "text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)]"
+                    : "bg-white/5 text-[var(--text-secondary)] hover:bg-white/5 hover:text-[var(--text-primary)] lg:bg-transparent"
                 }`}
               >
-                <span className="flex items-center gap-2">
+                <span className="flex items-center gap-2 whitespace-nowrap">
                   <Icon size={16} />
                   {item.label}
                 </span>
@@ -75,7 +75,7 @@ export function ProfileShell({ children }: { children: ReactNode }) {
           <button
             type="button"
             onClick={handleLogout}
-            className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50 dark:text-zinc-300 dark:hover:bg-zinc-800"
+            className="flex shrink-0 items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm font-medium whitespace-nowrap text-zinc-700 hover:bg-zinc-50 lg:w-full lg:bg-transparent dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <LogOut size={16} />
             Logout
@@ -112,7 +112,7 @@ export function ProfilePageHeader({
 
 export function ProfilePanel({ children }: { children: ReactNode }) {
   return (
-    <div className="glass-panel rounded-[20px] p-6">
+    <div className="spectrum-panel rounded-[24px] p-6">
       {children}
     </div>
   );

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { ThumbsUp, Trophy } from "lucide-react";
 
 import { Avatar } from "@/design-system/feedback/Avatar";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Button } from "@/design-system/buttons/Button";
 import {
   DEFAULT_CATEGORY_SCORES,
@@ -84,7 +84,7 @@ function ReviewCard({
   }
 
   return (
-    <GlassPanel className="p-5">
+    <SpectrumPanel className="p-5">
       <div className="flex gap-3">
         <Avatar src={review.user?.avatar} name={review.user?.name} size="sm" />
         <div className="min-w-0 flex-1">
@@ -198,7 +198,7 @@ function ReviewCard({
           )}
         </div>
       </div>
-    </GlassPanel>
+    </SpectrumPanel>
   );
 }
 
@@ -276,7 +276,7 @@ export function CommunityReviewsSection({
           owner badge · replies · top reviewer rankings
         </p>
 
-        <GlassPanel className="mb-6 p-5">
+        <SpectrumPanel className="mb-6 p-5">
           <h3 className="mb-4 font-bold text-[var(--text-primary)]">Write a review</h3>
           <div className="grid gap-4 md:grid-cols-2">
             <label className="block text-sm md:col-span-2">
@@ -368,10 +368,10 @@ export function CommunityReviewsSection({
           >
             Publish review
           </Button>
-        </GlassPanel>
+        </SpectrumPanel>
 
         {topReviewers.length > 0 && (
-          <GlassPanel className="mb-6 p-5">
+          <SpectrumPanel className="mb-6 p-5">
             <p className="mb-3 flex items-center gap-2 font-bold text-[var(--text-primary)]">
               <Trophy size={18} className="text-[var(--premium-gold)]" />
               🔥 Top reviewer rankings
@@ -391,7 +391,7 @@ export function CommunityReviewsSection({
                 </li>
               ))}
             </ol>
-          </GlassPanel>
+          </SpectrumPanel>
         )}
 
         <div className="space-y-4">
@@ -408,9 +408,9 @@ export function CommunityReviewsSection({
             />
           ))}
           {!reviews.length && (
-            <GlassPanel className="p-8 text-center text-[var(--text-secondary)]">
+            <SpectrumPanel className="p-8 text-center text-[var(--text-secondary)]">
               No community reviews yet. Be the first to review a phone.
-            </GlassPanel>
+            </SpectrumPanel>
           )}
         </div>
       </section>

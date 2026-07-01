@@ -15,7 +15,7 @@ import PhoneGrid from "@/components/phone/PhoneGrid";
 import { Button } from "@/design-system/buttons/Button";
 import { Skeleton } from "@/design-system/feedback/Skeleton";
 import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Modal } from "@/design-system/modals/Modal";
 import {
   applyPhoneFinderFilters,
@@ -356,7 +356,7 @@ export default function PhoneFinderPageInner() {
           ) : error ? (
             <p className="text-[var(--rose-alert)]">{error}</p>
           ) : filtered.length === 0 ? (
-            <GlassPanel className="p-10 text-center">
+            <SpectrumPanel className="p-10 text-center">
               <p className="font-semibold text-[var(--text-primary)]">
                 No phones match these filters
               </p>
@@ -371,7 +371,7 @@ export default function PhoneFinderPageInner() {
               >
                 Reset all filters
               </Button>
-            </GlassPanel>
+            </SpectrumPanel>
           ) : (
             <PhoneGrid
               devices={filtered}
@@ -436,6 +436,11 @@ export default function PhoneFinderPageInner() {
         onClose={() => setMobileFiltersOpen(false)}
         title="Phone Finder filters"
         size="lg"
+        footer={
+          <Button type="button" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
+            Show {loading ? "…" : filtered.length} phones
+          </Button>
+        }
       >
         {filterPanel}
       </Modal>

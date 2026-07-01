@@ -6,9 +6,10 @@ import { ArenaShell } from "@/components/layout/ArenaShell";
 import JsonLd from "@/components/seo/JsonLd";
 import InArticleContent from "@/components/ads/InArticleContent";
 import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
-import { GlassPanel } from "@/design-system/glass/GlassPanel";
+import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { absoluteUrl } from "@/lib/seo";
 import { getNewsBySlug, getActiveAdvertisements, type NewsArticle } from "@/lib/api";
+import { reservedAdIds, resolveSiteAdSlots } from "@/lib/ad-utils";
 
 function formatDate(value?: string | null): string {
   if (!value) return "";
@@ -75,6 +76,8 @@ export default async function NewsArticlePage({
   }
 
   const ads = await getActiveAdvertisements().catch(() => []);
+  const siteSlots = resolveSiteAdSlots(ads);
+  const reserved = reservedAdIds(siteSlots);
 
   const published = article.publishedAt ?? article.createdAt;
   const jsonLd = {
@@ -93,7 +96,7 @@ export default async function NewsArticlePage({
   };
 
   return (
-    <ArenaShell>
+    <ArenaShell ads={ads}>
       <JsonLd data={jsonLd} />
 
       <Breadcrumbs
@@ -105,7 +108,7 @@ export default async function NewsArticlePage({
         ]}
       />
 
-      <GlassPanel className="p-6 md:p-10">
+      <SpectrumPanel className="p-6 md:p-10">
         {article.featured && (
           <span className="mb-3 inline-block rounded-full bg-[var(--premium-gold)]/20 px-2 py-0.5 text-xs font-semibold text-[var(--premium-gold)]">
             Featured
@@ -131,9 +134,10 @@ export default async function NewsArticlePage({
         <InArticleContent
           content={article.content}
           ads={ads}
+          reservedAdIds={reserved}
           className="prose prose-invert mt-8 max-w-none prose-p:text-[var(--text-secondary)] prose-headings:text-[var(--text-primary)]"
         />
-      </GlassPanel>
+      </SpectrumPanel>
     </ArenaShell>
   );
 }
