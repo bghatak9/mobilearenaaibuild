@@ -76,10 +76,7 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 5,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#f4f2f8" },
-    { media: "(prefers-color-scheme: dark)", color: "#0d0c12" },
-  ],
+  themeColor: "#070B14",
 };
 
 export default function RootLayout({
@@ -92,7 +89,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
       suppressHydrationWarning
     >
       <body className="min-h-full min-h-[100dvh] flex flex-col bg-background text-foreground">

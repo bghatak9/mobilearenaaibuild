@@ -21,17 +21,40 @@ export function MobileChromeSync() {
 
     const measure = () => {
       const mobile = window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+      const desktop = window.matchMedia("(min-width: 1024px)").matches;
+      const header = document.getElementById("arena-site-header");
+
+      if (desktop) {
+        const compare = document.getElementById("arena-compare-bar");
+        const stickyAd = document.getElementById("arena-sticky-ad-bar");
+
+        html.style.setProperty("--arena-mobile-compare-h", "0px");
+        html.style.setProperty("--arena-mobile-sticky-ad-h", "0px");
+        html.style.setProperty("--arena-mobile-header-h", "0px");
+
+        const headerRect = header?.getBoundingClientRect();
+        const headerPad = headerRect
+          ? Math.ceil(headerRect.bottom + 12)
+          : 152;
+        html.style.setProperty("--arena-desktop-header-h", `${headerPad}px`);
+
+        html.setAttribute(
+          "data-compare-open",
+          items.length > 0 ? "true" : "false",
+        );
+        return;
+      }
 
       if (!mobile) {
         html.style.setProperty("--arena-mobile-compare-h", "0px");
         html.style.setProperty("--arena-mobile-header-h", "0px");
         html.style.setProperty("--arena-mobile-sticky-ad-h", "0px");
+        html.style.setProperty("--arena-desktop-header-h", "9.5rem");
         html.removeAttribute("data-compare-open");
         return;
       }
 
       const compare = document.getElementById("arena-compare-bar");
-      const header = document.getElementById("arena-site-header");
       const stickyAd = document.getElementById("arena-sticky-ad-bar");
 
       html.style.setProperty(
@@ -48,6 +71,7 @@ export function MobileChromeSync() {
         ? Math.ceil(headerRect.bottom + 8)
         : 72;
       html.style.setProperty("--arena-mobile-header-h", `${headerPad}px`);
+      html.style.setProperty("--arena-desktop-header-h", "9.5rem");
       html.setAttribute(
         "data-compare-open",
         items.length > 0 ? "true" : "false",
@@ -92,6 +116,7 @@ export function MobileChromeSync() {
       html.style.removeProperty("--arena-mobile-compare-h");
       html.style.removeProperty("--arena-mobile-header-h");
       html.style.removeProperty("--arena-mobile-sticky-ad-h");
+      html.style.removeProperty("--arena-desktop-header-h");
       html.removeAttribute("data-compare-open");
     };
   }, [items.length]);

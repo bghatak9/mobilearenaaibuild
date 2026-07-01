@@ -46,6 +46,11 @@ export {
   type TitanAccent,
 } from "./titan-spectrum/category-accents";
 export {
+  brandThemes,
+  brandAccent,
+  type BrandThemeKey,
+} from "./titan-spectrum/brand-themes";
+export {
   SpectrumBatteryIcon,
   SpectrumChipIcon,
   SpectrumCompareIcon,

@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { Bell, Heart, User } from "lucide-react";
 
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { cn } from "@/design-system/utils/cn";
 
 import { useSiteNavAccount } from "./use-site-nav-account";
@@ -28,10 +27,6 @@ export function SiteNavToolbar({ layout }: SiteNavToolbarProps) {
   if (layout === "mobile") {
     return (
       <>
-        <ThemeToggle
-          variant="nav"
-          className="arena-mobile-header-btn arena-mobile-header-theme"
-        />
         <Link
           href={notificationsHref}
           className="arena-mobile-header-btn"
@@ -55,7 +50,6 @@ export function SiteNavToolbar({ layout }: SiteNavToolbarProps) {
 
   return (
     <>
-      <ThemeToggle variant="nav" className="arena-floating-nav-icon arena-floating-nav-icon-theme" />
       <Link
         href={notificationsHref}
         className="arena-floating-nav-icon arena-floating-nav-icon-bell"

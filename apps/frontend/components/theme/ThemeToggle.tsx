@@ -26,7 +26,7 @@ export function ThemeToggle({
   showLabel = false,
   className = "",
 }: ThemeToggleProps) {
-  const { theme, toggleTheme } = useTheme();
+  const { theme, toggleTheme, ready } = useTheme();
   const isDark = theme === "dark";
 
   return (
@@ -36,10 +36,17 @@ export function ThemeToggle({
       aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
       title={isDark ? "Day mode" : "Night mode"}
       className={`inline-flex items-center gap-2 rounded p-0.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${VARIANT_CLASS[variant]} ${className}`}
-      suppressHydrationWarning
     >
-      {isDark ? <Sun size={18} /> : <Moon size={18} />}
-      {showLabel ? (
+      {ready ? (
+        isDark ? (
+          <Sun size={18} aria-hidden />
+        ) : (
+          <Moon size={18} aria-hidden />
+        )
+      ) : (
+        <span className="inline-block h-[18px] w-[18px] shrink-0" aria-hidden />
+      )}
+      {showLabel && ready ? (
         <span className="text-xs">{isDark ? "Day mode" : "Night mode"}</span>
       ) : null}
     </button>

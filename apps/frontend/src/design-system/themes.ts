@@ -1,30 +1,21 @@
 import { colors, cssColorVars } from "./colors";
 
-export type ThemeMode = "light" | "dark";
+/** Titan Spectrum v1.0 — dark luxury only */
+export type ThemeMode = "dark";
 
-/** Titan Spectrum — dark luxury is the signature Arena experience */
 export const themes = {
   dark: {
-    background: colors.darkSpace,
+    background: colors.bgPrimary,
     foreground: colors.textPrimary,
-    card: colors.surfaceCard,
+    card: colors.surface1,
     muted: colors.textSecondary,
-    border: "rgb(237 234 245 / 0.08)",
-    brand: colors.titanBlue,
-  },
-  light: {
-    background: "#f4f2f8",
-    foreground: "#12101a",
-    card: "#ffffff",
-    muted: "#5c586c",
-    border: "rgb(18 16 26 / 0.1)",
-    brand: colors.titanBlue,
+    border: "rgb(255 255 255 / 0.08)",
+    brand: colors.blue,
   },
 } as const;
 
 export const themeCssVars = {
   dark: { ...cssColorVars, ...themes.dark },
-  light: { ...cssColorVars, ...themes.light },
 } as const;
 
 export const STORAGE_KEY = "ma-theme";

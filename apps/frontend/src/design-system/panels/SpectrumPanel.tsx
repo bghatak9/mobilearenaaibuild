@@ -17,11 +17,11 @@ type SpectrumPanelProps = {
 };
 
 const variantClass: Record<SpectrumPanelVariant, string> = {
-  default: "spectrum-panel",
-  accent: "spectrum-panel spectrum-panel-accent",
-  purple: "spectrum-panel spectrum-panel-purple",
-  gold: "spectrum-panel spectrum-panel-gold",
-  elevated: "spectrum-panel spectrum-panel-elevated",
+  default: "spectrum-panel titan-card",
+  accent: "spectrum-panel titan-card spectrum-panel-accent",
+  purple: "spectrum-panel titan-card spectrum-panel-purple",
+  gold: "spectrum-panel titan-card spectrum-panel-gold",
+  elevated: "spectrum-panel titan-card spectrum-panel-elevated",
 };
 
 export function SpectrumPanel({

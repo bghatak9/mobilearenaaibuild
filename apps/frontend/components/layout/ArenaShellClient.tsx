@@ -48,8 +48,8 @@ export function ArenaShellClient({
       <div
         className={
           auth
-            ? "arena-mobile-main-pad mx-auto w-full min-w-0 max-w-[1120px] px-3 pb-8 sm:px-4 lg:pb-12 lg:pt-40"
-            : "arena-mobile-main-pad arena-mobile-content-pad mx-auto w-full min-w-0 max-w-[1120px] px-3 pb-8 sm:px-4 md:px-6 lg:px-4 lg:pb-12 lg:pt-40"
+            ? "arena-shell-container arena-mobile-main-pad mx-auto w-full min-w-0 pb-8 sm:pb-10"
+            : "arena-shell-container arena-mobile-main-pad arena-mobile-content-pad mx-auto w-full min-w-0 pb-8 sm:pb-10"
         }
       >
         {showAds && topAd ? (

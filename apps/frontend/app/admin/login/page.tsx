@@ -5,7 +5,6 @@ import { useState } from "react";
 
 import { GoogleSignInButton } from "@/components/auth/GoogleSignInButton";
 import { useSocialAuthAvailable } from "@/components/auth/SocialAuthBlock";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { adminGoogleSignIn, adminLogin } from "@/lib/api";
 import { useAdminAuth } from "@/lib/admin-auth";
 
@@ -51,12 +50,8 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-zinc-100 px-4 dark:bg-zinc-950">
-      <div className="absolute left-4 top-[max(1rem,env(safe-area-inset-top))]">
-        <ThemeToggle variant="light" showLabel />
-      </div>
-
-      <div className="w-full max-w-sm rounded-2xl border border-gray-200 bg-white p-8 shadow-xl dark:border-zinc-800 dark:bg-zinc-900">
+    <div className="relative flex min-h-screen items-center justify-center bg-zinc-950 px-4">
+      <div className="w-full max-w-sm rounded-2xl border border-zinc-800 bg-zinc-900 p-8 shadow-xl">
         <h1 className="text-2xl font-extrabold text-zinc-900 dark:text-zinc-100">
           Mobile<span className="text-red-600">Arena</span>
           <span className="ml-1 text-sm font-medium text-zinc-400">admin</span>

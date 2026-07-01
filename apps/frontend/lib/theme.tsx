@@ -10,61 +10,60 @@ import {
   type ReactNode,
 } from "react";
 
-export type Theme = "light" | "dark";
-
 import { DEFAULT_THEME, STORAGE_KEY } from "@/design-system/themes";
+
+/** Titan Spectrum — dark luxury only (no light / Aurora Glass mode). */
+export type Theme = "dark";
 
 type ThemeContextValue = {
   theme: Theme;
+  ready: boolean;
   setTheme: (theme: Theme) => void;
+  /** @deprecated Light mode removed — no-op for compatibility */
   toggleTheme: () => void;
 };
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function readStoredTheme(): Theme {
-  if (typeof window === "undefined") return DEFAULT_THEME;
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === "light" || stored === "dark") return stored;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
-    ? "dark"
-    : DEFAULT_THEME;
+  return DEFAULT_THEME;
 }
 
-export function applyTheme(theme: Theme) {
-  document.documentElement.classList.toggle("dark", theme === "dark");
-  document.documentElement.style.colorScheme = theme;
+export function applyTheme(_theme: Theme = DEFAULT_THEME) {
+  document.documentElement.classList.add("dark");
+  document.documentElement.classList.remove("light");
+  document.documentElement.style.colorScheme = "dark";
+  try {
+    localStorage.setItem(STORAGE_KEY, DEFAULT_THEME);
+  } catch {
+    /* ignore */
+  }
 }
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>(DEFAULT_THEME);
   const [ready, setReady] = useState(false);
 
   useLayoutEffect(() => {
-    const initial = readStoredTheme();
-    setThemeState(initial);
-    applyTheme(initial);
+    applyTheme();
     setReady(true);
   }, []);
 
   const setTheme = useCallback((next: Theme) => {
-    setThemeState(next);
-    localStorage.setItem(STORAGE_KEY, next);
     applyTheme(next);
   }, []);
 
   const toggleTheme = useCallback(() => {
-    setThemeState((current) => {
-      const next: Theme = current === "dark" ? "light" : "dark";
-      localStorage.setItem(STORAGE_KEY, next);
-      applyTheme(next);
-      return next;
-    });
+    applyTheme();
   }, []);
 
   const value = useMemo(
-    () => ({ theme: ready ? theme : DEFAULT_THEME, setTheme, toggleTheme }),
-    [ready, theme, setTheme, toggleTheme],
+    () => ({
+      theme: DEFAULT_THEME,
+      ready,
+      setTheme,
+      toggleTheme,
+    }),
+    [ready, setTheme, toggleTheme],
   );
 
   return (

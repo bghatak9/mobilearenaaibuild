@@ -1,5 +1,5 @@
 /**
- * Titan Spectrum — category-driven accent colors for navigation & sections.
+ * Titan Spectrum v1.0 — category-driven accent colors.
  */
 
 export type TitanAccent =
@@ -8,18 +8,42 @@ export type TitanAccent =
   | "cyan"
   | "green"
   | "orange"
-  | "pink";
+  | "pink"
+  | "red";
+
+export type GadgetCategory =
+  | "smartphone"
+  | "tablet"
+  | "laptop"
+  | "wearable"
+  | "audio"
+  | "camera"
+  | "gaming";
+
+export const GADGET_CATEGORY_ACCENTS: Record<
+  GadgetCategory,
+  { accent: string; label: string }
+> = {
+  smartphone: { accent: "#3B82F6", label: "Smartphones" },
+  tablet: { accent: "#8B5CF6", label: "Tablets" },
+  laptop: { accent: "#06B6D4", label: "Laptops" },
+  wearable: { accent: "#22C55E", label: "Wearables" },
+  audio: { accent: "#F59E0B", label: "Audio" },
+  camera: { accent: "#EC4899", label: "Cameras" },
+  gaming: { accent: "#EF4444", label: "Gaming" },
+};
 
 export const TITAN_ACCENTS: Record<
   TitanAccent,
   { label: string; cssVar: string; hex: string }
 > = {
-  blue: { label: "Blue", cssVar: "--titan-blue", hex: "#5B8AFF" },
-  purple: { label: "Purple", cssVar: "--titan-purple", hex: "#A67BFF" },
-  cyan: { label: "Cyan", cssVar: "--titan-cyan", hex: "#3DD9C8" },
-  green: { label: "Green", cssVar: "--titan-green", hex: "#4ADE80" },
-  orange: { label: "Orange", cssVar: "--titan-orange", hex: "#FFA04D" },
-  pink: { label: "Pink", cssVar: "--titan-pink", hex: "#FF7EB3" },
+  blue: { label: "Blue", cssVar: "--blue", hex: "#3B82F6" },
+  purple: { label: "Purple", cssVar: "--purple", hex: "#8B5CF6" },
+  cyan: { label: "Cyan", cssVar: "--cyan", hex: "#06B6D4" },
+  green: { label: "Green", cssVar: "--green", hex: "#22C55E" },
+  orange: { label: "Orange", cssVar: "--orange", hex: "#F59E0B" },
+  pink: { label: "Pink", cssVar: "--pink", hex: "#EC4899" },
+  red: { label: "Red", cssVar: "--red", hex: "#EF4444" },
 };
 
 /** Accent per main nav destination */
@@ -52,4 +76,17 @@ export function accentForPathname(pathname: string, search = ""): TitanAccent {
   if (pathname === "/phones" || pathname.startsWith("/phones/")) return "blue";
 
   return "cyan";
+}
+
+export function gadgetCategoryFromName(name?: string | null): GadgetCategory {
+  const n = (name ?? "").toLowerCase();
+  if (n.includes("tablet")) return "tablet";
+  if (n.includes("laptop") || n.includes("notebook")) return "laptop";
+  if (n.includes("watch") || n.includes("wearable") || n.includes("band"))
+    return "wearable";
+  if (n.includes("audio") || n.includes("earbud") || n.includes("headphone"))
+    return "audio";
+  if (n.includes("camera")) return "camera";
+  if (n.includes("gaming") || n.includes("console")) return "gaming";
+  return "smartphone";
 }

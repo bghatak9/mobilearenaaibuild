@@ -1,115 +1,169 @@
 /**
- * Titan Spectrum — MobileArena premium gadget specification design system
- * Dark luxury default · category-driven accents · WCAG AA contrast pairs
+ * Titan Spectrum Design System v1.0
+ * Dark luxury only — no light / Aurora Glass mode
  */
 
-:root {
-  /* ── Titan Spectrum core palette ── */
-  --titan-void: #0d0c12;
-  --titan-surface: #16141f;
-  --titan-elevated: #1e1c2a;
-  --titan-muted: #252333;
-  --titan-blue: #5b8aff;
-  --titan-purple: #a67bff;
-  --titan-cyan: #3dd9c8;
-  --titan-green: #4ade80;
-  --titan-orange: #ffa04d;
-  --titan-pink: #ff7eb3;
+:root,
+html {
+  /* ── Backgrounds ── */
+  --bg-primary: #070b14;
+  --bg-secondary: #0f172a;
+  --bg-tertiary: #172033;
 
-  /* ── Legacy aliases (incremental migration) ── */
-  --arena-blue: var(--titan-blue);
-  --electric-cyan: var(--titan-cyan);
-  --aurora-purple: var(--titan-purple);
-  --emerald-success: var(--titan-green);
-  --premium-gold: var(--titan-orange);
-  --rose-alert: var(--titan-pink);
-  --dark-space: var(--titan-void);
-  --surface-card: var(--titan-surface);
-  --surface-elevated: var(--titan-elevated);
-  --surface-glow: var(--titan-muted);
+  /* ── Surfaces ── */
+  --surface-1: #111827;
+  --surface-2: #1b2538;
+  --surface-3: #24324a;
 
-  /* ── Typography colors ── */
-  --text-primary: #edeaf5;
-  --text-secondary: #9b97ad;
-  --text-muted: #6f6b82;
+  /* ── Text (WCAG AA on dark surfaces) ── */
+  --text-primary: #f8fafc;
+  --text-secondary: #cbd5e1;
+  --text-muted: #94a3b8;
 
   /* ── Borders ── */
-  --border-subtle: rgb(237 234 245 / 0.08);
-  --border-muted: rgb(237 234 245 / 0.05);
-  --border-accent: color-mix(in srgb, var(--titan-cyan) 38%, transparent);
-  --border-accent-purple: color-mix(in srgb, var(--titan-purple) 38%, transparent);
-  --border-accent-gold: color-mix(in srgb, var(--titan-orange) 38%, transparent);
+  --border-soft: rgb(255 255 255 / 0.08);
+  --border-strong: rgb(255 255 255 / 0.15);
+  --border-subtle: var(--border-soft);
+  --border-muted: rgb(255 255 255 / 0.05);
 
-  /* ── Layout tokens ── */
+  /* ── Brand accents ── */
+  --blue: #3b82f6;
+  --purple: #8b5cf6;
+  --cyan: #06b6d4;
+  --green: #22c55e;
+  --orange: #f59e0b;
+  --red: #ef4444;
+  --pink: #ec4899;
+
+  /* ── Status ── */
+  --success: #22c55e;
+  --warning: #f59e0b;
+  --danger: #ef4444;
+  --info: #3b82f6;
+
+  /* ── Titan aliases ── */
+  --titan-blue: var(--blue);
+  --titan-purple: var(--purple);
+  --titan-cyan: var(--cyan);
+  --titan-green: var(--green);
+  --titan-orange: var(--orange);
+  --titan-pink: var(--pink);
+  --titan-red: var(--red);
+  --titan-void: var(--bg-primary);
+  --titan-surface: var(--surface-1);
+  --titan-elevated: var(--surface-2);
+  --titan-muted: var(--surface-3);
+
+  /* ── Legacy aliases ── */
+  --arena-blue: var(--blue);
+  --electric-cyan: var(--cyan);
+  --aurora-purple: var(--purple);
+  --emerald-success: var(--green);
+  --premium-gold: var(--orange);
+  --rose-alert: var(--pink);
+  --dark-space: var(--bg-primary);
+  --surface-card: var(--surface-1);
+  --surface-elevated: var(--surface-2);
+  --surface-glow: var(--surface-3);
+
+  /* ── Layout ── */
   --titan-radius-card: 24px;
-  --titan-radius-control: 12px;
-  --titan-shadow-ambient: 0 12px 40px rgb(0 0 0 / 0.38);
-  --titan-shadow-ambient-hover: 0 20px 56px rgb(0 0 0 / 0.48);
-  --titan-shadow-accent: 0 8px 32px color-mix(in srgb, var(--titan-accent, var(--titan-cyan)) 22%, transparent);
+  --titan-radius-button: 14px;
+  --titan-radius-modal: 28px;
+  --titan-radius-image: 20px;
+  --titan-shadow-ambient: 0 4px 24px rgb(0 0 0 / 0.28);
+  --titan-shadow-ambient-hover: 0 8px 32px rgb(0 0 0 / 0.32);
   --card-shadow: var(--titan-shadow-ambient);
   --card-shadow-hover: var(--titan-shadow-ambient-hover);
 
-  /* ── Gradients (subtle animated via CSS) ── */
-  --gradient-arena: linear-gradient(135deg, var(--titan-blue), var(--titan-cyan));
-  --gradient-aurora: linear-gradient(135deg, var(--titan-cyan), var(--titan-purple));
-  --gradient-gold: linear-gradient(135deg, var(--titan-orange), #ffc078);
-  --gradient-spectrum: linear-gradient(
-    120deg,
-    var(--titan-blue),
-    var(--titan-purple),
-    var(--titan-cyan),
-    var(--titan-green),
-    var(--titan-orange),
-    var(--titan-pink)
+  /* ── Premium gradients (heroes, CTAs, badges only) ── */
+  --gradient-ocean-core: linear-gradient(135deg, #0f172a 0%, #111827 50%, #1e3a8a 100%);
+  --gradient-cosmic-purple: linear-gradient(135deg, #111827 0%, #4c1d95 50%, #2563eb 100%);
+  --gradient-neon-spectrum: linear-gradient(
+    90deg,
+    #3b82f6,
+    #8b5cf6,
+    #ec4899,
+    #f59e0b,
+    #22c55e
   );
+  --gradient-arena: linear-gradient(90deg, var(--blue), var(--purple));
+  --gradient-aurora: linear-gradient(135deg, var(--cyan), var(--purple));
+  --gradient-gold: linear-gradient(90deg, var(--orange), #fb923c);
+  --gradient-spectrum: var(--gradient-neon-spectrum);
+  --gradient-primary-btn: linear-gradient(90deg, #3b82f6, #8b5cf6);
+  --gradient-success-btn: linear-gradient(90deg, #10b981, #22c55e);
+  --gradient-warning-btn: linear-gradient(90deg, #f59e0b, #fb923c);
 
-  /* ── Active category accent (set per-route) ── */
-  --titan-accent: var(--titan-cyan);
+  --border-accent: color-mix(in srgb, var(--cyan) 38%, transparent);
+  --border-accent-purple: color-mix(in srgb, var(--purple) 38%, transparent);
+  --border-accent-gold: color-mix(in srgb, var(--orange) 38%, transparent);
+
+  /* ── Active accent (route / category) ── */
+  --titan-accent: var(--cyan);
   --titan-accent-soft: color-mix(in srgb, var(--titan-accent) 14%, transparent);
   --titan-accent-border: color-mix(in srgb, var(--titan-accent) 36%, transparent);
+  --titan-accent-glow: color-mix(in srgb, var(--titan-accent) 12%, transparent);
 
-  /* ── Semantic app tokens ── */
-  --background: var(--titan-void);
+  /* ── App semantic tokens ── */
+  --background: var(--bg-primary);
   --foreground: var(--text-primary);
-  --card: var(--titan-surface);
+  --card: var(--surface-1);
   --muted: var(--text-secondary);
-  --border: var(--border-subtle);
-  --ma-brand: var(--titan-blue);
-  --ma-brand-hover: #7aa0ff;
+  --border: var(--border-soft);
+  --ma-brand: var(--blue);
+  --ma-brand-hover: #60a5fa;
+
+  /* ── Layout shell (header + content align) ── */
+  --arena-content-max: 1120px;
+  --arena-content-gutter: clamp(0.75rem, 2.5vw, 1.5rem);
+  --arena-desktop-header-h: 9.5rem;
+
   color-scheme: dark;
 }
 
-html:not(.dark) {
-  --titan-void: #f4f2f8;
-  --titan-surface: #ffffff;
-  --titan-elevated: #f8f6fc;
-  --titan-muted: #ece9f4;
-  --text-primary: #12101a;
-  --text-secondary: #5c586c;
-  --text-muted: #8a8699;
-  --border-subtle: rgb(18 16 26 / 0.1);
-  --border-muted: rgb(18 16 26 / 0.06);
-  --border-accent: color-mix(in srgb, var(--titan-cyan) 45%, transparent);
-  --border-accent-purple: color-mix(in srgb, var(--titan-purple) 42%, transparent);
-  --border-accent-gold: color-mix(in srgb, var(--titan-orange) 45%, transparent);
-  --titan-shadow-ambient: 0 12px 40px rgb(18 16 26 / 0.08);
-  --titan-shadow-ambient-hover: 0 20px 56px rgb(18 16 26 / 0.12);
-  --background: var(--titan-void);
-  --foreground: var(--text-primary);
-  --card: var(--titan-surface);
-  --muted: var(--text-secondary);
-  --border: var(--border-subtle);
-  color-scheme: light;
+/* Gadget category accents */
+.category-smartphone,
+[data-titan-category="smartphone"] {
+  --titan-accent: #3b82f6;
+  --accent: #3b82f6;
+}
+.category-tablet,
+[data-titan-category="tablet"] {
+  --titan-accent: #8b5cf6;
+  --accent: #8b5cf6;
+}
+.category-laptop,
+[data-titan-category="laptop"] {
+  --titan-accent: #06b6d4;
+  --accent: #06b6d4;
+}
+.category-wearable,
+[data-titan-category="wearable"] {
+  --titan-accent: #22c55e;
+  --accent: #22c55e;
+}
+.category-audio,
+[data-titan-category="audio"] {
+  --titan-accent: #f59e0b;
+  --accent: #f59e0b;
+}
+.category-camera,
+[data-titan-category="camera"] {
+  --titan-accent: #ec4899;
+  --accent: #ec4899;
+}
+.category-gaming,
+[data-titan-category="gaming"] {
+  --titan-accent: #ef4444;
+  --accent: #ef4444;
 }
 
-html.dark {
-  color-scheme: dark;
-}
-
-/* Category accent modifiers */
-[data-titan-accent="blue"] { --titan-accent: var(--titan-blue); }
-[data-titan-accent="purple"] { --titan-accent: var(--titan-purple); }
-[data-titan-accent="cyan"] { --titan-accent: var(--titan-cyan); }
-[data-titan-accent="green"] { --titan-accent: var(--titan-green); }
-[data-titan-accent="orange"] { --titan-accent: var(--titan-orange); }
-[data-titan-accent="pink"] { --titan-accent: var(--titan-pink); }
+/* Nav route accents */
+[data-titan-accent="blue"] { --titan-accent: var(--blue); --accent: var(--blue); }
+[data-titan-accent="purple"] { --titan-accent: var(--purple); --accent: var(--purple); }
+[data-titan-accent="cyan"] { --titan-accent: var(--cyan); --accent: var(--cyan); }
+[data-titan-accent="green"] { --titan-accent: var(--green); --accent: var(--green); }
+[data-titan-accent="orange"] { --titan-accent: var(--orange); --accent: var(--orange); }
+[data-titan-accent="pink"] { --titan-accent: var(--pink); --accent: var(--pink); }
+[data-titan-accent="red"] { --titan-accent: var(--red); --accent: var(--red); }

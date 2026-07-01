@@ -25,7 +25,6 @@ import type { LucideIcon } from "lucide-react";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth";
 import { getNavForRole, type AdminNavItemDef } from "@/lib/admin-nav";
 import { roleLabel } from "@/lib/roles";
-import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 import "./admin.css";
 
@@ -73,7 +72,7 @@ function Shell({ children }: { children: ReactNode }) {
 
   if (!ready) {
     return (
-      <div className="admin-shell flex min-h-screen items-center justify-center bg-gray-100 text-gray-500 dark:bg-zinc-950 dark:text-zinc-400">
+      <div className="admin-shell flex min-h-screen items-center justify-center bg-zinc-950 text-zinc-400">
         Loading…
       </div>
     );
@@ -89,7 +88,7 @@ function Shell({ children }: { children: ReactNode }) {
   const visibleNav = getNavForRole(user?.role);
 
   return (
-    <div className="admin-shell flex min-h-screen bg-gray-100 text-zinc-900 dark:bg-zinc-950 dark:text-zinc-100">
+    <div className="admin-shell flex min-h-screen bg-zinc-950 text-zinc-100">
       {sidebarOpen ? (
         <button
           type="button"
@@ -104,9 +103,6 @@ function Shell({ children }: { children: ReactNode }) {
           sidebarOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
         }`}
       >
-        <div className="flex items-center border-b border-gray-200 px-4 py-3 dark:border-zinc-800">
-          <ThemeToggle variant="admin" showLabel />
-        </div>
 
         <Link
           href={visibleNav[0]?.href ?? "/admin"}

@@ -97,12 +97,14 @@ export function FloatingNav() {
       <header
         id="arena-site-header"
         className={cn(
-          "fixed inset-x-0 top-0 z-50 w-full max-w-[100vw] overflow-hidden lg:inset-x-auto lg:left-1/2 lg:w-[min(1120px,calc(100%-1.5rem))] lg:max-w-none lg:overflow-visible lg:-translate-x-1/2",
+          "arena-shell-header fixed inset-x-0 top-0 z-50 w-full max-w-[100vw]",
+          "lg:left-1/2 lg:w-[min(var(--arena-content-max),calc(100%-2*var(--arena-content-gutter)))] lg:max-w-[var(--arena-content-max)]",
+          "lg:-translate-x-1/2",
           "transition-[transform,opacity,top] duration-300 ease-out",
           hidden
-            ? "lg:pointer-events-none lg:-translate-y-[calc(100%+1.5rem)] lg:opacity-0"
+            ? "lg:pointer-events-none lg:-translate-y-[calc(100%+1rem)] lg:opacity-0"
             : "lg:translate-y-0 lg:opacity-100",
-          scrolled ? "lg:top-2" : "lg:top-4",
+          scrolled ? "lg:top-2" : "lg:top-[var(--arena-content-gutter)]",
         )}
       >
         <div className="arena-mobile-site-header lg:hidden">
@@ -113,29 +115,26 @@ export function FloatingNav() {
           <MobileCategoryNav />
         </div>
 
-        <div className="hidden lg:block">
-          <div className="arena-gradient-ring arena-gradient-ring-compact arena-gradient-ring-nav">
+        <div className="hidden w-full min-w-0 lg:block">
+          <div className="arena-gradient-ring arena-gradient-ring-compact arena-gradient-ring-nav w-full min-w-0">
             <nav
               className={cn(
-                "arena-floating-nav arena-gradient-ring-inner flex flex-col gap-3 px-4 backdrop-blur-xl transition-all duration-200 md:px-6",
-                scrolled ? "py-2" : "py-4",
+                "arena-floating-nav arena-gradient-ring-inner flex w-full min-w-0 flex-col gap-2.5 px-3 transition-all duration-200 lg:px-4 xl:px-5",
+                scrolled ? "py-2.5" : "py-3.5",
               )}
               aria-label="Main"
             >
-              <div className="arena-floating-nav-glow" aria-hidden>
-                <span className="arena-floating-nav-orb arena-floating-nav-orb-cyan" />
-                <span className="arena-floating-nav-orb arena-floating-nav-orb-purple" />
-                <span className="arena-floating-nav-orb arena-floating-nav-orb-blue" />
-              </div>
-
-              <div className="relative z-[2] flex items-center gap-3">
-                <Link href="/" className="arena-floating-nav-logo shrink-0">
+              <div className="relative z-[2] flex w-full min-w-0 flex-wrap items-center gap-2 lg:gap-3">
+                <Link
+                  href="/"
+                  className="arena-floating-nav-logo shrink-0"
+                >
                   <span className="arena-floating-nav-logo-mobile">Mobile</span>
                   <span className="arena-floating-nav-logo-arena">Arena</span>
                 </Link>
 
-                <div className="arena-floating-nav-search-wrap">
-                  <div className="arena-floating-nav-search">
+                <div className="arena-floating-nav-search-wrap min-w-0 flex-1 basis-[12rem]">
+                  <div className="arena-floating-nav-search min-w-0">
                     <button
                       type="button"
                       onClick={() => openSearch()}
@@ -156,7 +155,7 @@ export function FloatingNav() {
                   </div>
                 </div>
 
-                <div className="arena-floating-nav-toolbar">
+                <div className="arena-floating-nav-toolbar shrink-0">
                   <SiteNavToolbar layout="desktop" />
                 </div>
               </div>
@@ -168,7 +167,7 @@ export function FloatingNav() {
                     href={link.href}
                     data-titan-accent={accentForNavHref(link.href)}
                     className={cn(
-                      "arena-floating-nav-link rounded-full px-3 py-1.5 text-xs font-semibold uppercase tracking-wide",
+                      "arena-floating-nav-link",
                       isSiteNavLinkActive(link.href, pathname, search) &&
                         "arena-floating-nav-link-active",
                     )}

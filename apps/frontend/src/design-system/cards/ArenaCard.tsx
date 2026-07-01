@@ -69,12 +69,10 @@ export function ArenaCard({
 
   return (
     <motion.article
-      whileHover={{ y: -6, scale: 1.01 }}
-      transition={{ duration: 0.2, ease: [0.4, 0, 0.2, 1] }}
-      className="arena-card arena-device-card group relative overflow-hidden rounded-[22px] bg-[var(--surface-card)]/95 p-4 backdrop-blur-xl"
+      whileHover={{ y: -2 }}
+      transition={{ duration: 0.18, ease: "easeOut" }}
+      className="arena-card arena-device-card titan-card group relative overflow-hidden p-4"
     >
-      <div className="pointer-events-none absolute -right-8 -top-8 h-32 w-32 rounded-full bg-[var(--electric-cyan)]/20 blur-3xl transition duration-200 group-hover:bg-[var(--aurora-purple)]/30" />
-
       <div className="mb-3 flex flex-wrap items-center gap-2">
         {badge && (
           <span className="arena-badge inline-flex items-center gap-1">
@@ -86,7 +84,7 @@ export function ArenaCard({
       </div>
 
       <Link href={href} className="block">
-        <div className="relative mb-4 flex h-40 items-center justify-center overflow-hidden rounded-[18px] border border-[var(--border-muted)] bg-gradient-to-br from-[var(--arena-blue)]/15 via-[var(--surface-glow)] to-[var(--aurora-purple)]/15">
+        <div className="relative mb-4 flex h-40 items-center justify-center overflow-hidden rounded-[var(--titan-radius-image)] border border-[var(--border-soft)] bg-[var(--bg-secondary)]">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -95,7 +93,9 @@ export function ArenaCard({
               className="h-full w-full object-contain p-4 transition duration-200 group-hover:scale-105"
             />
           ) : (
-            <span className="text-4xl opacity-40">📱</span>
+            <span className="text-3xl opacity-25" aria-hidden>
+              📱
+            </span>
           )}
           <div className="absolute inset-0 flex items-end bg-gradient-to-t from-[var(--dark-space)]/90 via-transparent to-transparent p-3 opacity-0 transition duration-200 group-hover:opacity-100">
             <p className="text-xs text-[var(--text-secondary)]">
@@ -104,17 +104,15 @@ export function ArenaCard({
           </div>
         </div>
 
-        <h3 className="text-lg font-bold text-[var(--text-primary)]">{title}</h3>
+        <h3 className="text-base font-semibold leading-snug text-[var(--text-primary)]">{title}</h3>
         {subtitle && (
           <p className="mt-1 text-sm text-[var(--text-secondary)]">{subtitle}</p>
         )}
         {chip && (
-          <p className="mt-2 inline-block rounded-full bg-white/5 px-2 py-0.5 text-xs text-[var(--electric-cyan)]">
-            {chip}
-          </p>
+          <span className="titan-chip mt-2 text-[var(--text-secondary)]">{chip}</span>
         )}
         {price && (
-          <p className="mt-3 text-xl font-extrabold text-[var(--premium-gold)]">
+          <p className="titan-mono mt-3 text-lg font-semibold text-[var(--text-primary)]">
             {price}
           </p>
         )}
@@ -138,7 +136,7 @@ export function ArenaCard({
           onClick={() =>
             toggle({ id: deviceId, slug, name: deviceName ?? String(title) })
           }
-          className={`arena-btn-ghost flex-1 text-xs ${inCompare ? "text-[var(--electric-cyan)]" : ""}`}
+          className={`arena-btn-ghost flex-1 text-xs ${inCompare ? "text-[var(--blue)]" : ""}`}
           aria-pressed={inCompare}
         >
           <Scale size={12} className="mr-1 inline" />
@@ -148,7 +146,7 @@ export function ArenaCard({
           type="button"
           disabled={wishlistLoading}
           onClick={handleWishlist}
-          className={`arena-btn-ghost flex-1 text-xs ${inWishlist ? "text-[var(--electric-cyan)]" : ""}`}
+          className={`arena-btn-ghost flex-1 text-xs ${inWishlist ? "text-[var(--blue)]" : ""}`}
           title="Add to wishlist with price alerts"
         >
           {inWishlist ? (

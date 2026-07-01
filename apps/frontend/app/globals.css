@@ -36,8 +36,8 @@ html {
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--bg-primary);
+  color: var(--text-primary);
   font-family: var(--font-inter), system-ui, sans-serif;
   overflow-x: clip;
   min-height: 100%;
@@ -82,6 +82,7 @@ body {
   --arena-mobile-compare-h: 0px;
   --arena-mobile-header-h: 0px;
   --arena-mobile-sticky-ad-h: 0px;
+  --arena-desktop-header-h: 9.5rem;
 }
 
 .arena-mobile-bottom-offset {
@@ -104,7 +105,7 @@ body {
 
 @media (min-width: 1024px) {
   .arena-mobile-main-pad {
-    padding-top: 10rem;
+    padding-top: calc(var(--arena-desktop-header-h, 9.5rem) + 0.75rem);
   }
 
   .arena-mobile-content-pad {
@@ -1913,3 +1914,126 @@ html:not(.dark) .arena-auth-brand {
     transition: none !important;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════
+   Titan Spectrum v1.0 — professional cascade overrides
+   ═══════════════════════════════════════════════════════════ */
+
+.arena-floating-nav,
+html.dark .arena-floating-nav,
+html:not(.dark) .arena-floating-nav {
+  background: var(--surface-1) !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 20px !important;
+  box-shadow: var(--titan-shadow-ambient) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.arena-floating-nav::before {
+  display: none !important;
+}
+
+.arena-gradient-ring-nav {
+  padding: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+
+.arena-floating-nav-search,
+html.dark .arena-floating-nav-search,
+html:not(.dark) .arena-floating-nav-search {
+  background: var(--bg-secondary) !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+}
+
+.arena-floating-nav-search-wrap {
+  background: transparent !important;
+  padding: 0 !important;
+  box-shadow: none !important;
+}
+
+.arena-floating-nav-links,
+html.dark .arena-floating-nav-links,
+html:not(.dark) .arena-floating-nav-links {
+  background: transparent !important;
+  border: none !important;
+  border-top: 1px solid var(--border-soft) !important;
+  box-shadow: none !important;
+}
+
+.arena-floating-nav-link {
+  text-transform: none !important;
+  letter-spacing: 0.01em !important;
+  font-weight: 500 !important;
+}
+
+.arena-floating-nav-link:hover,
+html:not(.dark) .arena-floating-nav-link:hover {
+  color: var(--text-primary) !important;
+  background: var(--surface-2) !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.arena-floating-nav-link-active,
+html:not(.dark) .arena-floating-nav-link-active {
+  color: var(--text-primary) !important;
+  background: var(--surface-2) !important;
+  background-image: none !important;
+  box-shadow: inset 0 0 0 1px var(--titan-accent-border) !important;
+  font-weight: 600 !important;
+}
+
+.arena-floating-nav-logo-arena,
+.arena-mobile-header-logo-arena {
+  background: none !important;
+  color: var(--blue) !important;
+  animation: none !important;
+  -webkit-background-clip: unset !important;
+  background-clip: unset !important;
+}
+
+.spectrum-page-bg,
+.aurora-page-bg,
+html:not(.dark) .spectrum-page-bg,
+html:not(.dark) .aurora-page-bg {
+  background:
+    radial-gradient(ellipse 70% 45% at 50% -20%, rgb(59 130 246 / 0.06), transparent 55%),
+    var(--bg-primary) !important;
+}
+
+.arena-floating-nav-orb,
+.arena-floating-nav-glow {
+  display: none !important;
+}
+
+.arena-btn-primary {
+  border-radius: var(--titan-radius-button) !important;
+  background: var(--blue) !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+.arena-btn-primary:hover {
+  background: #2563eb !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+
+.arena-device-card {
+  background: var(--surface-1) !important;
+  border: 1px solid var(--border-soft) !important;
+  border-radius: var(--titan-radius-card) !important;
+  backdrop-filter: none !important;
+}
+
+.arena-auth-card {
+  background: var(--surface-1) !important;
+  border-radius: var(--titan-radius-card) !important;
+}
+
+
