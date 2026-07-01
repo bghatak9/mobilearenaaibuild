@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { adminLogin } from "@/lib/api";
 import { useAdminAuth } from "@/lib/admin-auth";
+import { Button, Card, Input, TitanLogo } from "@mobilearena/ui";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -29,55 +30,56 @@ export default function AdminLoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-zinc-950 px-4">
-      <form
-        onSubmit={handleSubmit}
-        className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl"
-      >
-        <h1 className="text-2xl font-extrabold text-zinc-900">
-          Mobile<span className="text-red-600">Arena</span>
-          <span className="ml-1 text-sm font-medium text-zinc-400">admin</span>
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">Sign in to manage content.</p>
+    <div className="flex min-h-screen items-center justify-center bg-bg-primary px-4">
+      <Card className="w-full max-w-sm p-8 hover:transform-none hover:shadow-card">
+        <div className="flex items-center gap-2 titan-display text-2xl">
+          <TitanLogo className="h-8 w-8" />
+          Mobile<span className="text-blue">Arena</span>
+          <span className="ml-1 text-sm font-medium text-text-muted">admin</span>
+        </div>
+        <p className="mt-1 text-sm text-text-muted">Sign in to manage content.</p>
 
         {error && (
-          <p className="mt-4 rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">
+          <p className="mt-4 rounded-[var(--radius-button)] border border-danger/30 bg-surface-2 px-3 py-2 text-sm text-danger">
             {error}
           </p>
         )}
 
-        <label className="mt-5 block text-sm font-medium text-gray-700">
-          Email
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
-            placeholder="superadmin@mobilearena.com"
-          />
-        </label>
+        <form onSubmit={handleSubmit}>
+          <label className="mt-5 block text-sm font-medium text-text-secondary">
+            Email
+            <Input
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1"
+              placeholder="superadmin@mobilearena.com"
+            />
+          </label>
 
-        <label className="mt-4 block text-sm font-medium text-gray-700">
-          Password
-          <input
-            type="password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm outline-none focus:border-red-500"
-            placeholder="••••••••"
-          />
-        </label>
+          <label className="mt-4 block text-sm font-medium text-text-secondary">
+            Password
+            <Input
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="mt-1"
+              placeholder="••••••••"
+            />
+          </label>
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="mt-6 w-full rounded-lg bg-red-600 py-2.5 font-semibold text-white transition hover:bg-red-500 disabled:opacity-60"
-        >
-          {loading ? "Signing in…" : "Sign in"}
-        </button>
-      </form>
+          <Button
+            type="submit"
+            variant="primary"
+            disabled={loading}
+            className="mt-6 w-full"
+          >
+            {loading ? "Signing in…" : "Sign in"}
+          </Button>
+        </form>
+      </Card>
     </div>
   );
 }

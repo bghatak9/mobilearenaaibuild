@@ -12,15 +12,7 @@ import {
   type NewsArticle,
   type Review,
 } from "@/lib/api";
-
-const GRADIENTS = [
-  "bg-gradient-to-br from-teal-600 to-emerald-800",
-  "bg-gradient-to-br from-rose-600 to-red-900",
-  "bg-gradient-to-br from-amber-500 to-orange-700",
-  "bg-gradient-to-br from-indigo-600 to-violet-900",
-  "bg-gradient-to-br from-sky-600 to-blue-900",
-  "bg-gradient-to-br from-fuchsia-600 to-purple-900",
-];
+import { Button, Container, HERO_GRADIENTS } from "@mobilearena/ui";
 
 type Item = {
   href: string;
@@ -82,100 +74,96 @@ export default async function Home() {
   const bottom = rest.slice(2, 5);
 
   return (
-    <div className="min-h-screen bg-gray-100 pb-24">
+    <div className="min-h-screen bg-bg-primary pb-24">
       <Header />
 
-      <main className="mx-auto max-w-[1100px] px-4 py-5">
-        {/* Ad */}
-        <div className="mb-5">
-          <p className="mb-1 text-center text-[10px] uppercase tracking-widest text-gray-400">
-            Advertisement
-          </p>
-          <div className="flex h-24 items-center justify-center rounded border border-gray-200 bg-white text-sm text-gray-300">
-            Ad
-          </div>
-        </div>
-
-        {/* Finder · Hero · Reviews */}
-        <div className="grid gap-4 lg:grid-cols-[230px_1fr_330px]">
-          <PhoneFinderBox />
-
-          <div>
-            {hero ? (
-              <FeatureCard
-                size="hero"
-                href={hero.href}
-                title={hero.title}
-                meta={hero.meta}
-                image={hero.image}
-                gradient={GRADIENTS[0]}
-              />
-            ) : (
-              <div className="flex h-[300px] items-center justify-center rounded-md border border-gray-200 bg-white text-gray-400">
-                No featured content yet
-              </div>
-            )}
+      <main>
+        <Container className="py-5">
+          <div className="mb-5">
+            <p className="mb-1 text-center text-[10px] uppercase tracking-widest text-text-muted">
+              Advertisement
+            </p>
+            <div className="flex h-24 items-center justify-center rounded-[var(--radius-card)] border border-border-soft bg-surface-1 text-sm text-text-muted">
+              Ad
+            </div>
           </div>
 
-          <div className="flex flex-col gap-4">
-            {rightCol.length > 0 ? (
-              rightCol.map((item, i) => (
+          <div className="grid gap-4 lg:grid-cols-[230px_1fr_330px]">
+            <PhoneFinderBox />
+
+            <div>
+              {hero ? (
+                <FeatureCard
+                  size="hero"
+                  href={hero.href}
+                  title={hero.title}
+                  meta={hero.meta}
+                  image={hero.image}
+                  gradient={HERO_GRADIENTS[0]}
+                  premium
+                />
+              ) : (
+                <div className="flex h-[300px] items-center justify-center rounded-[var(--radius-card)] border border-border-soft bg-surface-1 text-text-muted">
+                  No featured content yet
+                </div>
+              )}
+            </div>
+
+            <div className="flex flex-col gap-4">
+              {rightCol.length > 0 ? (
+                rightCol.map((item, i) => (
+                  <FeatureCard
+                    key={item.href}
+                    size="md"
+                    href={item.href}
+                    title={item.title}
+                    meta={item.meta}
+                    image={item.image}
+                    gradient={HERO_GRADIENTS[(i + 1) % HERO_GRADIENTS.length]}
+                  />
+                ))
+              ) : (
+                <div className="flex h-[150px] items-center justify-center rounded-[var(--radius-card)] border border-border-soft bg-surface-1 text-sm text-text-muted">
+                  More reviews soon
+                </div>
+              )}
+              <Link
+                href="/reviews"
+                className="rounded-[var(--radius-button)] border border-border-soft bg-surface-1 py-2 text-center text-xs font-semibold text-text-secondary transition hover:text-blue"
+              >
+                ALL REVIEWS
+              </Link>
+            </div>
+          </div>
+
+          <div className="mt-5 grid gap-4 lg:grid-cols-4">
+            <div className="titan-gradient-cosmic flex h-[220px] flex-col items-start justify-center gap-3 rounded-[var(--radius-card)] p-5">
+              <span className="titan-badge-premium">Advertisement</span>
+              <p className="titan-display text-xl text-text-primary">
+                Smooth-sailing through 20+ apps.
+              </p>
+              <Button variant="primary">Buy now</Button>
+            </div>
+
+            {bottom.length > 0 ? (
+              bottom.map((item, i) => (
                 <FeatureCard
                   key={item.href}
-                  size="md"
+                  size="sm"
                   href={item.href}
                   title={item.title}
                   meta={item.meta}
                   image={item.image}
-                  gradient={GRADIENTS[(i + 1) % GRADIENTS.length]}
+                  gradient={HERO_GRADIENTS[(i + 2) % HERO_GRADIENTS.length]}
                 />
               ))
             ) : (
-              <div className="flex h-[150px] items-center justify-center rounded-md border border-gray-200 bg-white text-sm text-gray-400">
-                More reviews soon
+              <div className="col-span-3 flex h-[220px] items-center justify-center rounded-[var(--radius-card)] border border-border-soft bg-surface-1 text-sm text-text-muted">
+                More stories soon
               </div>
             )}
-            <Link
-              href="/reviews"
-              className="rounded border border-gray-200 bg-white py-2 text-center text-xs font-semibold text-zinc-600 hover:text-red-600"
-            >
-              ALL REVIEWS
-            </Link>
           </div>
-        </div>
-
-        {/* Ad banner · News cards */}
-        <div className="mt-5 grid gap-4 lg:grid-cols-4">
-          <div className="flex h-[220px] flex-col items-start justify-center gap-3 rounded-md bg-gradient-to-br from-amber-300 to-yellow-200 p-5">
-            <span className="text-[10px] uppercase text-amber-700">
-              Advertisement
-            </span>
-            <p className="text-xl font-extrabold text-amber-900">
-              Smooth-sailing through 20+ apps.
-            </p>
-            <span className="rounded bg-red-600 px-4 py-1.5 text-sm font-semibold text-white">
-              Buy now
-            </span>
-          </div>
-
-          {bottom.length > 0 ? (
-            bottom.map((item, i) => (
-              <FeatureCard
-                key={item.href}
-                size="sm"
-                href={item.href}
-                title={item.title}
-                meta={item.meta}
-                image={item.image}
-                gradient={GRADIENTS[(i + 3) % GRADIENTS.length]}
-              />
-            ))
-          ) : (
-            <div className="col-span-3 flex h-[220px] items-center justify-center rounded-md border border-gray-200 bg-white text-sm text-gray-400">
-              More stories soon
-            </div>
-          )}
-        </div>
+        </Container>
       </main>
 
       <Footer />

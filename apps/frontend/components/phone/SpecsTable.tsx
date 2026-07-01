@@ -1,7 +1,5 @@
 import type { Device } from "@/lib/api";
-
-type Row = { label: string; value: string | null | undefined };
-type Section = { title: string; rows: Row[] };
+import { SpecTable, type SpecSection } from "@mobilearena/ui";
 
 function yesNo(value: boolean | null | undefined): string | null {
   if (value === null || value === undefined) return null;
@@ -13,7 +11,7 @@ export default function SpecsTable({ device }: { device: Device }) {
     ? Math.max(...device.cameras.map((c) => c.megapixel))
     : null;
 
-  const sections: Section[] = [
+  const sections: SpecSection[] = [
     {
       title: "General",
       rows: [
@@ -107,35 +105,9 @@ export default function SpecsTable({ device }: { device: Device }) {
   ];
 
   return (
-    <div className="space-y-6">
-      {sections
-        .map((s) => ({
-          ...s,
-          rows: s.rows.filter((r) => r.value != null && r.value !== ""),
-        }))
-        .filter((s) => s.rows.length > 0)
-        .map((section) => (
-          <div
-            key={section.title}
-            className="overflow-hidden rounded-2xl border border-gray-200 bg-white"
-          >
-            <h3 className="border-b border-gray-100 bg-gray-50 px-4 py-3 font-semibold text-gray-900">
-              {section.title}
-            </h3>
-            <table className="w-full text-sm">
-              <tbody>
-                {section.rows.map((row) => (
-                  <tr key={row.label} className="border-b border-gray-100 last:border-0">
-                    <td className="w-1/3 px-4 py-3 font-medium text-gray-500">
-                      {row.label}
-                    </td>
-                    <td className="px-4 py-3 text-gray-900">{row.value}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ))}
-    </div>
+    <SpecTable
+      sections={sections}
+      categorySlug={device.category?.slug ?? device.category?.name}
+    />
   );
 }

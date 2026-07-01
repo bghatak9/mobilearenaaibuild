@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { MessageSquare, Clock } from "lucide-react";
+import { Badge, cn, titanGradients } from "@mobilearena/ui";
 
 export type FeatureCardProps = {
   href: string;
@@ -9,6 +10,7 @@ export type FeatureCardProps = {
   image?: string | null;
   gradient?: string;
   size?: "hero" | "md" | "sm";
+  premium?: boolean;
 };
 
 const HEIGHTS: Record<NonNullable<FeatureCardProps["size"]>, string> = {
@@ -23,46 +25,59 @@ export default function FeatureCard({
   meta,
   comments,
   image,
-  gradient = "bg-gradient-to-br from-zinc-700 to-zinc-900",
+  gradient = titanGradients.ocean,
   size = "sm",
+  premium = false,
 }: FeatureCardProps) {
   return (
     <Link
       href={href}
-      className={`group relative block overflow-hidden rounded-md ${HEIGHTS[size]}`}
+      className={cn(
+        "group relative flex flex-col overflow-hidden rounded-[var(--radius-card)] border border-border-soft bg-surface-1 shadow-card transition hover:-translate-y-1 hover:shadow-card-hover",
+        HEIGHTS[size],
+      )}
     >
-      {image ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={image}
-          alt={title}
-          className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105"
-        />
-      ) : (
-        <div className={`absolute inset-0 ${gradient}`} />
-      )}
+      <div className="relative min-h-0 flex-1 overflow-hidden">
+        {image ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={image}
+            alt={title}
+            className="absolute inset-0 h-full w-full object-cover transition group-hover:scale-105"
+          />
+        ) : (
+          <div className={cn("absolute inset-0", gradient)} />
+        )}
 
-      <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/5" />
+        {premium && (
+          <Badge premium className="absolute right-3 top-3">
+            Premium
+          </Badge>
+        )}
 
-      {meta && (
-        <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
-          <Clock size={12} /> {meta}
-        </span>
-      )}
+        {meta && (
+          <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] border border-border-soft bg-surface-2 px-2 py-1 text-[11px] font-medium text-text-primary">
+            <Clock size={12} /> {meta}
+          </span>
+        )}
 
-      {comments != null && (
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded bg-black/55 px-2 py-1 text-[11px] font-medium text-white">
-          <MessageSquare size={12} /> {comments}
-        </span>
-      )}
+        {comments != null && (
+          <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-[var(--radius-chip)] border border-border-soft bg-surface-2 px-2 py-1 text-[11px] font-medium text-text-primary">
+            <MessageSquare size={12} /> {comments}
+          </span>
+        )}
+      </div>
 
-      <h3
-        className={`absolute bottom-0 left-0 right-0 p-4 font-bold leading-tight text-white ${
-          size === "hero" ? "text-2xl md:text-3xl" : "text-base"
-        }`}
-      >
-        {title}
-      </h3>
+      <div className="border-t border-border-soft bg-bg-primary px-4 py-3">
+        <h3
+          className={cn(
+            "titan-display leading-tight text-text-primary",
+            size === "hero" ? "text-2xl md:text-3xl" : "text-base",
+          )}
+        >
+          {title}
+        </h3>
+      </div>
     </Link>
   );
 }

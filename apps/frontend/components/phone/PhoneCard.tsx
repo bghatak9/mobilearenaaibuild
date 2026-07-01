@@ -4,14 +4,28 @@ import Link from "next/link";
 import { Star } from "lucide-react";
 import type { Device } from "@/lib/api";
 import CompareButton from "@/components/compare/CompareButton";
+import {
+  Card,
+  Chip,
+  getBrandColor,
+  getCategoryClass,
+  cn,
+} from "@mobilearena/ui";
 
 export default function PhoneCard({ device }: { device: Device }) {
   const image = device.images?.[0]?.url ?? null;
+  const brandColor = getBrandColor(device.brand?.name);
+  const categoryClass = getCategoryClass(
+    device.category?.slug ?? device.category?.name,
+  );
 
   return (
-    <div className="flex flex-col rounded-2xl border border-gray-200 bg-white p-4 shadow-sm transition hover:shadow-md">
+    <Card
+      interactive
+      className={cn("flex flex-col p-4", categoryClass)}
+    >
       <Link href={`/phones/${device.slug}`} className="block">
-        <div className="mb-3 flex h-36 items-center justify-center overflow-hidden rounded-xl bg-gray-100">
+        <div className="mb-3 flex h-36 items-center justify-center overflow-hidden rounded-[var(--radius-image)] bg-surface-2">
           {image ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -20,25 +34,31 @@ export default function PhoneCard({ device }: { device: Device }) {
               className="h-full w-full object-contain"
             />
           ) : (
-            <span className="text-sm text-gray-400">No image</span>
+            <span className="text-sm text-text-muted">No image</span>
           )}
         </div>
 
-        <h2 className="text-base font-semibold text-gray-900">
+        <h2 className="text-base font-semibold text-text-primary">
           {device.name}
         </h2>
-        <p className="text-sm text-gray-500">
-          {device.brand?.name ?? "Unknown brand"}
+        <p className="text-sm text-text-muted">
+          <span style={{ color: brandColor }}>{device.brand?.name ?? "Unknown brand"}</span>
         </p>
 
-        <div className="mt-2 flex items-center justify-between">
-          <span className="font-semibold text-emerald-600">
+        {device.category?.name && (
+          <Chip accent="var(--accent)" className="mt-2">
+            {device.category.name}
+          </Chip>
+        )}
+
+        <div className="mt-3 flex items-center justify-between">
+          <span className="titan-mono font-semibold text-green">
             {device.price != null ? `$${device.price}` : "—"}
           </span>
           {device.rating != null && (
-            <span className="inline-flex items-center gap-1 text-sm text-amber-500">
-              <Star size={14} className="fill-amber-400 stroke-amber-400" />
-              {device.rating.toFixed(1)}
+            <span className="inline-flex items-center gap-1 text-sm text-orange">
+              <Star size={14} className="fill-orange stroke-orange" />
+              <span className="titan-mono">{device.rating.toFixed(1)}</span>
             </span>
           )}
         </div>
@@ -50,6 +70,6 @@ export default function PhoneCard({ device }: { device: Device }) {
           className="w-full"
         />
       </div>
-    </div>
+    </Card>
   );
 }

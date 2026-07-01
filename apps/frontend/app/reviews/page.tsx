@@ -4,6 +4,7 @@ import { Star } from "lucide-react";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { getReviews, type Review } from "@/lib/api";
+import { Card, Container } from "@mobilearena/ui";
 
 export default async function ReviewsPage() {
   let reviews: Review[] = [];
@@ -15,42 +16,45 @@ export default async function ReviewsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 pb-24">
+    <div className="min-h-screen bg-bg-primary pb-24">
       <Header />
 
-      <section className="mx-auto max-w-5xl px-5 py-8">
-        <h1 className="mb-8 text-3xl font-bold text-gray-900">Reviews</h1>
+      <section>
+        <Container className="py-8">
+          <h1 className="titan-display mb-8 text-3xl">Reviews</h1>
 
-        {error ? (
-          <p className="text-red-500">Couldn&apos;t load reviews. Is the API running?</p>
-        ) : reviews.length === 0 ? (
-          <p className="text-gray-500">No reviews published yet.</p>
-        ) : (
-          <div className="space-y-4">
-            {reviews.map((review) => (
-              <Link
-                key={review.id}
-                href={`/reviews/${review.slug}`}
-                className="flex items-center justify-between gap-4 rounded-2xl border border-gray-200 bg-white p-5 transition hover:shadow-md"
-              >
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900">
-                    {review.title}
-                  </h2>
-                  {review.device && (
-                    <p className="text-sm text-gray-500">
-                      {review.device.name}
-                    </p>
-                  )}
-                </div>
-                <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-amber-50 px-3 py-1 font-semibold text-amber-600">
-                  <Star size={15} className="fill-amber-400 stroke-amber-400" />
-                  {review.score.toFixed(1)}
-                </span>
-              </Link>
-            ))}
-          </div>
-        )}
+          {error ? (
+            <p className="text-danger">Couldn&apos;t load reviews. Is the API running?</p>
+          ) : reviews.length === 0 ? (
+            <p className="text-text-muted">No reviews published yet.</p>
+          ) : (
+            <div className="space-y-4">
+              {reviews.map((review) => (
+                <Link key={review.id} href={`/reviews/${review.slug}`}>
+                  <Card
+                    interactive
+                    className="flex items-center justify-between gap-4 p-5"
+                  >
+                    <div>
+                      <h2 className="text-lg font-semibold text-text-primary">
+                        {review.title}
+                      </h2>
+                      {review.device && (
+                        <p className="text-sm text-text-muted">
+                          {review.device.name}
+                        </p>
+                      )}
+                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-[var(--radius-chip)] bg-surface-2 px-3 py-1 font-semibold text-orange">
+                      <Star size={15} className="fill-orange stroke-orange" />
+                      <span className="titan-mono">{review.score.toFixed(1)}</span>
+                    </span>
+                  </Card>
+                </Link>
+              ))}
+            </div>
+          )}
+        </Container>
       </section>
 
       <Footer />
