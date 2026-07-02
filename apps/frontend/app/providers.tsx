@@ -1,6 +1,8 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 import { CatalogProvider } from "@/lib/catalog-context";
 import { CompareProvider } from "@/lib/compare-context";
 import { SiteAuthProvider } from "@/lib/site-auth";
@@ -10,6 +12,13 @@ import CompareBar from "@/components/compare/CompareBar";
 import { MobileChromeSync } from "@/components/layout/MobileChromeSync";
 import { PublicSiteChrome } from "@/components/layout/PublicSiteChrome";
 
+function clearStuckBodyScrollLock() {
+  document.body.style.overflow = "";
+  document.body.style.position = "";
+  document.body.style.top = "";
+  document.body.style.width = "";
+}
+
 export default function Providers({
   children,
   importedOnly = false,
@@ -17,6 +26,17 @@ export default function Providers({
   children: ReactNode;
   importedOnly?: boolean;
 }) {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    clearStuckBodyScrollLock();
+  }, [pathname]);
+
+  useEffect(() => {
+    clearStuckBodyScrollLock();
+    return clearStuckBodyScrollLock;
+  }, []);
+
   return (
     <ThemeProvider>
       <ToastProvider>

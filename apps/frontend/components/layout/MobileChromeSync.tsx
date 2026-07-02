@@ -237,7 +237,15 @@ export function MobileChromeSync() {
     };
 
     const onNavigate = () => {
+      expandedHeaderBottomRef.current = 0;
+      html.removeAttribute("data-site-header-hidden");
       pinHeaderChrome(NAV_PIN_MS);
+      scheduleAfterHeaderTransition();
+    };
+
+    const onChromeChange = () => {
+      schedule();
+      scheduleAfterHeaderTransition();
     };
 
     const onHeaderInteractionEvent = () => {
@@ -302,7 +310,7 @@ export function MobileChromeSync() {
     document.addEventListener("click", onHeaderInteraction, { capture: true });
     document.addEventListener("focusin", onHeaderInteraction, { capture: true });
     window.addEventListener("arena:navigate", onNavigate);
-    window.addEventListener("arena:header-chrome-change", onNavigate);
+    window.addEventListener("arena:header-chrome-change", onChromeChange);
     window.addEventListener("arena:header-interaction", onHeaderInteractionEvent);
 
     schedule();
@@ -322,7 +330,7 @@ export function MobileChromeSync() {
       document.removeEventListener("click", onHeaderInteraction, true);
       document.removeEventListener("focusin", onHeaderInteraction, true);
       window.removeEventListener("arena:navigate", onNavigate);
-      window.removeEventListener("arena:header-chrome-change", onNavigate);
+      window.removeEventListener("arena:header-chrome-change", onChromeChange);
       window.removeEventListener("arena:header-interaction", onHeaderInteractionEvent);
       html.removeAttribute("data-header-pinned");
       html.style.removeProperty("--arena-mobile-compare-h");

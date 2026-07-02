@@ -11,12 +11,16 @@ const REVEAL_AT_Y = 32;
 const HIDE_AFTER_Y = 56;
 const DELTA_THRESHOLD = 2;
 const HEADER_INTERACTION_MS = 1200;
-const HEADER_SELECTOR = "#arena-site-header";
+const TOP_CHROME_SELECTOR = "#arena-site-header, #arena-top-ad-bar";
 const HEADER_HOVER_SELECTOR = "#arena-site-header, #arena-top-ad-bar";
 
 function readScrollY(): number {
   const el = document.scrollingElement ?? document.documentElement;
-  return Math.max(0, el.scrollTop || window.scrollY || 0);
+  const viewportY =
+    typeof window !== "undefined" && window.visualViewport
+      ? window.visualViewport.pageTop
+      : 0;
+  return Math.max(0, el.scrollTop || window.scrollY || viewportY || 0);
 }
 
 function chromeActive(): boolean {
@@ -26,13 +30,14 @@ function chromeActive(): boolean {
   );
 }
 
-function isHeaderTarget(target: EventTarget | null): boolean {
+function isChromeTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Node)) return false;
-  return Boolean((target as Element).closest?.(HEADER_SELECTOR));
+  return Boolean((target as Element).closest?.(TOP_CHROME_SELECTOR));
 }
 
 /**
- * Scrolling down the page hides the header and top ad; scrolling up reveals them.
+ * Finger swipe up / scroll down the page hides the header and top ad.
+ * Finger swipe down / scroll back up reveals them.
  * Header/ad taps and hover keep chrome visible.
  */
 export function useScrollHideHeader() {
@@ -41,6 +46,7 @@ export function useScrollHideHeader() {
   const lastY = useRef(0);
   const hiddenRef = useRef(false);
   const headerInteractionUntilRef = useRef(0);
+  const touchStartYRef = useRef<number | null>(null);
 
   useEffect(() => {
     hiddenRef.current = headerHidden;
@@ -56,6 +62,8 @@ export function useScrollHideHeader() {
       const root = document.documentElement;
       if (nextHidden) {
         root.setAttribute("data-site-header-hidden", "true");
+        root.removeAttribute("data-header-pinned");
+        root.removeAttribute("data-header-interacting");
       } else {
         root.removeAttribute("data-site-header-hidden");
       }
@@ -64,6 +72,11 @@ export function useScrollHideHeader() {
 
     const headerInteractionActive = () =>
       Date.now() < headerInteractionUntilRef.current;
+
+    const scrollHideBlocked = () =>
+      !chromeActive() ||
+      headerInteractionActive() ||
+      document.documentElement.hasAttribute("data-header-hovered");
 
     const setHeaderHovered = (hovered: boolean) => {
       if (hovered) {
@@ -100,49 +113,78 @@ export function useScrollHideHeader() {
       setHeaderHovered(false);
     };
 
-    const onScroll = () => {
-      const y = readScrollY();
-
-      setScrolled(y > 20);
-
-      if (!chromeActive()) {
-        sync(false);
-        lastY.current = y;
+    const applyScrollDelta = (delta: number, y: number) => {
+      if (scrollHideBlocked()) {
+        if (!chromeActive()) sync(false);
         return;
       }
-
-      if (headerInteractionActive()) {
-        sync(false);
-        lastY.current = y;
-        return;
-      }
-
-      if (document.documentElement.hasAttribute("data-header-hovered")) {
-        sync(false);
-        lastY.current = y;
-        return;
-      }
-
-      const delta = y - lastY.current;
 
       if (y <= REVEAL_AT_Y) {
         sync(false);
       } else if (delta > DELTA_THRESHOLD && y > HIDE_AFTER_Y) {
+        // Swipe up / read down → hide header + top ad
         sync(true);
       } else if (delta < -DELTA_THRESHOLD) {
+        // Swipe down / scroll back up → reveal header + top ad
         sync(false);
       }
+    };
 
+    const onScroll = () => {
+      const y = readScrollY();
+      setScrolled(y > 20);
+
+      if (scrollHideBlocked()) {
+        if (!chromeActive()) sync(false);
+        lastY.current = y;
+        return;
+      }
+
+      applyScrollDelta(y - lastY.current, y);
+      lastY.current = y;
+    };
+
+    const onTouchStart = (event: TouchEvent) => {
+      if (event.touches.length !== 1) {
+        touchStartYRef.current = null;
+        return;
+      }
+      touchStartYRef.current = event.touches[0].clientY;
+    };
+
+    const onTouchMove = (event: TouchEvent) => {
+      const startY = touchStartYRef.current;
+      if (startY == null || event.touches.length !== 1 || scrollHideBlocked()) return;
+
+      const currentY = event.touches[0].clientY;
+      const fingerDelta = startY - currentY;
+      if (Math.abs(fingerDelta) < 6) return;
+
+      const y = readScrollY();
+      applyScrollDelta(fingerDelta, y);
+      lastY.current = y;
+      touchStartYRef.current = currentY;
+    };
+
+    const onTouchEnd = () => {
+      touchStartYRef.current = null;
+    };
+
+    const onWheel = (event: WheelEvent) => {
+      if (scrollHideBlocked()) return;
+      const y = readScrollY();
+      applyScrollDelta(event.deltaY, y);
       lastY.current = y;
     };
 
     const onHeaderInteraction = (event: Event) => {
-      if (!isHeaderTarget(event.target)) return;
+      if (!isChromeTarget(event.target)) return;
       pinHeader();
     };
 
     const onNavigate = () => {
-      pinHeader();
+      lastY.current = readScrollY();
+      sync(false);
     };
 
     const clearInteractingAttr = () => {
@@ -172,12 +214,16 @@ export function useScrollHideHeader() {
 
     onScroll();
     window.addEventListener("scroll", onScroll, { passive: true });
+    document.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("wheel", onWheel, { passive: true });
+    document.addEventListener("touchstart", onTouchStart, { passive: true });
+    document.addEventListener("touchmove", onTouchMove, { passive: true });
+    document.addEventListener("touchend", onTouchEnd, { passive: true });
+    document.addEventListener("touchcancel", onTouchEnd, { passive: true });
+    window.visualViewport?.addEventListener("scroll", onScroll);
+    window.visualViewport?.addEventListener("resize", onScroll);
     window.addEventListener("arena:navigate", onNavigate);
     document.addEventListener("pointerdown", onHeaderInteraction, {
-      passive: true,
-      capture: true,
-    });
-    document.addEventListener("touchstart", onHeaderInteraction, {
       passive: true,
       capture: true,
     });
@@ -195,9 +241,16 @@ export function useScrollHideHeader() {
         delete node.dataset.arenaHoverBound;
       }
       window.removeEventListener("scroll", onScroll);
+      document.removeEventListener("scroll", onScroll);
+      window.removeEventListener("wheel", onWheel);
+      document.removeEventListener("touchstart", onTouchStart);
+      document.removeEventListener("touchmove", onTouchMove);
+      document.removeEventListener("touchend", onTouchEnd);
+      document.removeEventListener("touchcancel", onTouchEnd);
+      window.visualViewport?.removeEventListener("scroll", onScroll);
+      window.visualViewport?.removeEventListener("resize", onScroll);
       window.removeEventListener("arena:navigate", onNavigate);
       document.removeEventListener("pointerdown", onHeaderInteraction, true);
-      document.removeEventListener("touchstart", onHeaderInteraction, true);
       document.removeEventListener("click", onHeaderInteraction, true);
       document.removeEventListener("focusin", onHeaderInteraction, true);
       document.documentElement.removeAttribute("data-header-interacting");
