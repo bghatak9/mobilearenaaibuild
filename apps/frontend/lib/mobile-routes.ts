@@ -20,3 +20,17 @@ export function isAdminRoute(pathname: string): boolean {
 export function hideMobileChrome(pathname: string): boolean {
   return isAuthRoute(pathname) || isAdminRoute(pathname);
 }
+
+/** Public pages without any ad slots. */
+export const AD_FREE_ROUTES = [
+  "/contact",
+  "/privacy",
+  "/terms",
+  "/community-guidelines",
+] as const;
+
+export function isAdFreeRoute(pathname: string): boolean {
+  return AD_FREE_ROUTES.some(
+    (route) => pathname === route || pathname.startsWith(`${route}/`),
+  );
+}

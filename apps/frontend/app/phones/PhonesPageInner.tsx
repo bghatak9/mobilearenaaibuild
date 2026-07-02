@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 
 import PhoneGrid from "@/components/phone/PhoneGrid";
 import BrandFilter from "@/components/filters/BrandFilter";
+import { SiteNavSwipeHint } from "@/components/navigation/SiteNavSwipeHint";
 import { Button } from "@/design-system/buttons/Button";
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Modal } from "@/design-system/modals/Modal";
@@ -18,6 +19,7 @@ import {
   resolveBrandCatalog,
   type BrandCategoryGroup,
 } from "@/lib/brand-categories";
+import { getTrendingArenaDevices } from "@/features/phone-finder/device-utils";
 
 type Sort = "newest" | "price-asc" | "price-desc" | "rating";
 
@@ -31,6 +33,11 @@ export default function PhonesPageInner() {
   const upcomingOnly =
     searchParams.get("upcoming") === "1" ||
     searchParams.get("upcoming") === "true";
+  const trendingOnly =
+    searchParams.get("trending") === "1" ||
+    searchParams.get("trending") === "true";
+
+  const catalogOnly = !favoritesOnly && !upcomingOnly && !trendingOnly;
 
   const [all, setAll] = useState<Device[]>([]);
   const [brandGroups, setBrandGroups] = useState<BrandCategoryGroup[]>([]);
@@ -98,7 +105,7 @@ export default function PhonesPageInner() {
     return () => {
       active = false;
     };
-  }, [favoritesOnly, upcomingOnly, router]);
+  }, [favoritesOnly, upcomingOnly, trendingOnly, router]);
 
   useEffect(() => {
     function refreshCatalog() {
@@ -133,7 +140,7 @@ export default function PhonesPageInner() {
 
     window.addEventListener("focus", refreshCatalog);
     return () => window.removeEventListener("focus", refreshCatalog);
-  }, [favoritesOnly, upcomingOnly]);
+  }, [favoritesOnly, upcomingOnly, trendingOnly]);
 
   const catalogBrandGroups = useMemo(
     () => resolveBrandCatalog(brandGroups, all),
@@ -153,11 +160,18 @@ export default function PhonesPageInner() {
   }, [brand, brands]);
 
   const filtered = useMemo(() => {
-    let list = all.filter((d) => {
+    let list = trendingOnly ? getTrendingArenaDevices(all) : all;
+
+    list = list.filter((d) => {
       const matchSearch = d.name.toLowerCase().includes(search.toLowerCase());
+      if (upcomingOnly || trendingOnly) return matchSearch;
       const matchBrand = brand === "All" || d.brand?.name === brand;
       return matchSearch && matchBrand;
     });
+
+    if (upcomingOnly || trendingOnly) {
+      return list;
+    }
 
     list = [...list].sort((a, b) => {
       switch (sort) {
@@ -173,11 +187,12 @@ export default function PhonesPageInner() {
     });
 
     return list;
-  }, [all, search, brand, sort]);
+  }, [all, search, brand, sort, upcomingOnly, trendingOnly]);
 
-  const activeFilterCount = (brand !== "All" ? 1 : 0) + (sort !== "newest" ? 1 : 0);
+  const activeFilterCount =
+    catalogOnly ? (brand !== "All" ? 1 : 0) + (sort !== "newest" ? 1 : 0) : 0;
 
-  const filterPanel = (
+  const filterPanel = catalogOnly ? (
     <>
       <SpectrumPanel className="p-5">
         <h2 className="mb-3 font-bold text-[var(--text-primary)]">Sort by</h2>
@@ -203,84 +218,123 @@ export default function PhonesPageInner() {
         />
       </SpectrumPanel>
     </>
-  );
+  ) : null;
+
+  const sectionLabel = favoritesOnly
+    ? "Favorite Phones"
+    : upcomingOnly
+      ? "Upcoming Devices"
+      : trendingOnly
+        ? "Trending Arena"
+        : "Brands";
+
+  const pageTitle = favoritesOnly
+    ? "Favorite Phones"
+    : upcomingOnly
+      ? "Upcoming Devices"
+      : trendingOnly
+        ? "Trending Arena"
+        : "Phones";
+
+  const pageEyebrow = favoritesOnly
+    ? "Your collection"
+    : upcomingOnly
+      ? "Launch radar"
+      : trendingOnly
+        ? "Community heat"
+        : "Brands";
+
+  const simplifiedLayout = upcomingOnly || trendingOnly;
+  const showPageHeader = favoritesOnly || trendingOnly;
+  const showSwipeHint = favoritesOnly;
+  const showSearch = !upcomingOnly;
+  const searchPlaceholder = upcomingOnly
+    ? "Search phones..."
+    : trendingOnly
+      ? "Search trending devices..."
+      : "Search phones...";
 
   return (
     <>
-      <header className="mb-8">
-        <p className="text-xs font-bold uppercase tracking-widest text-[var(--electric-cyan)]">
-          {favoritesOnly
-            ? "Your collection"
-            : upcomingOnly
-              ? "Launch radar"
-              : "Brands"}
-        </p>
-        <h1 className="mt-2 text-3xl font-extrabold text-[var(--text-primary)]">
-          {favoritesOnly
-            ? "Favorite Phones"
-            : upcomingOnly
-              ? "Upcoming Devices"
-              : "Phones"}
-        </h1>
-        <p className="mt-1 text-sm text-[var(--text-secondary)]">
-          {favoritesOnly ? (
-            <>
-              Phones you saved with the heart icon.{" "}
-              <Link href="/phones" className="text-[var(--electric-cyan)] hover:underline">
-                Browse all phones
-              </Link>
-            </>
-          ) : upcomingOnly ? (
-            <>
-              Bulk-uploaded phones launching soon.{" "}
-              <Link href="/phones" className="text-[var(--electric-cyan)] hover:underline">
-                Browse all phones
-              </Link>
-            </>
-          ) : (
-            <>
-              Browse every brand in the Arena catalog. Use{" "}
-              <Link href="/phone-finder" className="text-[var(--electric-cyan)] hover:underline">
-                Phone Finder
-              </Link>{" "}
-              for advanced filters.
-            </>
-          )}
-        </p>
-      </header>
+      {showPageHeader ? (
+        <header className="mb-8">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--electric-cyan)]">
+            {pageEyebrow}
+          </p>
+          <h1 className="mt-2 text-3xl font-extrabold text-[var(--text-primary)]">
+            {pageTitle}
+          </h1>
+          <p className="mt-1 text-sm text-[var(--text-secondary)]">
+            {favoritesOnly ? (
+              <>
+                Phones you saved with the heart icon.{" "}
+                <Link href="/phones" className="text-[var(--electric-cyan)] hover:underline">
+                  Browse all phones
+                </Link>
+              </>
+            ) : upcomingOnly ? (
+              <>
+                Bulk-uploaded phones launching soon.{" "}
+                <Link href="/phones" className="text-[var(--electric-cyan)] hover:underline">
+                  Browse all phones
+                </Link>
+              </>
+            ) : (
+              <>
+                What the community is exploring right now — ranked by Arena score and ratings.{" "}
+                <Link href="/phones" className="text-[var(--electric-cyan)] hover:underline">
+                  Browse all phones
+                </Link>
+              </>
+            )}
+          </p>
+        </header>
+      ) : null}
 
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center lg:hidden">
-        <SearchBar
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          onSubmit={(q) => setSearch(q)}
-          onVoiceQuery={(q) => setSearch(q)}
-          placeholder="Search phones..."
-          className="flex-1"
-        />
-        <Button
-          type="button"
-          variant="secondary"
-          className="shrink-0"
-          onClick={() => setMobileFiltersOpen(true)}
-        >
-          <Filter size={16} />
-          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
-        </Button>
-      </div>
+      {showSwipeHint ? (
+        <SiteNavSwipeHint section={sectionLabel} className={trendingOnly ? "hidden" : undefined} />
+      ) : null}
 
-      <div className="grid gap-6 lg:grid-cols-4">
-        <aside className="hidden space-y-5 lg:block">{filterPanel}</aside>
-
-        <div className="lg:col-span-3">
+      {showSearch ? (
+        <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center lg:hidden">
           <SearchBar
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             onSubmit={(q) => setSearch(q)}
             onVoiceQuery={(q) => setSearch(q)}
-            placeholder="Search phones..."
-            className="mb-6 hidden lg:block"
+            placeholder={searchPlaceholder}
+            className="flex-1"
           />
+          {catalogOnly ? (
+            <Button
+              type="button"
+              variant="secondary"
+              className="shrink-0"
+              onClick={() => setMobileFiltersOpen(true)}
+            >
+              <Filter size={16} />
+              Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+            </Button>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className={simplifiedLayout ? "grid gap-6" : "grid gap-6 lg:grid-cols-4"}>
+        {catalogOnly ? (
+          <aside className="hidden space-y-5 lg:block">{filterPanel}</aside>
+        ) : null}
+
+        <div className={simplifiedLayout ? undefined : "lg:col-span-3"}>
+          {showSearch ? (
+            <SearchBar
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              onSubmit={(q) => setSearch(q)}
+              onVoiceQuery={(q) => setSearch(q)}
+              placeholder={searchPlaceholder}
+              className="mb-6 hidden lg:block"
+            />
+          ) : null}
 
           {loading ? (
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -294,27 +348,37 @@ export default function PhonesPageInner() {
             <SpectrumPanel className="p-8 text-center text-[var(--text-secondary)]">
               {favoritesOnly
                 ? "No favorite phones yet. Save phones with the heart on search results or add them from your profile."
-                : "No phones match your filters."}
+                : upcomingOnly
+                  ? "No upcoming devices match your search."
+                  : trendingOnly
+                    ? "No trending devices match your search."
+                    : "No phones match your filters."}
             </SpectrumPanel>
           ) : (
-            <PhoneGrid devices={filtered} />
+            <PhoneGrid
+              devices={filtered}
+              pageSize={3}
+              swipePaginate={!trendingOnly}
+            />
           )}
         </div>
       </div>
 
-      <Modal
-        open={mobileFiltersOpen}
-        onClose={() => setMobileFiltersOpen(false)}
-        title="Filter phones"
-        size="lg"
-        footer={
-          <Button type="button" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
-            Show {loading ? "…" : filtered.length} phones
-          </Button>
-        }
-      >
-        {filterPanel}
-      </Modal>
+      {catalogOnly ? (
+        <Modal
+          open={mobileFiltersOpen}
+          onClose={() => setMobileFiltersOpen(false)}
+          title="Filter phones"
+          size="lg"
+          footer={
+            <Button type="button" className="w-full" onClick={() => setMobileFiltersOpen(false)}>
+              Show {loading ? "…" : filtered.length} phones
+            </Button>
+          }
+        >
+          {filterPanel}
+        </Modal>
+      ) : null}
     </>
   );
 }

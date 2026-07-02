@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Filter, Share2 } from "lucide-react";
+import { Filter } from "lucide-react";
 
 import { LifestyleCategoriesBar } from "@/components/phone-finder/LifestyleCategoriesBar";
 import { AiHubPanel } from "@/components/phone-finder/AiHubPanel";
@@ -12,6 +12,7 @@ import { PhoneFinderSearch } from "@/components/phone-finder/PhoneFinderSearch";
 import { PollsReviewsPanel } from "@/components/phone-finder/PollsReviewsPanel";
 import { TrendingSearches } from "@/components/phone-finder/TrendingSearches";
 import PhoneGrid from "@/components/phone/PhoneGrid";
+import { SiteNavSwipeHint } from "@/components/navigation/SiteNavSwipeHint";
 import { Button } from "@/design-system/buttons/Button";
 import { Skeleton } from "@/design-system/feedback/Skeleton";
 import { Breadcrumbs } from "@/design-system/navigation/Breadcrumbs";
@@ -47,11 +48,13 @@ import {
 import { GamificationStrip } from "@/components/phone-finder/GamificationStrip";
 import { resolveVisitorGeo } from "@/lib/visitor-geo";
 import { useSearchLanguage } from "@/lib/use-search-language";
+import { useSiteAuth } from "@/lib/site-auth";
 
 export default function PhoneFinderPageInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { language: searchLanguage } = useSearchLanguage();
+  const { user, ready: authReady } = useSiteAuth();
 
   const [all, setAll] = useState<Device[]>([]);
   const [brandGroups, setBrandGroups] = useState<BrandCategoryGroup[]>([]);
@@ -60,7 +63,6 @@ export default function PhoneFinderPageInner() {
   const [filters, setFilters] = useState<PhoneFinderFilters>(() =>
     filtersFromSearchParams(searchParams),
   );
-  const [copied, setCopied] = useState(false);
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
   const [wishlistIds, setWishlistIds] = useState<Set<number>>(new Set());
   const [badges, setBadges] = useState<ProfileBadge[]>([]);
@@ -237,20 +239,6 @@ export default function PhoneFinderPageInner() {
     updateFilters(applyPreset(presetId, filters, DEFAULT_PHONE_FINDER_FILTERS));
   }
 
-  async function shareFilters() {
-    const url =
-      typeof window !== "undefined"
-        ? `${window.location.origin}/phone-finder?${filtersToSearchParams(filters).toString()}`
-        : "/phone-finder";
-    try {
-      await navigator.clipboard.writeText(url);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {
-      setCopied(false);
-    }
-  }
-
   const activeCount = countActiveFilters(filters);
 
   const filterPanel = (
@@ -285,28 +273,7 @@ export default function PhoneFinderPageInner() {
         items={[{ label: "Home", href: "/" }, { label: "Phone Finder" }]}
       />
 
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <p className="text-xs font-bold uppercase tracking-widest text-[var(--electric-cyan)]">
-            MobileArena Phone Finder
-          </p>
-          <h1 className="mt-2 text-3xl font-extrabold text-[var(--text-primary)]">
-            Find your perfect phone
-          </h1>
-          <p className="mt-1 max-w-2xl text-sm text-[var(--text-secondary)]">
-            Filter by price, specs, and hardware first — then explore AI tools and
-            community picks below your results.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <Button type="button" variant="secondary" onClick={() => void shareFilters()}>
-            <Share2 size={16} />
-            {copied ? "Link copied" : "Share search"}
-          </Button>
-        </div>
-      </header>
-
-      <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center lg:hidden">
+      <div className="mb-6 flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center lg:hidden">
         <PhoneFinderSearch
           value={searchInput}
           devices={all}
@@ -318,12 +285,12 @@ export default function PhoneFinderPageInner() {
           onFocusChange={(focused) => {
             searchFocusedRef.current = focused;
           }}
-          className="flex-1"
+          className="min-w-0 flex-1"
         />
         <Button
           type="button"
           variant="secondary"
-          className="shrink-0 lg:hidden"
+          className="w-full shrink-0 sm:w-auto lg:hidden"
           onClick={() => setMobileFiltersOpen(true)}
         >
           <Filter size={16} />
@@ -331,15 +298,16 @@ export default function PhoneFinderPageInner() {
         </Button>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-4">
-        <aside className="lg:col-span-1">
+      <div className="grid min-w-0 gap-6 lg:grid-cols-4">
+        <aside className="min-w-0 lg:col-span-1">
           <div className="hidden lg:block">{filterPanel}</div>
           <p className="mt-0 text-xs text-[var(--text-secondary)] lg:sr-only">
             Tap Filters above to refine results.
           </p>
         </aside>
 
-        <div className="lg:col-span-3">
+        <div className="min-w-0 lg:col-span-3">
+          <SiteNavSwipeHint section="Phone Finder" className="mb-4" />
           <p className="mb-4 text-sm text-[var(--text-secondary)]">
             <span className="font-semibold text-[var(--text-primary)]">
               {loading ? "…" : filtered.length}
@@ -376,6 +344,7 @@ export default function PhoneFinderPageInner() {
             <PhoneGrid
               devices={filtered}
               showArenaScore
+              pageSize={3}
               priceCurrency={filters.priceCurrency}
               searchQuery={searchInput}
               wishlistIds={wishlistIds}
@@ -392,12 +361,14 @@ export default function PhoneFinderPageInner() {
         </div>
       </div>
 
-      <section className="mt-12 border-t border-white/10 pt-10">
+      <section className="mt-12 min-w-0 border-t border-white/10 pt-10">
         <p className="mb-6 text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">
           More discovery tools
         </p>
 
-        {getToken() && badges.length > 0 && <GamificationStrip earned={badges} />}
+        {authReady && user && badges.length > 0 && (
+          <GamificationStrip earned={badges} />
+        )}
 
         <PresetChips
           className="mb-6"
