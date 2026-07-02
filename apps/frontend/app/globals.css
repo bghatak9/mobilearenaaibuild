@@ -100,7 +100,7 @@ body {
   --arena-chrome-bottom: 0px;
   --arena-header-offset: 0px;
   --arena-content-top-pad: 4.5rem;
-  --arena-chrome-gap: 6px;
+  --arena-chrome-gap: 0px;
   --arena-desktop-header-h: 9.5rem;
 }
 
@@ -118,11 +118,9 @@ body {
 }
 
 /* Reserve space for fixed header + top ad before chrome measurement runs */
-html[data-has-top-ad] .arena-mobile-main-pad--with-top-ad {
-  padding-top: max(
-    var(--arena-content-top-pad, 10rem),
-    calc(var(--arena-chrome-bottom, 11rem) + var(--arena-chrome-gap, 6px) + 0.5rem)
-  );
+html[data-has-top-ad] .arena-mobile-main-pad--with-top-ad,
+html[data-has-top-ad] .arena-mobile-main-pad {
+  padding-top: var(--arena-content-top-pad, var(--arena-chrome-bottom, 11rem));
 }
 
 /* ── Banner ad sizing (IAB: 320×50, 728×90, 970×90) ── */
@@ -149,7 +147,13 @@ html[data-has-top-ad] .arena-mobile-main-pad--with-top-ad {
 }
 
 .arena-ad-banner--header {
-  border-radius: 0.25rem;
+  border-radius: 0 0 0.25rem 0.25rem;
+  width: 100%;
+  max-width: min(100%, var(--arena-banner-max-w, 970px));
+  height: var(--arena-banner-max-h, 5.625rem);
+  max-height: var(--arena-banner-max-h, 5.625rem);
+  aspect-ratio: auto;
+  margin: 0;
 }
 
 .arena-ad-banner--sticky {
@@ -174,23 +178,50 @@ html[data-has-top-ad] .arena-mobile-main-pad--with-top-ad {
     var(--arena-header-offset, var(--arena-mobile-header-h, 4.5rem))
   );
   box-sizing: border-box;
-  max-height: calc(var(--arena-top-banner-h, 3.125rem) + 0.5rem);
+  display: flex;
+  justify-content: center;
+  height: var(--arena-top-banner-h, 3.125rem);
+  min-height: var(--arena-top-banner-h, 3.125rem);
+  max-height: var(--arena-top-banner-h, 3.125rem);
   overflow: hidden;
-  padding-block: 0.25rem;
-  padding-inline: max(0.75rem, env(safe-area-inset-left))
-    max(0.75rem, env(safe-area-inset-right));
-  background: color-mix(in srgb, var(--dark-space) 96%, transparent);
+  padding: 0;
+  background: transparent;
   transition:
     top 300ms cubic-bezier(0.4, 0, 0.2, 1),
-    transform 300ms cubic-bezier(0.4, 0, 0.2, 1);
-  pointer-events: auto;
+    height 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 300ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 300ms cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
   isolation: isolate;
   transform: translateZ(0);
+  margin: 0;
 }
 
-html[data-site-header-hidden]:not([data-header-pinned]):not([data-header-interacting])
+html[data-header-pinned] .arena-top-ad-bar,
+html[data-header-interacting] .arena-top-ad-bar {
+  transition: none !important;
+}
+
+html[data-header-pinned] .arena-top-ad-bar,
+html[data-header-interacting] .arena-top-ad-bar,
+html[data-header-hovered] .arena-top-ad-bar,
+html[data-site-header-hidden][data-header-hovered] .arena-top-ad-bar,
+html[data-site-header-hidden][data-header-pinned] .arena-top-ad-bar,
+html[data-site-header-hidden][data-header-interacting] .arena-top-ad-bar {
+  transform: translate3d(0, 0, 0) !important;
+  opacity: 1 !important;
+  pointer-events: none;
+}
+
+html[data-site-header-hidden]:not([data-header-pinned]):not([data-header-interacting]):not([data-header-hovered])
   .arena-top-ad-bar {
-  top: max(0.25rem, env(safe-area-inset-top));
+  transform: translate3d(
+    0,
+    calc(-1 * (var(--arena-top-ad-top, 0px) + var(--arena-top-banner-h, 3.125rem) + 0.75rem)),
+    0
+  ) !important;
+  opacity: 0;
+  pointer-events: none;
 }
 
 /* Keep top ad below header during nav taps / route changes */
@@ -209,7 +240,14 @@ html:not([data-site-header-hidden]) .arena-top-ad-bar {
 }
 
 html[data-header-pinned] #arena-site-header.arena-shell-header,
-html[data-header-interacting] #arena-site-header.arena-shell-header {
+html[data-header-interacting] #arena-site-header.arena-shell-header,
+html[data-header-hovered] #arena-site-header.arena-shell-header {
+  transform: translate3d(0, 0, 0) !important;
+  pointer-events: auto !important;
+}
+
+html[data-header-hovered] #arena-site-header.arena-site-header--hidden,
+html[data-site-header-hidden][data-header-hovered] #arena-site-header.arena-shell-header {
   transform: translate3d(0, 0, 0) !important;
   pointer-events: auto !important;
 }
@@ -225,24 +263,27 @@ html[data-header-interacting] .arena-top-ad-bar {
   width: 100%;
   max-width: var(--arena-content-max);
   margin-inline: auto;
+  padding-inline: var(--arena-content-gutter, 1rem);
   box-sizing: border-box;
+  height: 100%;
   overflow: hidden;
-  max-height: var(--arena-top-banner-h, 5.625rem);
+  pointer-events: auto;
 }
 
 .arena-top-ad-bar .arena-top-ad-bar-inner > div {
   display: block;
   width: 100%;
   max-width: 100%;
-  max-height: var(--arena-top-banner-h, 5.625rem);
+  height: 100%;
   overflow: hidden;
 }
 
-.arena-top-ad-bar .arena-top-ad-bar-inner a {
+.arena-top-ad-bar .arena-top-ad-bar-inner a,
+.arena-top-ad-bar .arena-top-ad-bar-inner .arena-ad-banner {
   display: block;
   width: 100%;
   max-width: 100%;
-  max-height: var(--arena-top-banner-h, 5.625rem);
+  height: 100%;
   overflow: hidden;
 }
 
@@ -258,27 +299,33 @@ html[data-header-interacting] .arena-top-ad-bar {
 
 @media (min-width: 1280px) {
   .arena-top-ad-bar {
-    padding-inline: var(--arena-content-gutter, 1rem);
-    max-height: calc(var(--arena-top-banner-h, 5.625rem) + 0.5rem);
-    top: max(
-      var(
-        --arena-top-ad-top,
-        var(--arena-header-offset, var(--arena-desktop-header-h, 11rem))
-      ),
-      11rem
+    top: var(
+      --arena-top-ad-top,
+      var(--arena-header-offset, var(--arena-desktop-header-h, 9.5rem))
     );
   }
 
-  html[data-has-top-ad] .arena-mobile-main-pad--with-top-ad {
-    padding-top: max(
-      var(--arena-content-top-pad, 12rem),
-      calc(var(--arena-chrome-bottom, 13rem) + var(--arena-chrome-gap, 6px) + 0.75rem)
-    );
+  html[data-has-top-ad] #arena-site-header .arena-gradient-ring-nav,
+  html[data-has-top-ad] #arena-site-header .arena-gradient-ring-inner,
+  html[data-has-top-ad] #arena-site-header .arena-floating-nav {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 
-  html[data-site-header-hidden]:not([data-header-pinned]):not([data-header-interacting])
+  html[data-has-top-ad] .arena-mobile-main-pad--with-top-ad,
+  html[data-has-top-ad] .arena-mobile-main-pad {
+    padding-top: var(--arena-content-top-pad, var(--arena-chrome-bottom, 13rem));
+  }
+
+  html[data-site-header-hidden]:not([data-header-pinned]):not([data-header-interacting]):not([data-header-hovered])
     .arena-top-ad-bar {
-    top: max(0.75rem, env(safe-area-inset-top));
+    transform: translate3d(
+      0,
+      calc(-1 * (var(--arena-top-ad-top, 0px) + var(--arena-top-banner-h, 5.625rem) + 0.75rem)),
+      0
+    ) !important;
+    opacity: 0;
+    pointer-events: none;
   }
 
   .arena-mobile-content-pad {
@@ -308,7 +355,8 @@ html[data-header-interacting] .arena-top-ad-bar {
 }
 
 #arena-site-header.arena-site-header--hidden,
-html[data-site-header-hidden] #arena-site-header.arena-shell-header {
+html[data-site-header-hidden]:not([data-header-hovered]):not([data-header-pinned]):not([data-header-interacting])
+  #arena-site-header.arena-shell-header {
   transform: translate3d(0, calc(-100% - 0.5rem), 0) !important;
   pointer-events: none;
 }
@@ -1226,6 +1274,17 @@ html[data-site-header-hidden] #arena-site-header.arena-shell-header {
   justify-content: center;
 }
 
+html[data-header-hovered] #arena-site-header.arena-shell-header {
+  overflow: visible !important;
+}
+
+html[data-header-hovered] .arena-gradient-ring-nav,
+html[data-header-hovered] .arena-floating-nav,
+html[data-header-hovered] .arena-floating-nav-links,
+html[data-header-hovered] .arena-nav-dropdown {
+  overflow: visible !important;
+}
+
 @media (min-width: 1280px) {
   #arena-site-header.arena-shell-header {
     position: fixed;
@@ -1241,13 +1300,42 @@ html[data-site-header-hidden] #arena-site-header.arena-shell-header {
     -webkit-transform: translateZ(0);
     overscroll-behavior: contain;
     touch-action: manipulation;
+    overflow: visible;
+  }
+
+  .arena-nav-dropdown:hover,
+  .arena-nav-dropdown-open {
+    overflow: visible !important;
+    z-index: 80 !important;
+  }
+
+  .arena-nav-dropdown:hover .arena-floating-nav-link,
+  .arena-nav-dropdown-open .arena-floating-nav-link {
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+
+  .arena-nav-dropdown:hover .arena-floating-nav-link-text,
+  .arena-nav-dropdown-open .arena-floating-nav-link-text {
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
+  }
+
+  .arena-floating-nav-links {
+    overflow: visible !important;
+  }
+
+  .arena-nav-mega-wrap {
+    z-index: 90 !important;
   }
 
   #arena-site-header.arena-shell-header-scrolled .arena-gradient-ring-nav {
     box-shadow: 0 8px 32px rgb(0 0 0 / 0.28);
   }
 
-  html[data-site-header-hidden] #arena-site-header.arena-shell-header {
+  html[data-site-header-hidden]:not([data-header-hovered]):not([data-header-pinned]):not([data-header-interacting])
+    #arena-site-header.arena-shell-header {
     transform: translate3d(0, calc(-100% - 0.75rem), 0) !important;
   }
 
@@ -1333,7 +1421,7 @@ html:not(.dark) .spectrum-panel-elevated {
     0 0 0 1px rgb(6 182 212 / 0.25),
     0 20px 50px rgb(37 99 235 / 0.28),
     0 0 60px rgb(6 182 212 / 0.18);
-  overflow: hidden;
+  overflow: visible;
   max-width: 100%;
 }
 
@@ -2735,7 +2823,7 @@ html:not(.dark) .arena-floating-nav-links {
 @media (min-width: 1280px) {
   .arena-floating-nav-links,
   html.dark .arena-floating-nav-links,
-  html:not(.dark) .arena-floating-nav-links {
+  html:not(.dark)   .arena-floating-nav-links {
     display: grid !important;
     grid-template-columns:
       minmax(0, 0.88fr)
@@ -2747,7 +2835,7 @@ html:not(.dark) .arena-floating-nav-links {
       minmax(0, 1.08fr)
       minmax(0, 0.86fr) !important;
     gap: 0.2rem !important;
-    overflow: hidden !important;
+    overflow: visible !important;
     padding: 0.4rem 0.3rem 0.48rem !important;
     border-radius: 14px !important;
     border: 1px solid color-mix(in srgb, var(--cyan) 14%, var(--border-soft)) !important;
@@ -2786,7 +2874,20 @@ html:not(.dark) .arena-floating-nav-links {
   .arena-nav-dropdown {
     min-width: 0 !important;
     max-width: 100% !important;
-    overflow: hidden !important;
+    overflow: visible !important;
+  }
+
+  .arena-nav-dropdown:hover .arena-floating-nav-link,
+  .arena-nav-dropdown-open .arena-floating-nav-link {
+    overflow: visible !important;
+    white-space: normal !important;
+  }
+
+  .arena-nav-dropdown:hover .arena-floating-nav-link-text,
+  .arena-nav-dropdown-open .arena-floating-nav-link-text {
+    overflow: visible !important;
+    text-overflow: unset !important;
+    white-space: normal !important;
   }
 }
 

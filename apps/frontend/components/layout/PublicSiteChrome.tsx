@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import AdUnit from "@/components/ads/AdUnit";
 import { FloatingNav } from "@/design-system/navigation/FloatingNav";
 import { getActiveAdvertisements } from "@/lib/api";
-import { bannerStyleVars, resolveSiteAdSlots, type SiteAdSlots } from "@/lib/ad-utils";
+import { bannerSlotMaxHeight, bannerStyleVars, resolveSiteAdSlots, type SiteAdSlots } from "@/lib/ad-utils";
 import { hideMobileChrome, isAdFreeRoute } from "@/lib/mobile-routes";
 
 const EMPTY_SLOTS: SiteAdSlots = {
@@ -42,10 +42,16 @@ export function PublicSiteChrome() {
   }, [showAds]);
 
   useEffect(() => {
+    const html = document.documentElement;
     if (showAds && topAd) {
-      document.documentElement.setAttribute("data-has-top-ad", "true");
-    } else if (!showAds) {
-      document.documentElement.removeAttribute("data-has-top-ad");
+      html.setAttribute("data-has-top-ad", "true");
+      html.style.setProperty(
+        "--arena-top-banner-h",
+        `${bannerSlotMaxHeight(topAd, "header")}px`,
+      );
+    } else {
+      html.removeAttribute("data-has-top-ad");
+      html.style.removeProperty("--arena-top-banner-h");
     }
   }, [showAds, topAd]);
 

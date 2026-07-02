@@ -182,21 +182,43 @@
 
 .arena-floating-nav-logo {
   font-family: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.02em;
+  font-weight: 800;
+  letter-spacing: -0.055em;
+  line-height: 1;
+  gap: 0.1em;
 }
 
-.arena-floating-nav-logo-mobile {
-  color: var(--text-primary);
+.arena-floating-nav-logo-mobile,
+.arena-mobile-header-logo-mobile {
+  font-weight: 800;
+  background: linear-gradient(
+    128deg,
+    var(--text-primary) 0%,
+    color-mix(in srgb, var(--text-primary) 72%, var(--blue)) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   text-shadow: none;
 }
 
-.arena-floating-nav-logo-arena {
-  background: none;
-  color: var(--blue);
-  animation: none;
-  -webkit-background-clip: unset;
-  background-clip: unset;
+.arena-floating-nav-logo-arena,
+.arena-mobile-header-logo-arena {
+  font-weight: 800;
+  background: linear-gradient(
+    110deg,
+    var(--cyan) 0%,
+    var(--blue) 28%,
+    color-mix(in srgb, var(--purple) 75%, var(--blue)) 52%,
+    var(--cyan) 76%,
+    var(--blue) 100%
+  );
+  background-size: 220% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: arena-wordmark-shimmer 7s ease-in-out infinite;
+  filter: drop-shadow(0 1px 10px color-mix(in srgb, var(--cyan) 32%, transparent));
 }
 
 .arena-floating-nav-icon {
@@ -234,29 +256,47 @@
 }
 
 /* ── Mobile chrome ── */
-@media (max-width: 1023px) {
+@media (max-width: 1279px) {
   .arena-mobile-site-header {
     background: var(--surface-1);
     border-bottom: 1px solid var(--border-soft);
-    box-shadow: none;
-    backdrop-filter: none;
   }
 
   .arena-mobile-header-logo {
     font-family: var(--font-space-grotesk), var(--font-inter), system-ui, sans-serif;
-    font-weight: 700;
+    font-weight: 800;
+    letter-spacing: -0.055em;
+    gap: 0.1em;
   }
 
   .arena-mobile-header-logo-mobile {
-    color: var(--text-primary);
+    font-weight: 800;
+    background: linear-gradient(
+      128deg,
+      var(--text-primary) 0%,
+      color-mix(in srgb, var(--text-primary) 72%, var(--blue)) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
   }
 
   .arena-mobile-header-logo-arena {
-    background: none;
-    color: var(--blue);
-    animation: none;
-    -webkit-background-clip: unset;
-    background-clip: unset;
+    font-weight: 800;
+    background: linear-gradient(
+      110deg,
+      var(--cyan) 0%,
+      var(--blue) 28%,
+      color-mix(in srgb, var(--purple) 75%, var(--blue)) 52%,
+      var(--cyan) 76%,
+      var(--blue) 100%
+    );
+    background-size: 220% auto;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: arena-wordmark-shimmer 7s ease-in-out infinite;
+    filter: drop-shadow(0 1px 10px color-mix(in srgb, var(--cyan) 32%, transparent));
   }
 
   .arena-mobile-category-nav {
@@ -266,13 +306,23 @@
 
   .arena-mobile-category-link {
     color: var(--text-muted);
-    font-size: 0.8125rem;
-    font-weight: 500;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    border-color: var(--border-soft);
+    background: var(--surface-2);
+    gap: 0.35rem;
   }
 
   .arena-mobile-category-link-active {
-    color: var(--titan-accent);
-    font-weight: 600;
+    color: #fff;
+    font-weight: 700;
+    border-color: color-mix(in srgb, var(--titan-accent) 50%, transparent);
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--titan-accent) 88%, #000 12%),
+      var(--titan-accent)
+    );
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--titan-accent) 26%, transparent);
   }
 
   .arena-mobile-drawer-panel {
@@ -284,6 +334,50 @@
     background: var(--surface-2);
     color: var(--titan-accent);
     box-shadow: inset 3px 0 0 var(--titan-accent);
+  }
+
+  .arena-mobile-drawer-section {
+    border-bottom: 1px solid var(--border-muted);
+  }
+
+  .arena-mobile-drawer-submenu {
+    padding: 0 0 0.75rem;
+  }
+
+  .arena-mobile-drawer-submenu-group + .arena-mobile-drawer-submenu-group {
+    margin-top: 0.65rem;
+  }
+
+  .arena-mobile-drawer-submenu-title {
+    margin: 0 0 0.25rem;
+    padding: 0 0.75rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .arena-mobile-drawer-submenu-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .arena-mobile-drawer-sublink {
+    display: block;
+    border-radius: 8px;
+    padding: 0.45rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    color: var(--text-secondary);
+    text-decoration: none;
+  }
+
+  .arena-mobile-drawer-sublink:hover,
+  .arena-mobile-drawer-sublink:active {
+    color: var(--titan-accent);
+    background: var(--surface-2);
   }
 }
 
@@ -451,18 +545,84 @@
   background: var(--titan-accent);
 }
 
+.titan-spec-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
 .titan-spec-table tbody tr {
   border-bottom: 1px solid var(--border-muted);
 }
 
+.titan-spec-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.titan-spec-table td {
+  padding: 0.75rem 1rem;
+  vertical-align: top;
+}
+
 .titan-spec-label {
+  width: 38%;
+  padding-right: 0.75rem;
   color: var(--text-muted);
   font-size: 0.75rem;
   font-weight: 500;
+  line-height: 1.4;
 }
 
 .titan-spec-value {
+  width: 62%;
   color: var(--text-primary);
+  font-size: 0.8125rem;
+  line-height: 1.45;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 639px) {
+  .titan-spec-table,
+  .titan-spec-table tbody,
+  .titan-spec-table tr,
+  .titan-spec-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .titan-spec-table tbody tr {
+    padding: 0.7rem 1rem;
+  }
+
+  .titan-spec-table td {
+    padding: 0;
+  }
+
+  .titan-spec-label {
+    width: 100%;
+    padding-right: 0;
+    padding-bottom: 0.2rem;
+    font-size: 0.6875rem;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+
+  .titan-spec-value {
+    width: 100%;
+    font-size: 0.875rem;
+  }
+}
+
+@keyframes arena-nav-mega-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* ── Shell ── */
@@ -484,11 +644,12 @@
 }
 
 /* ── Desktop auto-fit nav & layout ── */
-@media (min-width: 1024px) {
+@media (min-width: 1280px) {
   .arena-floating-nav {
     width: 100%;
     min-width: 0;
     max-width: 100%;
+    overflow: visible;
   }
 
   .arena-floating-nav-search-wrap {
@@ -515,25 +676,246 @@
   }
 
   .arena-floating-nav-links {
-    display: flex;
-    flex-wrap: wrap;
+    display: grid;
+    grid-template-columns:
+      minmax(0, 0.88fr)
+      minmax(0, 1.12fr)
+      minmax(0, 1.38fr)
+      minmax(0, 1.38fr)
+      minmax(0, 0.78fr)
+      minmax(0, 0.92fr)
+      minmax(0, 1.08fr)
+      minmax(0, 0.86fr);
     align-items: center;
-    justify-content: flex-start;
     gap: 0.2rem;
     width: 100%;
     min-width: 0;
+    overflow: visible;
+    padding: 0.4rem 0.3rem 0.48rem;
+    border-radius: 14px;
+    border: 1px solid color-mix(in srgb, var(--cyan) 14%, var(--border-soft));
+    background:
+      linear-gradient(
+        115deg,
+        color-mix(in srgb, var(--blue) 7%, var(--surface-1)),
+        color-mix(in srgb, var(--cyan) 6%, var(--surface-1)) 45%,
+        color-mix(in srgb, var(--purple) 7%, var(--surface-1))
+      );
+    box-shadow:
+      inset 0 1px 0 rgb(255 255 255 / 0.06),
+      0 8px 24px rgb(0 0 0 / 0.08);
+  }
+
+  .arena-nav-dropdown {
+    position: relative;
+    min-width: 0;
+    max-width: 100%;
+    overflow: visible;
+    display: flex;
+    align-items: stretch;
+  }
+
+  .arena-nav-dropdown:hover,
+  .arena-nav-dropdown-open {
+    z-index: 80;
+  }
+
+  .arena-nav-dropdown:hover .arena-floating-nav-link,
+  .arena-nav-dropdown-open .arena-floating-nav-link {
+    overflow: visible;
+    white-space: normal;
+    z-index: 81;
+  }
+
+  .arena-nav-dropdown:hover .arena-floating-nav-link-text,
+  .arena-nav-dropdown-open .arena-floating-nav-link-text {
+    overflow: visible;
+    text-overflow: unset;
+    white-space: normal;
   }
 
   .arena-floating-nav-link {
-    flex: 0 1 auto;
+    position: relative;
+    isolation: isolate;
+    display: inline-flex;
+    width: 100%;
     max-width: 100%;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.18rem;
+    text-align: center;
+    border-radius: 10px;
+    line-height: 1.15;
+    font-weight: 600;
+    letter-spacing: 0.005em;
     white-space: nowrap;
-    font-size: clamp(0.6875rem, 0.65rem + 0.15vw, 0.8125rem);
-    padding: 0.4rem clamp(0.45rem, 0.3rem + 0.35vw, 0.7rem);
+    font-size: clamp(0.7rem, 0.34rem + 0.34vw, 0.8125rem);
+    padding: 0.52rem 0.08rem;
+    min-height: 2.2rem;
+    box-sizing: border-box;
+    overflow: hidden;
+    color: var(--text-secondary);
+    background: transparent;
+    transition:
+      color 180ms ease,
+      background 180ms ease,
+      box-shadow 180ms ease,
+      transform 180ms ease;
+  }
+
+  .arena-floating-nav-link-text {
+    display: block;
+    min-width: 0;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    line-height: 1.15;
+  }
+
+  .arena-floating-nav-link-icon {
+    flex-shrink: 0;
+    width: 12px;
+    height: 12px;
+    opacity: 0.82;
+    transition: opacity 180ms ease;
+  }
+
+  .arena-floating-nav-link:hover {
+    color: var(--titan-accent);
+    background: color-mix(in srgb, var(--titan-accent) 12%, var(--surface-2));
+    box-shadow: 0 2px 10px color-mix(in srgb, var(--titan-accent) 14%, transparent);
+  }
+
+  .arena-floating-nav-link:hover .arena-floating-nav-link-icon {
+    opacity: 1;
+  }
+
+  .arena-floating-nav-link-active {
+    color: #fff;
+    background: linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--titan-accent) 88%, #000 12%),
+      var(--titan-accent)
+    );
+    box-shadow:
+      0 4px 16px color-mix(in srgb, var(--titan-accent) 32%, transparent),
+      inset 0 1px 0 rgb(255 255 255 / 0.22);
+  }
+
+  .arena-floating-nav-link-active .arena-floating-nav-link-icon {
+    opacity: 1;
+  }
+
+  .arena-floating-nav-link-subtle-active.arena-floating-nav-link-active {
+    color: var(--text-primary);
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--border-soft);
+  }
+
+  .arena-nav-dropdown-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .arena-nav-mega-wrap {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    z-index: 80;
+    padding-top: 0.35rem;
+  }
+
+  .arena-nav-mega-panel {
+    position: relative;
+    top: auto;
+    left: auto;
+    z-index: 80;
+    min-width: 14rem;
+    max-width: min(22rem, 92vw);
+    padding: 0.85rem;
+    border-radius: 14px;
+    box-shadow: var(--titan-shadow-ambient);
+    animation: arena-nav-mega-in 140ms ease-out;
+  }
+
+  .arena-nav-mega-grid {
+    display: grid;
+    gap: 0.85rem;
+  }
+
+  .arena-nav-mega-grid-wide {
+    min-width: 20rem;
+    max-width: min(28rem, 92vw);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem 1.25rem;
+  }
+
+  .arena-nav-mega-group-title {
+    margin: 0 0 0.4rem;
+    padding: 0 0.35rem;
+    font-size: 0.625rem;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-muted);
+  }
+
+  .arena-nav-mega-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  .arena-nav-mega-link {
+    display: block;
+    border-radius: 10px;
+    padding: 0.45rem 0.5rem;
+    text-decoration: none;
+    transition: background 120ms ease, color 120ms ease;
+  }
+
+  .arena-nav-mega-link:hover,
+  .arena-nav-mega-link:focus-visible {
+    background: var(--surface-2);
+    outline: none;
+  }
+
+  .arena-nav-mega-link-label {
+    display: block;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--text-primary);
+    line-height: 1.3;
+  }
+
+  .arena-nav-mega-link-desc {
+    display: block;
+    margin-top: 0.1rem;
+    font-size: 0.6875rem;
+    line-height: 1.35;
+    color: var(--text-muted);
+  }
+
+  .arena-nav-dropdown-open .arena-floating-nav-link-active,
+  .arena-nav-dropdown:hover .arena-floating-nav-link {
+    color: var(--text-primary);
+  }
+
+  .arena-nav-dropdown:nth-last-child(-n+2) .arena-nav-mega-wrap {
+    left: auto;
+    right: 0;
+  }
+
+  .arena-nav-dropdown:nth-last-child(-n+2) .arena-nav-mega-panel {
+    left: auto;
+    right: 0;
   }
 
   .arena-floating-nav-logo {
-    font-size: clamp(1rem, 0.92rem + 0.2vw, 1.2rem);
+    font-size: clamp(1.25rem, 1.05rem + 0.32vw, 1.5rem);
   }
 
   .arena-floating-nav-signin {
@@ -543,18 +925,15 @@
   }
 
   .arena-floating-nav-icon-profile span {
-    display: none;
+    display: inline;
   }
 }
 
-@media (min-width: 1280px) {
+@media (min-width: 1536px) {
   .arena-floating-nav-link {
-    font-size: 0.8125rem;
-    padding: 0.45rem 0.75rem;
-  }
-
-  .arena-floating-nav-icon-profile span {
-    display: inline;
+    font-size: 0.875rem;
+    gap: 0.22rem;
+    padding-inline: 0.12rem;
   }
 }
 

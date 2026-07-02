@@ -7,39 +7,41 @@ import { useState } from "react";
 import type { PaidAdvertisement } from "@/lib/api";
 import AdLabel from "@/components/ads/AdLabel";
 import { useAdImpression } from "@/components/ads/useAdImpression";
-import { adDisplayVariant } from "@/lib/ad-utils";
-import { resolvePlacementMeta } from "@/lib/ad-catalog";
+import { adDisplayVariant, bannerSlotMaxHeight, bannerStyleVars, type BannerAdSlot } from "@/lib/ad-utils";
 import { getAdClickUrl, handleAdClick } from "@/lib/ad-tracking";
 import { useCompare } from "@/lib/compare-context";
 
 type AdUnitProps = {
   ad: PaidAdvertisement | null | undefined;
   variant?: "banner" | "card" | "inline" | "skyscraper" | "affiliate" | "video";
+  /** Header / sticky / in-page banner sizing rules */
+  slot?: BannerAdSlot;
   className?: string;
   showPlaceholder?: boolean;
 };
 
-function bannerMinHeight(ad: PaidAdvertisement | null | undefined): string {
-  const h = ad?.height ?? resolvePlacementMeta(ad?.placement ?? "")?.height;
-  if (!h) return "min-h-[72px] sm:min-h-[90px]";
-  if (h <= 50) return "min-h-[50px]";
-  if (h <= 90) return "min-h-[72px] sm:min-h-[90px]";
-  if (h <= 250) return "min-h-[180px] sm:min-h-[220px]";
-  return "min-h-[300px]";
+function bannerPlaceholderStyle(
+  ad: PaidAdvertisement | null | undefined,
+  slot: BannerAdSlot,
+): React.CSSProperties {
+  const px = bannerSlotMaxHeight(ad, slot);
+  return { ...bannerStyleVars(ad, slot), minHeight: `${px}px` };
 }
 
 function TrackedShell({
   ad,
   children,
   className = "",
+  style,
 }: {
   ad: PaidAdvertisement;
   children: React.ReactNode;
   className?: string;
+  style?: React.CSSProperties;
 }) {
   const ref = useAdImpression(ad.id, ad.placement);
   return (
-    <div ref={ref} className={className}>
+    <div ref={ref} className={className} style={style}>
       {children}
     </div>
   );
@@ -112,9 +114,48 @@ function AdTrackedLink({
   );
 }
 
+function BannerAd({
+  ad,
+  slot,
+  className = "",
+  isSponsored,
+}: {
+  ad: PaidAdvertisement;
+  slot: BannerAdSlot;
+  className?: string;
+  isSponsored: boolean;
+}) {
+  const compact = slot === "header" || slot === "sticky";
+  const style = bannerStyleVars(ad, slot);
+
+  return (
+    <TrackedShell ad={ad} className={className} style={style}>
+      <AdLabel
+        sponsored={isSponsored}
+        className={compact ? "sr-only" : "mb-1 text-center"}
+      />
+      <AdTrackedLink
+        ad={ad}
+        className={`arena-ad-banner arena-ad-banner--${slot} group overflow-hidden border border-gray-200 bg-white transition hover:border-red-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900`}
+      >
+        <AdImage
+          ad={ad}
+          className="arena-ad-banner__img"
+          titleClassName={
+            slot === "header" || slot === "sticky"
+              ? "flex h-full w-full items-center justify-center px-4 text-center text-sm font-semibold text-zinc-700 group-hover:text-red-600 dark:text-zinc-200"
+              : "px-4 text-center text-sm font-semibold text-zinc-700 group-hover:text-red-600 dark:text-zinc-200"
+          }
+        />
+      </AdTrackedLink>
+    </TrackedShell>
+  );
+}
+
 export default function AdUnit({
   ad,
   variant,
+  slot = "inline",
   className = "",
   showPlaceholder = true,
 }: AdUnitProps) {
@@ -142,10 +183,10 @@ export default function AdUnit({
       );
     }
     return (
-      <div className={className}>
-        <AdLabel className="mb-1 text-center" />
+      <div className={className} style={bannerPlaceholderStyle(ad, slot)}>
+        <AdLabel className={slot === "header" || slot === "sticky" ? "sr-only" : "mb-1 text-center"} />
         <div
-          className={`flex items-center justify-center rounded border border-gray-200 bg-white text-sm text-gray-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-600 ${bannerMinHeight(ad)}`}
+          className={`arena-ad-banner arena-ad-banner--${slot} flex items-center justify-center rounded border border-gray-200 bg-white text-sm text-gray-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-600`}
         >
           Ad
         </div>
@@ -245,33 +286,10 @@ export default function AdUnit({
   }
 
   if (resolvedVariant === "inline") {
-    return (
-      <TrackedShell ad={ad} className={className}>
-        <AdLabel sponsored={isSponsored} className="mb-1 text-center" />
-        <AdTrackedLink
-          ad={ad}
-          className={`group flex w-full items-center justify-center overflow-hidden rounded border border-gray-200 bg-white transition hover:border-red-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${bannerMinHeight(ad)}`}
-        >
-          <AdImage
-            ad={ad}
-            className="h-full w-full object-contain object-center"
-          />
-        </AdTrackedLink>
-      </TrackedShell>
-    );
+    return <BannerAd ad={ad} slot="inline" className={className} isSponsored={isSponsored} />;
   }
 
-  return (
-    <TrackedShell ad={ad} className={className}>
-      <AdLabel sponsored={isSponsored} className="mb-1 text-center" />
-      <AdTrackedLink
-        ad={ad}
-        className={`group flex w-full items-center justify-center overflow-hidden rounded border border-gray-200 bg-white transition hover:border-red-300 hover:shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${bannerMinHeight(ad)}`}
-      >
-        <AdImage ad={ad} className="h-full w-full object-contain object-center" />
-      </AdTrackedLink>
-    </TrackedShell>
-  );
+  return <BannerAd ad={ad} slot={slot} className={className} isSponsored={isSponsored} />;
 }
 
 type StickyAdBarProps = {
@@ -287,7 +305,7 @@ export function StickyAdBar({ ad }: StickyAdBarProps) {
   return (
     <div
       id="arena-sticky-ad-bar"
-      className="arena-mobile-sticky-ad-offset fixed inset-x-0 z-40 border-t border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur lg:hidden dark:border-zinc-800 dark:bg-zinc-950/95"
+      className="arena-mobile-sticky-ad-offset fixed inset-x-0 z-40 border-t border-gray-200 bg-white/95 p-2 shadow-lg backdrop-blur xl:hidden dark:border-zinc-800 dark:bg-zinc-950/95"
     >
       <div className="relative mx-auto max-w-lg">
         <button
@@ -298,7 +316,7 @@ export function StickyAdBar({ ad }: StickyAdBarProps) {
         >
           <X size={16} />
         </button>
-        <AdUnit ad={ad} showPlaceholder={false} />
+        <AdUnit ad={ad} variant="banner" slot="sticky" showPlaceholder={false} />
       </div>
     </div>
   );
