@@ -9,6 +9,7 @@ import {
 import { UserRole } from '@prisma/client';
 
 import { CacheService } from '../cache/cache.service';
+import { mailCopy } from '../i18n/mail-copy';
 import { PrismaService } from '../prisma/prisma.service';
 import { AuthService } from './auth.service';
 
@@ -35,10 +36,9 @@ export class PasswordResetService {
     private readonly auth: AuthService,
   ) {}
 
-  async requestEmailReset(email: string) {
+  async requestEmailReset(email: string, locale?: string) {
     const normalized = email.trim().toLowerCase();
-    const genericMessage =
-      'If an account exists, a verification code has been sent to your email.';
+    const genericMessage = mailCopy(locale).resetSent;
 
     const user = await this.prisma.user.findUnique({
       where: { email: normalized },

@@ -1,13 +1,18 @@
-import Link from "next/link";
-import { ArrowRight, Calendar, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
+"use client";
 
-import { ArenaCard } from "@/design-system/cards/ArenaCard";
+import { Link } from "@/i18n/navigation";
+import { ArrowRight, Sparkles, TrendingUp, Users, Zap } from "lucide-react";
+
+import { DeviceBriefFeatureLink } from "@/components/device-brief/DeviceBriefFeatureLink";
+import { TrendingArenaScroll } from "@/components/home/arena/TrendingArenaScroll";
+import { EditorsChoiceScroll } from "@/components/home/arena/EditorsChoiceScroll";
+import { HomeSwipeDeviceGrid } from "@/components/home/arena/HomeSwipeDeviceGrid";
+import { CommunityStreamPanel } from "@/components/home/arena/CommunityStreamSwipe";
+import { EditorsArenaSwipe } from "@/components/home/arena/EditorsArenaSwipe";
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
-import {
-  formatDeviceLaunchLabel,
-  getUpcomingDevices,
-} from "@/features/phone-finder/device-utils";
+import { getTrendingArenaDevices, getUpcomingDevices } from "@/features/phone-finder/device-utils";
 import type { Device, NewsArticle, Review } from "@/lib/api";
+import { useSiteLanguage } from "@/lib/site-language";
 
 type SectionProps = {
   devices: Device[];
@@ -19,18 +24,18 @@ function SectionHeader({
   title,
   subtitle,
   href,
+  viewAllLabel,
   accent = "default",
 }: {
   title: string;
   subtitle?: string;
   href?: string;
+  viewAllLabel: string;
   accent?: "default" | "gold";
 }) {
   return (
     <div
-      className={`arena-section-header mb-6 flex flex-wrap items-end justify-between gap-3 ${
-        accent === "gold" ? "arena-section-header-gold" : ""
-      }`}
+      className={`arena-section-header mb-6 flex flex-wrap items-end justify-between gap-3 ${ accent === "gold" ? "arena-section-header-gold" : "" }`}
     >
       <div>
         <h2 className="text-2xl font-extrabold tracking-tight text-[var(--text-primary)] md:text-3xl">
@@ -47,7 +52,7 @@ function SectionHeader({
           href={href}
           className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-accent)] bg-[var(--electric-cyan)]/10 px-3 py-1.5 text-sm font-semibold text-[var(--electric-cyan)] transition hover:bg-[var(--electric-cyan)]/15"
         >
-          View all <ArrowRight size={14} />
+          {viewAllLabel} <ArrowRight size={14} className="arena-rtl-mirror" />
         </Link>
       )}
     </div>
@@ -55,168 +60,76 @@ function SectionHeader({
 }
 
 export function TrendingArenaSection({ devices }: { devices: Device[] }) {
-  const trending = devices.slice(0, 4);
+  const { t } = useSiteLanguage();
+  const trending = getTrendingArenaDevices(devices);
+
   return (
     <section aria-labelledby="trending-arena" className="arena-home-section">
       <SectionHeader
-        title="Trending Arena"
-        subtitle="What the community is exploring right now"
-        href="/phones"
+        title={t("home.trendingArena")}
+        subtitle={t("home.trendingSubtitle")}
+        href="/phones?trending=1"
+        viewAllLabel={t("home.viewAll")}
       />
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {trending.length > 0 ? (
-          trending.map((d, i) => (
-            <ArenaCard
-              key={d.id}
-              href={`/phones/${d.slug}`}
-              slug={d.slug}
-              deviceId={d.id}
-              title={d.name}
-              subtitle={d.brand?.name}
-              chip={d.chipset?.cpu?.split(" ").slice(0, 2).join(" ") ?? d.os ?? undefined}
-              specPreview={
-                d.display
-                  ? `${d.display.size}" · ${d.display.refreshRate}Hz · ${d.battery?.capacity ?? "—"}mAh`
-                  : undefined
-              }
-              price={d.price != null ? `$${d.price.toLocaleString()}` : undefined}
-              image={d.images?.[0]?.url}
-              badge={i === 0 ? "Trending #1" : "Trending"}
-              communityScore={d.rating ? Math.round(d.rating * 10) : undefined}
-            />
-          ))
-        ) : (
-          <SpectrumPanel variant="accent" className="col-span-full p-10 text-center text-[var(--text-secondary)]">
-            Trending devices appear here as the catalog grows.
-          </SpectrumPanel>
-        )}
-      </div>
+      <TrendingArenaScroll devices={trending} />
     </section>
   );
 }
 
 export function EditorsChoiceSection({ devices }: { devices: Device[] }) {
-  const picks = devices.slice(0, 3);
+  const { t } = useSiteLanguage();
   return (
     <section aria-labelledby="editors-choice" className="arena-home-section">
       <SectionHeader
-        title="Editor's Choices"
-        subtitle="Hand-picked by the MobileArena editorial team"
+        title={t("home.editorsChoices")}
+        subtitle={t("home.editorsSubtitle")}
         href="/reviews"
+        viewAllLabel={t("home.viewAll")}
         accent="gold"
       />
-      <div className="grid gap-5 md:grid-cols-3">
-        {picks.length > 0 ? (
-          picks.map((d) => (
-            <ArenaCard
-              key={d.id}
-              href={`/phones/${d.slug}`}
-              slug={d.slug}
-              deviceId={d.id}
-              title={d.name}
-              subtitle={d.brand?.name}
-              chip={d.os ?? undefined}
-              price={d.price != null ? `$${d.price.toLocaleString()}` : undefined}
-              image={d.images?.[0]?.url}
-              badge="Editor Choice"
-              communityScore={d.rating ? Math.round(d.rating * 10) : undefined}
-            />
-          ))
-        ) : (
-          <SpectrumPanel variant="gold" className="col-span-full p-10 text-center text-[var(--text-secondary)]">
-            Editor picks appear as reviews are published.
-          </SpectrumPanel>
-        )}
-      </div>
+      <EditorsChoiceScroll devices={devices} />
     </section>
   );
 }
 
 export function UpcomingDevicesSection({ devices }: { devices: Device[] }) {
-  const upcoming = getUpcomingDevices(devices, 4);
+  const { t } = useSiteLanguage();
+  const upcoming = getUpcomingDevices(devices, devices.length);
 
   return (
     <section aria-labelledby="upcoming-devices" className="arena-home-section">
       <SectionHeader
-        title="Upcoming Devices"
-        subtitle="Bulk-uploaded launches from Admin → Bulk Upload"
+        title={t("home.upcomingDevices")}
+        subtitle={t("home.upcomingSubtitle")}
         href="/phones?upcoming=1"
+        viewAllLabel={t("home.viewAll")}
       />
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {upcoming.length > 0 ? (
-          upcoming.map((device) => (
-            <ArenaCard
-              key={device.id}
-              href={`/phones/${device.slug}`}
-              slug={device.slug}
-              deviceId={device.id}
-              title={device.name}
-              subtitle={device.brand?.name}
-              chip={formatDeviceLaunchLabel(device)}
-              specPreview={
-                device.display
-                  ? `${device.display.size}" · ${device.display.refreshRate ?? "—"}Hz`
-                  : device.os ?? undefined
-              }
-              price={
-                device.price != null
-                  ? `$${device.price.toLocaleString()}`
-                  : "TBA"
-              }
-              image={device.images?.[0]?.url}
-              badge="Upcoming"
-              communityScore={
-                device.rating ? Math.round(device.rating * 10) : undefined
-              }
-            />
-          ))
-        ) : (
-          <SpectrumPanel
-            variant="accent"
-            className="col-span-full flex flex-col items-center gap-3 p-10 text-center text-[var(--text-secondary)]"
-          >
-            <Calendar size={28} className="text-[var(--electric-cyan)]" />
-            <p>Upload upcoming devices via Admin → Bulk Upload to show launches here.</p>
-          </SpectrumPanel>
-        )}
-      </div>
+      <HomeSwipeDeviceGrid
+        devices={upcoming}
+        variant="upcoming"
+        emptyMessage={t("home.upcomingSubtitle")}
+      />
     </section>
   );
 }
 
 export function AiRecommendationsSection({ devices }: { devices: Device[] }) {
+  const { t } = useSiteLanguage();
   const picks = devices.slice(0, 3);
   return (
     <section aria-labelledby="ai-recs" className="arena-home-section">
       <SectionHeader
-        title="AI Device Recommendations"
-        subtitle="Arena Labs — personalized picks based on trends"
+        title={t("home.aiRecommendations")}
+        subtitle={t("home.aiSubtitle")}
+        viewAllLabel={t("home.viewAll")}
       />
       <SpectrumPanel variant="purple" className="grid gap-4 p-6 md:grid-cols-3">
         {picks.map((d) => (
-          <Link
-            key={d.id}
-            href={`/phones/${d.slug}`}
-            className="arena-feature-card group block"
-          >
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl border border-[var(--border-accent-purple)] bg-[var(--aurora-purple)]/15">
-              <Sparkles size={18} className="text-[var(--aurora-purple)]" />
-            </div>
-            <p className="mt-3 font-bold text-[var(--text-primary)] group-hover:text-[var(--electric-cyan)]">
-              {d.name}
-            </p>
-            <p className="mt-1 text-xs text-[var(--text-secondary)]">
-              Match score:{" "}
-              <span className="font-semibold text-[var(--electric-cyan)]">
-                {78 + (d.id % 20)}%
-              </span>{" "}
-              · {d.brand?.name}
-            </p>
-          </Link>
+          <DeviceBriefFeatureLink key={d.id} device={d} />
         ))}
         {picks.length === 0 && (
           <p className="text-sm text-[var(--text-secondary)] md:col-span-3">
-            Sign in and browse devices to unlock AI recommendations.
+            {t("home.aiSignInHint")}
           </p>
         )}
       </SpectrumPanel>
@@ -225,45 +138,22 @@ export function AiRecommendationsSection({ devices }: { devices: Device[] }) {
 }
 
 export function CommunityStreamSection() {
-  const items = [
-    { user: "TechFan42", action: "rated Volt Stride Pro 9.2/10", time: "2m ago" },
-    { user: "NimbusFan", action: "joined Volt Mobile community", time: "8m ago" },
-    { user: "ArenaLegend", action: "earned Reviewer badge", time: "15m ago" },
-    { user: "CompareKing", action: "compared 3 flagships", time: "22m ago" },
-  ];
+  const { t } = useSiteLanguage();
   return (
     <section aria-labelledby="community-stream" className="arena-home-section">
       <SectionHeader
-        title="Community Activity Stream"
-        subtitle="Live participation across the Arena"
+        title={t("home.communityStream")}
+        subtitle={t("home.communityStreamSubtitle")}
         href="/community"
+        viewAllLabel={t("home.viewAll")}
       />
-      <SpectrumPanel variant="accent" className="overflow-hidden">
-        {items.map((item, index) => (
-          <div
-            key={item.user + item.time}
-            className={`flex items-center gap-4 px-5 py-4 transition hover:bg-[var(--electric-cyan)]/5 ${
-              index > 0 ? "border-t border-[var(--border-muted)]" : ""
-            }`}
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[var(--border-accent)] bg-gradient-to-br from-[var(--arena-blue)] to-[var(--aurora-purple)] text-xs font-bold text-white shadow-lg shadow-[var(--arena-blue)]/20">
-              {item.user.slice(0, 2).toUpperCase()}
-            </span>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm text-[var(--text-primary)]">
-                <strong className="text-[var(--electric-cyan)]">{item.user}</strong>{" "}
-                {item.action}
-              </p>
-              <p className="mt-0.5 text-xs text-[var(--text-secondary)]">{item.time}</p>
-            </div>
-          </div>
-        ))}
-      </SpectrumPanel>
+      <CommunityStreamPanel />
     </section>
   );
 }
 
 export function LaunchTimelineSection() {
+  const { t } = useSiteLanguage();
   const launches = [
     { name: "Prism Horizon Max", date: "Jul 2026", status: "Rumored" },
     { name: "Echo Slate Fold", date: "Aug 2026", status: "Confirmed" },
@@ -271,7 +161,11 @@ export function LaunchTimelineSection() {
   ];
   return (
     <section aria-labelledby="launch-timeline" className="arena-home-section">
-      <SectionHeader title="Upcoming Launch Timeline" subtitle="The release calendar" />
+      <SectionHeader
+        title={t("home.launchTimeline")}
+        subtitle={t("home.launchTimelineSubtitle")}
+        viewAllLabel={t("home.viewAll")}
+      />
       <SpectrumPanel variant="elevated" className="p-6">
         <div className="relative ml-3 border-l-2 border-[var(--border-accent)] pl-8">
           {launches.map((l) => (
@@ -282,7 +176,9 @@ export function LaunchTimelineSection() {
               <p className="text-xs font-bold uppercase tracking-wide text-[var(--electric-cyan)]">
                 {l.date} · {l.status}
               </p>
-              <p className="mt-1 text-base font-bold text-[var(--text-primary)]">{l.name}</p>
+              <p className="mt-1 text-base font-bold text-[var(--text-primary)]">
+                {l.name}
+              </p>
             </div>
           ))}
         </div>
@@ -295,59 +191,32 @@ export function EditorsArenaSection({
   reviews,
   news,
 }: Pick<SectionProps, "reviews" | "news">) {
-  const items = [
-    ...reviews.slice(0, 2).map((r) => ({
-      href: `/reviews/${r.slug}`,
-      title: r.title,
-      type: "Review" as const,
-    })),
-    ...news.slice(0, 2).map((n) => ({
-      href: `/news/${n.slug}`,
-      title: n.title,
-      type: "News" as const,
-    })),
-  ];
-
+  const { t } = useSiteLanguage();
   return (
     <section aria-labelledby="editors-arena" className="arena-home-section">
       <SectionHeader
-        title="Editor's Arena"
-        subtitle="Curated by the MobileArena team"
+        title={t("home.editorsArena")}
+        subtitle={t("home.editorsArenaSubtitle")}
+        viewAllLabel={t("home.viewAll")}
         accent="gold"
       />
-      <div className="grid gap-4 md:grid-cols-2">
-        {items.map((item) => (
-          <Link
-            key={item.href}
-            href={item.href}
-            className="arena-editorial-card group flex items-start gap-4 p-5"
-          >
-            <span
-              className={`shrink-0 rounded-lg border px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
-                item.type === "Review"
-                  ? "border-[var(--border-accent-gold)] bg-[var(--premium-gold)]/15 text-[var(--premium-gold)]"
-                  : "border-[var(--border-accent)] bg-[var(--electric-cyan)]/10 text-[var(--electric-cyan)]"
-              }`}
-            >
-              {item.type}
-            </span>
-            <p className="flex-1 font-semibold leading-snug text-[var(--text-primary)] transition group-hover:text-[var(--electric-cyan)]">
-              {item.title}
-            </p>
-          </Link>
-        ))}
-      </div>
+      <EditorsArenaSwipe reviews={reviews} news={news} />
     </section>
   );
 }
 
 export function ReviewsPollsSection({ reviews }: { reviews: Review[] }) {
+  const { t } = useSiteLanguage();
   return (
     <section aria-labelledby="reviews-polls" className="arena-home-section">
-      <SectionHeader title="User Reviews & Polls" href="/reviews" />
+      <SectionHeader
+        title={t("home.reviewsPolls")}
+        href="/reviews"
+        viewAllLabel={t("home.viewAll")}
+      />
       <SpectrumPanel variant="purple" className="p-6">
         <p className="text-sm font-medium text-[var(--text-secondary)]">
-          Community poll · Which camera king wins in 2026?
+          {t("home.communityPoll")}
         </p>
         <div className="mt-4 space-y-3">
           {[
@@ -361,10 +230,7 @@ export function ReviewsPollsSection({ reviews }: { reviews: Review[] }) {
                 <span className="font-medium text-[var(--electric-cyan)]">{row.pct}%</span>
               </div>
               <div className="arena-score-bar">
-                <div
-                  className="arena-score-fill"
-                  style={{ width: `${row.pct}%` }}
-                />
+                <div className="arena-score-fill" style={{ width: `${row.pct}%` }} />
               </div>
             </div>
           ))}
@@ -374,7 +240,7 @@ export function ReviewsPollsSection({ reviews }: { reviews: Review[] }) {
             href={`/reviews/${reviews[0].slug}`}
             className="mt-4 inline-block text-sm font-semibold text-[var(--electric-cyan)] hover:underline"
           >
-            Read latest review: {reviews[0].title}
+            {reviews[0].title}
           </Link>
         )}
       </SpectrumPanel>
@@ -420,71 +286,4 @@ export function ArenaPulseSection() {
   );
 }
 
-export function ArenaFooterEcosystem() {
-  return (
-    <footer className="mt-8 border-t border-[var(--border-subtle)] pt-10">
-      <div className="grid gap-8 md:grid-cols-4">
-        <div className="md:col-span-2">
-          <p className="text-2xl font-extrabold text-[var(--text-primary)]">
-            Mobile<span className="spectrum-text">Arena</span>
-          </p>
-          <p className="mt-2 max-w-md text-sm leading-relaxed text-[var(--text-secondary)]">
-            Discover. Compare. Decide. Together. A premium, community-driven
-            smartphone platform with an original identity.
-          </p>
-        </div>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--electric-cyan)]">
-            Arena
-          </p>
-          <ul className="mt-3 space-y-2 text-sm">
-            {[
-              ["Phones", "/phones"],
-              ["Phone Finder", "/phone-finder"],
-              ["Comparison Tools", "/compare"],
-              ["Upcoming Devices", "/phones?upcoming=1"],
-              ["News", "/news"],
-              ["Reviews", "/reviews"],
-              ["Community", "/community"],
-              ["Contact", "/contact"],
-            ].map(([label, href]) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className="text-[var(--text-primary)] transition hover:text-[var(--electric-cyan)]"
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-        <div>
-          <p className="text-xs font-bold uppercase tracking-wider text-[var(--aurora-purple)]">
-            Community
-          </p>
-          <ul className="mt-3 space-y-2 text-sm">
-            {[
-              ["Discussions", "/discussions"],
-              ["Sign up", "/signup"],
-              ["Privacy", "/privacy"],
-              ["Terms", "/terms"],
-            ].map(([label, href]) => (
-              <li key={href}>
-                <Link
-                  href={href}
-                  className="text-[var(--text-primary)] transition hover:text-[var(--electric-cyan)]"
-                >
-                  {label}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-      <p className="mt-10 text-center text-xs text-[var(--text-secondary)]">
-        © {new Date().getFullYear()} MobileArena · Titan Spectrum Design System
-      </p>
-    </footer>
-  );
-}
+export { ArenaSiteFooter as ArenaFooterEcosystem } from "@/components/home/arena/ArenaSiteFooter";

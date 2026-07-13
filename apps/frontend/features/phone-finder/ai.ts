@@ -2,6 +2,7 @@ import { computeArenaScore } from "@/lib/arena-score";
 import type { Device } from "@/lib/api";
 
 import {
+  getTrendingArenaDevices,
   getUpcomingDevices,
   hasBatteryAtLeast,
   hasRefreshAtLeast,
@@ -500,14 +501,7 @@ export function communityFavorites(
 }
 
 export function realTimeTrendingDevices(devices: Device[], limit = 5): Device[] {
-  return [...devices]
-    .sort(
-      (a, b) =>
-        computeArenaScore(b) * 0.5 +
-        (b.rating ?? 0) * 5 -
-        (computeArenaScore(a) * 0.5 + (a.rating ?? 0) * 5),
-    )
-    .slice(0, limit);
+  return getTrendingArenaDevices(devices, limit);
 }
 
 export function upcomingLaunches(devices: Device[], limit = 5): Device[] {

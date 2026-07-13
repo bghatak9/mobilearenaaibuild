@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Logga in",
+    "myProfile": "Min profil",
+    "notifications": "Aviseringar",
+    "favorites": "Favoriter",
+    "search": "Sök",
+    "openMenu": "Öppna meny",
+    "language": "Språk",
+    "theme": "Byt tema",
+    "voiceSearch": "Röstsökning",
+    "closeMenu": "Stäng meny",
+    "menu": "Meny"
+  },
+  "languagePicker": {
+    "search": "Sök språk…",
+    "close": "Stäng",
+    "favorites": "Favoriter",
+    "recent": "Senast använda",
+    "popular": "Populära",
+    "all": "Alla språk ({count})",
+    "matches": "{count} träffar",
+    "empty": "Inga språk hittades",
+    "addFavorite": "Lägg till favorit",
+    "removeFavorite": "Ta bort favorit",
+    "changed": "Language changed to {language}"
+  }
+}

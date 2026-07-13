@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "समीक्षाएँ",
+    "loadError": "समीक्षाएँ लोड नहीं हो सकीं। क्या API चल रहा है?",
+    "empty": "अभी कोई समीक्षा नहीं।",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

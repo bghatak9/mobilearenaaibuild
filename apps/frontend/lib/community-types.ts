@@ -14,6 +14,27 @@ export const POLL_TYPE_LABELS: Record<PollType, string> = {
   COMPARISON: "Comparison Polls",
 };
 
+export const POLL_TYPE_META: Record<
+  PollType,
+  { label: string; description: string; accent: string }
+> = {
+  DEVICE: {
+    label: "Device Polls",
+    description: "Crowd picks for camera kings, gaming beasts, battery champions, and foldables.",
+    accent: "cyan",
+  },
+  WEEKLY: {
+    label: "Weekly Polls",
+    description: "Fresh Arena pulse — phone of the week, brand heat, and launch hype.",
+    accent: "purple",
+  },
+  COMPARISON: {
+    label: "Comparison Polls",
+    description: "Head-to-head matchups decided by the community.",
+    accent: "gold",
+  },
+};
+
 export const REVIEW_CATEGORIES = [
   { id: "camera", label: "📸 Camera", emoji: "📸" },
   { id: "battery", label: "🔋 Battery", emoji: "🔋" },

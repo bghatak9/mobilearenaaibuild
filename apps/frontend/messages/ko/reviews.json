@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "리뷰",
+    "loadError": "리뷰를 불러올 수 없습니다. API가 실행 중인가요?",
+    "empty": "아직 리뷰가 없습니다.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

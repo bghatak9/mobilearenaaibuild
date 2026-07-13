@@ -19,6 +19,11 @@ const trackClass = [
 const rangeThumbClass =
   "pointer-events-none absolute top-1/2 z-30 h-4 w-4 -translate-x-1/2 -translate-y-1/2 rounded-full border-2 border-white/80 bg-[linear-gradient(135deg,var(--arena-blue),var(--electric-cyan))] shadow-[0_0_14px_rgba(6,182,212,0.5)]";
 
+const sliderRowHeaderClass = "flex items-start justify-between gap-3";
+const sliderLabelClass =
+  "min-w-0 flex-1 text-sm leading-snug text-[var(--text-secondary)]";
+const sliderValueClass = "shrink-0 text-right text-xs font-bold";
+
 const toggleKnobClass = (active: boolean) =>
   cn(
     "absolute top-0.5 h-5 w-5 rounded-full border-2 transition-all duration-200",
@@ -131,11 +136,11 @@ export function MinRangeSlider({
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between gap-2">
-        <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+      <div className={sliderRowHeaderClass}>
+        <span className={sliderLabelClass}>{label}</span>
         <span
           className={cn(
-            "text-xs font-bold",
+            sliderValueClass,
             active ? "text-[var(--electric-cyan)]" : "text-[var(--text-secondary)]",
           )}
         >
@@ -191,16 +196,14 @@ export function StepSlider<T extends string | number>({
     <div className="space-y-2">
       <div
         className={cn(
-          "flex items-center gap-2",
-          hideLabel ? "justify-end" : "justify-between",
+          sliderRowHeaderClass,
+          hideLabel ? "justify-end" : undefined,
         )}
       >
-        {!hideLabel ? (
-          <span className="text-sm text-[var(--text-secondary)]">{label}</span>
-        ) : null}
+        {!hideLabel ? <span className={sliderLabelClass}>{label}</span> : null}
         <span
           className={cn(
-            "text-xs font-bold",
+            sliderValueClass,
             isDefault
               ? "text-[var(--text-secondary)]"
               : "text-[var(--electric-cyan)]",
@@ -222,9 +225,9 @@ export function StepSlider<T extends string | number>({
         className={trackClass}
         aria-label={label}
       />
-      <div className="flex justify-between text-[10px] text-[var(--text-secondary)]">
-        <span>{options[0]?.label}</span>
-        <span>{options[options.length - 1]?.label}</span>
+      <div className="grid grid-cols-2 gap-2 text-[10px] text-[var(--text-secondary)]">
+        <span className="min-w-0 truncate">{options[0]?.label}</span>
+        <span className="min-w-0 truncate text-right">{options[options.length - 1]?.label}</span>
       </div>
     </div>
   );
@@ -240,8 +243,8 @@ export function SlideToggle({
   onChange: (next: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-3">
-      <span className="text-sm text-[var(--text-secondary)]">{label}</span>
+    <div className="flex items-start justify-between gap-3">
+      <span className={sliderLabelClass}>{label}</span>
       <button
         type="button"
         role="switch"
@@ -279,16 +282,14 @@ export function TriSlide({
     <div className="space-y-2">
       <div
         className={cn(
-          "flex items-center gap-2",
-          hideLabel ? "justify-end" : "justify-between",
+          sliderRowHeaderClass,
+          hideLabel ? "justify-end" : undefined,
         )}
       >
-        {!hideLabel ? (
-          <span className="text-sm text-[var(--text-secondary)]">{label}</span>
-        ) : null}
+        {!hideLabel ? <span className={sliderLabelClass}>{label}</span> : null}
         <span
           className={cn(
-            "text-xs font-bold",
+            sliderValueClass,
             isDefault
               ? "text-[var(--text-secondary)]"
               : "text-[var(--electric-cyan)]",

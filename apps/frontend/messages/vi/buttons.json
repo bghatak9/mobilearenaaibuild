@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Đăng nhập",
+    "myProfile": "Hồ sơ của tôi",
+    "notifications": "Thông báo",
+    "favorites": "Yêu thích",
+    "search": "Tìm kiếm",
+    "openMenu": "Mở menu",
+    "language": "Ngôn ngữ",
+    "theme": "Đổi giao diện",
+    "voiceSearch": "Tìm kiếm bằng giọng nói",
+    "closeMenu": "Đóng menu",
+    "menu": "Menu"
+  },
+  "languagePicker": {
+    "search": "Tìm ngôn ngữ…",
+    "close": "Đóng",
+    "favorites": "Yêu thích",
+    "recent": "Đã dùng gần đây",
+    "popular": "Phổ biến",
+    "all": "Tất cả ngôn ngữ ({count})",
+    "matches": "{count} kết quả",
+    "empty": "Không tìm thấy ngôn ngữ",
+    "addFavorite": "Thêm yêu thích",
+    "removeFavorite": "Xóa yêu thích",
+    "changed": "Language changed to {language}"
+  }
+}

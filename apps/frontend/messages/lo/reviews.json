@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "Reviews",
+    "loadError": "Could not load reviews.",
+    "empty": "No reviews yet.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

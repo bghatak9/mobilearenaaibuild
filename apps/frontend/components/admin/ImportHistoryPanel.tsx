@@ -65,6 +65,20 @@ const BRANDS_CONFIG: BatchHistoryConfig = {
   noDeletePermissionMessage: "Your role cannot delete uploaded brands.",
 };
 
+const CONTENT_CONFIG: BatchHistoryConfig = {
+  kind: "news",
+  entityLabel: "article",
+  entityLabelPlural: "articles",
+  deleteOne: "delete_one_phone",
+  deleteSelected: "delete_selected_phones",
+  restore: "restore_deleted_import",
+  emptyMessage: "No uploads recorded yet.",
+  purgeConfirm:
+    "Permanently destroy all records from this upload? This cannot be undone.",
+  allDeletedMessage: "All items in this upload are deleted.",
+  noDeletePermissionMessage: "Your role cannot delete uploaded content.",
+};
+
 const HISTORY_CONFIG: Record<ImportHistoryKind, BatchHistoryConfig> = {
   phones: {
     kind: "phones",
@@ -73,7 +87,7 @@ const HISTORY_CONFIG: Record<ImportHistoryKind, BatchHistoryConfig> = {
     deleteOne: "delete_one_phone",
     deleteSelected: "delete_selected_phones",
     restore: "restore_deleted_import",
-    emptyMessage: "No phone, upcoming device, or brand uploads recorded yet.",
+    emptyMessage: "No uploads recorded yet.",
     purgeConfirm:
       "Permanently destroy all phones from this upload? This cannot be undone.",
     allDeletedMessage: "All phones in this upload are deleted.",
@@ -101,6 +115,13 @@ function formatBatchKind(kind: string): string {
 function historyConfigForKind(kind: string): BatchHistoryConfig {
   if (kind === "advertisements") return HISTORY_CONFIG.advertisements;
   if (kind === "brands") return BRANDS_CONFIG;
+  if (
+    kind === "news" ||
+    kind === "documentation" ||
+    kind === "reviews"
+  ) {
+    return CONTENT_CONFIG;
+  }
   return HISTORY_CONFIG.phones;
 }
 
@@ -126,9 +147,11 @@ function getSelectableIds(detail: ImportBatchDetail): number[] {
 export function ImportHistoryPanel({
   role,
   importKind = "phones",
+  refreshKey = 0,
 }: {
   role: UserRole;
   importKind?: ImportHistoryKind;
+  refreshKey?: number;
 }) {
   const config = HISTORY_CONFIG[importKind];
   const [batches, setBatches] = useState<ImportBatchSummary[]>([]);
@@ -171,22 +194,16 @@ export function ImportHistoryPanel({
     setLoading(true);
     setError(null);
     try {
-      const kindsToLoad =
-        importKind === "phones"
-          ? (["phones", "upcoming-devices", "brands"] as const)
-          : ([config.kind] as const);
-      const chunks = await Promise.all(
-        kindsToLoad.map((kind) =>
-          listImportBatches({ kind, includeDeleted }),
-        ),
-      );
-      const data = chunks
-        .flat()
-        .sort(
+      const data =
+        importKind === "advertisements"
+          ? await listImportBatches({ kind: config.kind, includeDeleted })
+          : await listImportBatches({ includeDeleted });
+      setBatches(
+        data.sort(
           (a, b) =>
             new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
-        );
-      setBatches(data);
+        ),
+      );
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load history");
     } finally {
@@ -196,7 +213,7 @@ export function ImportHistoryPanel({
 
   useEffect(() => {
     void refresh();
-  }, [refresh]);
+  }, [refresh, refreshKey]);
 
   async function loadDetail(batchId: number) {
     if (expandedId === batchId) {
@@ -299,7 +316,17 @@ export function ImportHistoryPanel({
         const brand = item.brand;
         return Boolean(brand ? !brand.deletedAt : !item.deletedAt);
       }
-      return item.device && !item.device.deletedAt;
+      if (
+        detail.kind === "news" ||
+        detail.kind === "documentation" ||
+        item.news
+      ) {
+        return item.news ? !item.news.deletedAt : !item.deletedAt;
+      }
+      if (item.device) {
+        return !item.device.deletedAt;
+      }
+      return !item.deletedAt;
     }) ?? [];
 
   return (
@@ -310,8 +337,9 @@ export function ImportHistoryPanel({
           <div>
             <h2 className="font-semibold text-zinc-900">Upload history</h2>
             <p className="text-sm text-gray-500">
-              Track {config.entityLabelPlural} uploads — single delete, bulk
-              delete, and permanent erase (SUPER_ADMIN only).
+              Track every bulk upload — phones, news, EV, documentation,
+              reviews, brands, and ads. Single delete, bulk delete, and
+              permanent erase (SUPER_ADMIN only).
               {importKind === "advertisements" &&
                 " Restore deleted ads is SUPER_ADMIN only."}
             </p>
@@ -602,43 +630,105 @@ export function ImportHistoryPanel({
                         );
                       }
 
+                      if (
+                        detail.kind === "news" ||
+                        detail.kind === "documentation" ||
+                        item.news ||
+                        item.entityType === "news"
+                      ) {
+                        const article = item.news;
+                        const title =
+                          article?.title ??
+                          item.entityName ??
+                          `Article #${item.entityId}`;
+                        const slug = article?.slug ?? item.entitySlug ?? "";
+                        const isDeleted = Boolean(
+                          article?.deletedAt ?? item.deletedAt,
+                        );
+                        return (
+                          <li
+                            key={item.id}
+                            className="flex items-center gap-2 rounded px-2 py-1 hover:bg-white"
+                          >
+                            <span
+                              className={
+                                isDeleted ? "text-gray-400 line-through" : ""
+                              }
+                            >
+                              {title}
+                              {slug ? (
+                                <span className="ml-2 text-xs text-gray-400">
+                                  {slug}
+                                </span>
+                              ) : null}
+                            </span>
+                          </li>
+                        );
+                      }
+
                       const device = item.device;
-                      if (!device) return null;
-                      const isDeleted = Boolean(device.deletedAt);
+                      if (device) {
+                        const isDeleted = Boolean(device.deletedAt);
+                        return (
+                          <li
+                            key={item.id}
+                            className="flex items-center gap-2 rounded px-2 py-1 hover:bg-white"
+                          >
+                            {canDeleteOne && !isDeleted && !batch.purgedAt && (
+                              <input
+                                type="checkbox"
+                                checked={selected.has(device.id)}
+                                onChange={() => toggleSelected(device.id)}
+                              />
+                            )}
+                            <span
+                              className={
+                                isDeleted ? "text-gray-400 line-through" : ""
+                              }
+                            >
+                              {device.name}
+                              <span className="ml-2 text-xs text-gray-400">
+                                {device.brand.name}
+                              </span>
+                            </span>
+                            {canDeleteOne && !isDeleted && !batch.purgedAt && (
+                              <button
+                                type="button"
+                                disabled={busy}
+                                onClick={() =>
+                                  void runAction(() => deleteOne(device.id))
+                                }
+                                className="ml-auto text-xs text-rose-600 hover:underline"
+                              >
+                                Delete
+                              </button>
+                            )}
+                          </li>
+                        );
+                      }
+
+                      const label =
+                        item.entityName ??
+                        `${item.entityType.replace(/_/g, " ")} #${item.entityId}`;
+                      const slug = item.entitySlug ?? "";
+                      const isDeleted = Boolean(item.deletedAt);
                       return (
                         <li
                           key={item.id}
                           className="flex items-center gap-2 rounded px-2 py-1 hover:bg-white"
                         >
-                          {canDeleteOne && !isDeleted && !batch.purgedAt && (
-                            <input
-                              type="checkbox"
-                              checked={selected.has(device.id)}
-                              onChange={() => toggleSelected(device.id)}
-                            />
-                          )}
                           <span
                             className={
                               isDeleted ? "text-gray-400 line-through" : ""
                             }
                           >
-                            {device.name}
-                            <span className="ml-2 text-xs text-gray-400">
-                              {device.brand.name}
-                            </span>
+                            {label}
+                            {slug ? (
+                              <span className="ml-2 text-xs text-gray-400">
+                                {slug}
+                              </span>
+                            ) : null}
                           </span>
-                          {canDeleteOne && !isDeleted && !batch.purgedAt && (
-                            <button
-                              type="button"
-                              disabled={busy}
-                              onClick={() =>
-                                void runAction(() => deleteOne(device.id))
-                              }
-                              className="ml-auto text-xs text-rose-600 hover:underline"
-                            >
-                              Delete
-                            </button>
-                          )}
                         </li>
                       );
                     })}

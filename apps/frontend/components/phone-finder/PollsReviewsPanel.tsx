@@ -1,17 +1,17 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { MessageSquare, Star, Vote } from "lucide-react";
 
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
   getActivePoll,
-  getToken,
   voteOnPoll,
   type ActivePoll,
   type Device,
 } from "@/lib/api";
+import { useSiteAuth } from "@/lib/site-auth";
 
 export function PollsReviewsPanel({
   reviewedDevices,
@@ -22,7 +22,8 @@ export function PollsReviewsPanel({
   const [loading, setLoading] = useState(true);
   const [voting, setVoting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const loggedIn = Boolean(getToken());
+  const { user, ready: authReady } = useSiteAuth();
+  const loggedIn = authReady && Boolean(user);
 
   useEffect(() => {
     getActivePoll()
@@ -95,7 +96,7 @@ export function PollsReviewsPanel({
                 ))}
               </div>
               <p className="mt-2 text-[11px] text-[var(--text-secondary)]">
-                {poll.totalVotes.toLocaleString()} votes
+                {poll.totalVotes.toLocaleString("en-US")} votes
               </p>
               {error && (
                 <p className="mt-2 text-xs text-[var(--rose-alert)]">

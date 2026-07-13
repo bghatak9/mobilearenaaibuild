@@ -2,6 +2,7 @@
 
 import { Moon, Sun } from "lucide-react";
 
+import { useClientMounted } from "@/hooks/useClientMounted";
 import { useTheme } from "@/lib/theme";
 
 type ThemeToggleProps = {
@@ -18,7 +19,7 @@ const VARIANT_CLASS: Record<NonNullable<ThemeToggleProps["variant"]>, string> = 
     "text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white",
   light:
     "text-zinc-600 hover:text-zinc-900 dark:text-zinc-300 dark:hover:text-white",
-  nav: "",
+  nav: "text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
 };
 
 export function ThemeToggle({
@@ -27,17 +28,26 @@ export function ThemeToggle({
   className = "",
 }: ThemeToggleProps) {
   const { theme, toggleTheme, ready } = useTheme();
+  const mounted = useClientMounted();
   const isDark = theme === "dark";
+  const showIcon = mounted && ready;
 
   return (
     <button
       type="button"
       onClick={toggleTheme}
-      aria-label={isDark ? "Switch to day mode" : "Switch to night mode"}
-      title={isDark ? "Day mode" : "Night mode"}
-      className={`inline-flex items-center gap-2 rounded p-0.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-red-500 ${VARIANT_CLASS[variant]} ${className}`}
+      aria-label={
+        showIcon
+          ? isDark
+            ? "Switch to day mode"
+            : "Switch to night mode"
+          : "Toggle theme"
+      }
+      title={showIcon ? (isDark ? "Day mode" : "Night mode") : "Toggle theme"}
+      className={`inline-flex items-center justify-center gap-2 rounded p-0.5 text-sm font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--blue)] ${VARIANT_CLASS[variant]} ${className}`}
+      suppressHydrationWarning
     >
-      {ready ? (
+      {showIcon ? (
         isDark ? (
           <Sun size={18} aria-hidden />
         ) : (
@@ -46,7 +56,7 @@ export function ThemeToggle({
       ) : (
         <span className="inline-block h-[18px] w-[18px] shrink-0" aria-hidden />
       )}
-      {showLabel && ready ? (
+      {showLabel && showIcon ? (
         <span className="text-xs">{isDark ? "Day mode" : "Night mode"}</span>
       ) : null}
     </button>

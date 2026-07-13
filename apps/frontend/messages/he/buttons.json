@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "התחברות",
+    "myProfile": "הפרופיל שלי",
+    "notifications": "התראות",
+    "favorites": "מועדפים",
+    "search": "חיפוש",
+    "openMenu": "פתח תפריט",
+    "language": "שפה",
+    "theme": "החלף ערכת נושא",
+    "voiceSearch": "חיפוש קולי",
+    "closeMenu": "סגור תפריט",
+    "menu": "תפריט"
+  },
+  "languagePicker": {
+    "search": "חיפוש שפה…",
+    "close": "סגור",
+    "favorites": "מועדפים",
+    "recent": "בשימוש לאחרונה",
+    "popular": "פופולריים",
+    "all": "כל השפות ({count})",
+    "matches": "{count} התאמות",
+    "empty": "לא נמצאו שפות",
+    "addFavorite": "הוסף למועדפים",
+    "removeFavorite": "הסר מהמועדפים",
+    "changed": "Language changed to {language}"
+  }
+}

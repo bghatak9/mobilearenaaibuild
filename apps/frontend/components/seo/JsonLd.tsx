@@ -1,16 +1,18 @@
 type JsonLdProps = {
   data: Record<string, unknown> | Record<string, unknown>[];
+  /** Stable id when multiple JSON-LD blocks appear on one page. */
+  id?: string;
 };
 
 /**
- * Renders a JSON-LD <script> for structured data. The payload is trusted
- * (built server-side from our own data) and serialized with `<` escaped to
- * avoid breaking out of the script tag.
+ * JSON-LD for crawlers. Uses application/ld+json (non-executable) so React 19
+ * does not treat it as a blocked client script.
  */
-export default function JsonLd({ data }: JsonLdProps) {
+export default function JsonLd({ data, id = "json-ld" }: JsonLdProps) {
   const json = JSON.stringify(data).replace(/</g, "\\u003c");
   return (
     <script
+      id={id}
       type="application/ld+json"
       dangerouslySetInnerHTML={{ __html: json }}
     />

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import {
@@ -10,6 +10,7 @@ import {
   type ActivePoll,
 } from "@/lib/api";
 import { getToken } from "@/lib/api";
+import { useSiteLanguage } from "@/lib/site-language";
 
 export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
   const [poll, setPoll] = useState<ActivePoll | null>(null);
@@ -17,6 +18,7 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
   const [voting, setVoting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loggedIn, setLoggedIn] = useState(false);
+  const { t } = useSiteLanguage();
 
   useEffect(() => {
     setLoggedIn(Boolean(getToken()));
@@ -28,7 +30,7 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
 
   async function handleVote(choiceId: string) {
     if (!loggedIn) {
-      setError("Sign in to vote on community polls.");
+      setError(t("home.signInToVote"));
       return;
     }
     setError(null);
@@ -59,7 +61,7 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
   if (!poll) {
     return (
       <SpectrumPanel variant="purple" className="p-6 text-sm text-[var(--text-secondary)]">
-        Community polls appear here soon.
+        {t("home.pollEmpty")}
       </SpectrumPanel>
     );
   }
@@ -67,7 +69,7 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
   return (
     <SpectrumPanel variant="purple" className="p-6">
       <p className="text-xs font-bold uppercase tracking-widest text-[var(--aurora-purple)]">
-        Community poll
+        {t("home.communityPoll")}
       </p>
       <p className="mt-1 text-base font-semibold text-[var(--text-primary)]">
         {poll.question}
@@ -96,14 +98,14 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
         ))}
       </div>
       <p className="mt-3 text-xs text-[var(--text-secondary)]">
-        {poll.totalVotes.toLocaleString()} votes
+        {t("home.pollVotes", { count: poll.totalVotes.toLocaleString() })}
       </p>
       {error && (
         <p className="mt-3 text-xs text-[var(--rose-alert)]">
           {error}{" "}
           {!loggedIn && (
             <Link href="/login" className="underline">
-              Sign in
+              {t("action.signIn")}
             </Link>
           )}
         </p>
@@ -113,7 +115,7 @@ export function HomePollWidget({ reviewsLink }: { reviewsLink?: string }) {
           href={reviewsLink}
           className="mt-4 inline-block text-sm text-[var(--electric-cyan)] hover:underline"
         >
-          Read latest reviews
+          {t("home.readLatestReviews")}
         </Link>
       )}
     </SpectrumPanel>

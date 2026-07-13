@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "Análises",
+    "loadError": "Não foi possível carregar as análises. A API está no ar?",
+    "empty": "Ainda não há análises.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

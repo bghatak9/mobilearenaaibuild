@@ -23,6 +23,7 @@ export function hideMobileChrome(pathname: string): boolean {
 
 /** Public pages without any ad slots. */
 export const AD_FREE_ROUTES = [
+  "/about",
   "/contact",
   "/privacy",
   "/terms",

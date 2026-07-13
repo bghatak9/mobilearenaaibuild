@@ -1,9 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Heart, Menu, Search } from "lucide-react";
 
+import { SiteLogo } from "@/components/brand/SiteLogo";
 import { useSiteNavAccount } from "@/design-system/navigation/use-site-nav-account";
+import { useSiteLanguage } from "@/lib/site-language";
 
 import { SiteNavToolbar } from "./SiteNavToolbar";
 
@@ -18,6 +20,7 @@ export function MobileCompactHeader({
   onSearch,
 }: MobileCompactHeaderProps) {
   const { favoritesHref } = useSiteNavAccount();
+  const { t } = useSiteLanguage();
 
   return (
     <div className="arena-mobile-header-top">
@@ -27,7 +30,7 @@ export function MobileCompactHeader({
             type="button"
             className="arena-mobile-header-btn"
             onClick={onMenuOpen}
-            aria-label="Open menu"
+            aria-label={t("action.openMenu")}
           >
             <Menu size={20} strokeWidth={2.25} />
           </button>
@@ -35,25 +38,22 @@ export function MobileCompactHeader({
             type="button"
             className="arena-mobile-header-btn"
             onClick={onSearch}
-            aria-label="Search"
-            title="Search"
+            aria-label={t("action.search")}
+            title={t("action.search")}
           >
             <Search size={19} strokeWidth={2.25} />
           </button>
           <Link
             href={favoritesHref}
             className="arena-mobile-header-btn arena-mobile-header-favorites"
-            aria-label="Favorite phones"
-            title="Favorite phones"
+            aria-label={t("action.favorites")}
+            title={t("action.favorites")}
           >
             <Heart size={19} strokeWidth={2.25} />
           </Link>
         </div>
 
-        <Link href="/" className="arena-mobile-header-logo" aria-label="MobileArena home">
-          <span className="arena-mobile-header-logo-mobile">Mobile</span>
-          <span className="arena-mobile-header-logo-arena">Arena</span>
-        </Link>
+        <SiteLogo variant="mobile" />
 
         <div className="arena-mobile-header-side arena-mobile-header-side-right">
           <SiteNavToolbar layout="mobile" />

@@ -1,7 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { Link } from "@/i18n/navigation";
+import { usePathname, useRouter } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { LogOut } from "lucide-react";
 import type { ReactNode } from "react";
 
@@ -16,6 +17,8 @@ export function ProfileShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const { signOut } = useSiteAuth();
   const { profile } = useProfile();
+  const t = useTranslations("dashboard");
+  const tCommon = useTranslations("common");
 
   function handleLogout() {
     signOut();
@@ -26,21 +29,21 @@ export function ProfileShell({ children }: { children: ReactNode }) {
     href === "/profile" ? pathname === "/profile" : pathname.startsWith(href);
 
   const breadcrumbs: BreadcrumbItem[] = [
-    { label: "Home", href: "/" },
-    { label: "Profile", href: "/profile" },
+    { label: tCommon("home"), href: "/" },
+    { label: t("myProfile"), href: "/profile" },
   ];
   const sub = PROFILE_NAV.find(
     (item) => item.href !== "/profile" && pathname.startsWith(item.href),
   );
   if (sub && pathname !== "/profile") {
-    breadcrumbs.push({ label: sub.label });
+    breadcrumbs.push({ label: t(sub.labelKey) });
   }
 
   return (
     <div className="mx-auto flex max-w-6xl flex-col gap-6 lg:flex-row lg:items-start">
       <aside className="w-full shrink-0 spectrum-panel p-4 lg:sticky lg:top-36 lg:w-64">
         <p className="hidden px-2 text-xs font-semibold uppercase tracking-wider text-[var(--text-secondary)] lg:block">
-          👤 My Profile
+          👤 {t("myProfile")}
         </p>
         <nav className="mt-0 flex gap-2 overflow-x-auto pb-1 lg:mt-3 lg:block lg:space-y-0.5 lg:overflow-visible">
           {PROFILE_NAV.map((item) => {
@@ -62,7 +65,7 @@ export function ProfileShell({ children }: { children: ReactNode }) {
               >
                 <span className="flex items-center gap-2 whitespace-nowrap">
                   <Icon size={16} />
-                  {item.label}
+                  {t(item.labelKey)}
                 </span>
                 {typeof count === "number" && count > 0 && (
                   <span className="rounded-full bg-zinc-200 px-2 py-0.5 text-[10px] font-bold dark:bg-zinc-700">
@@ -78,13 +81,13 @@ export function ProfileShell({ children }: { children: ReactNode }) {
             className="flex shrink-0 items-center gap-2 rounded-lg bg-white/5 px-3 py-2 text-sm font-medium whitespace-nowrap text-zinc-700 hover:bg-zinc-50 lg:w-full lg:bg-transparent dark:text-zinc-300 dark:hover:bg-zinc-800"
           >
             <LogOut size={16} />
-            Logout
+            {t("logout")}
           </button>
         </nav>
       </aside>
 
       <div className="min-w-0 flex-1">
-        <Breadcrumbs items={breadcrumbs} className="mb-4" />
+        <Breadcrumbs className="mb-4" items={breadcrumbs} />
         {children}
       </div>
     </div>
@@ -111,17 +114,14 @@ export function ProfilePageHeader({
 }
 
 export function ProfilePanel({ children }: { children: ReactNode }) {
-  return (
-    <div className="spectrum-panel rounded-[24px] p-6">
-      {children}
-    </div>
-  );
+  return <div className="spectrum-panel rounded-[24px] p-6">{children}</div>;
 }
 
 export function ProfileLoading() {
+  const t = useTranslations("common");
   return (
     <div className="flex items-center justify-center py-20 text-sm text-gray-500">
-      Loading profile…
+      {t("loading")}
     </div>
   );
 }

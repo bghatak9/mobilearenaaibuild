@@ -357,32 +357,6 @@ export class ProfileCollectionsService {
     return { ok: true };
   }
 
-  async ensureWelcomeNotification(userId: number) {
-    await this.prisma.$transaction(async (tx) => {
-      await tx.userNotification.updateMany({
-        where: {
-          userId,
-          type: 'system',
-          title: 'Welcome to MobileArena',
-          link: '/profile',
-        },
-        data: { link: '/phones' },
-      });
-
-      const count = await tx.userNotification.count({ where: { userId } });
-      if (count > 0) return;
-      await tx.userNotification.create({
-        data: {
-          userId,
-          type: 'system',
-          title: 'Welcome to MobileArena',
-          body: 'Your profile is ready. Explore phones, save bookmarks, and earn reputation badges.',
-          link: '/phones',
-        },
-      });
-    });
-  }
-
   async countStats(userId: number) {
     const [
       bookmarks,

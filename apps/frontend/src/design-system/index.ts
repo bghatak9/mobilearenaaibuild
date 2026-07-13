@@ -28,6 +28,8 @@ export { ToastProvider, useToast } from "./feedback/Toast";
 export { Skeleton } from "./feedback/Skeleton";
 export { Avatar } from "./feedback/Avatar";
 export { Pagination } from "./data/Pagination";
+export { SwipePagination } from "./data/SwipePagination";
+export { SwipePagedList } from "@/components/ui/SwipePagedList";
 export { DataTable } from "./data/DataTable";
 
 /* Phase 3+ — available but not wired into main layout yet */

@@ -19,6 +19,7 @@ export function ArPreviewModal({
   const [tilt, setTilt] = useState(12);
   const [placed, setPlaced] = useState(false);
   const [colorIdx, setColorIdx] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const dragging = useRef(false);
   const lastX = useRef(0);
 
@@ -27,6 +28,7 @@ export function ArPreviewModal({
 
   function onPointerDown(e: React.PointerEvent) {
     dragging.current = true;
+    setIsDragging(true);
     lastX.current = e.clientX;
     (e.target as HTMLElement).setPointerCapture(e.pointerId);
   }
@@ -40,6 +42,7 @@ export function ArPreviewModal({
 
   function onPointerUp() {
     dragging.current = false;
+    setIsDragging(false);
   }
 
   return (
@@ -66,7 +69,7 @@ export function ArPreviewModal({
             style={{
               transform: `rotateY(${rotation}deg) rotateX(${tilt}deg) translateY(${placed ? "0" : "-20px"}) scale(${placed ? 1 : 0.9})`,
               transformStyle: "preserve-3d",
-              transition: dragging.current ? "none" : "transform 0.15s ease",
+              transition: isDragging ? "none" : "transform 0.15s ease",
             }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 import { cn } from "@/design-system/utils/cn";
@@ -18,6 +19,7 @@ export function Pagination({
   onPageChange,
   className,
 }: PaginationProps) {
+  const t = useTranslations("common");
   if (totalPages <= 1) return null;
 
   const pages = Array.from({ length: totalPages }, (_, i) => i + 1).filter(
@@ -27,16 +29,16 @@ export function Pagination({
   return (
     <nav
       className={cn("flex items-center justify-center gap-1", className)}
-      aria-label="Pagination"
+      aria-label={t("pagination")}
     >
       <Button
         variant="ghost"
         size="sm"
         disabled={page <= 1}
         onClick={() => onPageChange(page - 1)}
-        aria-label="Previous page"
+        aria-label={t("previousPage")}
       >
-        <ChevronLeft size={16} />
+        <ChevronLeft size={16} className="arena-rtl-mirror" />
       </Button>
       {pages.map((p, i) => {
         const prev = pages[i - 1];
@@ -60,9 +62,9 @@ export function Pagination({
         size="sm"
         disabled={page >= totalPages}
         onClick={() => onPageChange(page + 1)}
-        aria-label="Next page"
+        aria-label={t("nextPage")}
       >
-        <ChevronRight size={16} />
+        <ChevronRight size={16} className="arena-rtl-mirror" />
       </Button>
     </nav>
   );

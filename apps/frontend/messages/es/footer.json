@@ -1,0 +1,31 @@
+{
+  "footer": {
+    "promise": "Descubre. Compara. Decide. Juntos.",
+    "arena": "Arena",
+    "workWithUs": "Trabaja con nosotros",
+    "discover": "Descubrir",
+    "support": "Soporte",
+    "aboutUs": "Sobre nosotros",
+    "contact": "Contacto",
+    "guidelines": "Normas de la comunidad",
+    "discussions": "Discusiones",
+    "createAccount": "Crear cuenta",
+    "advertise": "Publicidad",
+    "partnerships": "Asociaciones",
+    "press": "Prensa",
+    "home": "Inicio",
+    "news": "Noticias",
+    "phones": "Teléfonos",
+    "brands": "Brands",
+    "reviews": "Reseñas",
+    "compare": "Comparar",
+    "phoneFinder": "Buscador",
+    "guides": "Guides",
+    "community": "Comunidad",
+    "evHub": "Hub EV",
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "help": "Ayuda",
+    "copyright": "© {year} MobileArena. Todos los derechos reservados."
+  }
+}

@@ -13,6 +13,7 @@ import { isReservedStaffEmail } from './staff-seed-emails';
 import { assertPasswordMeetsPolicy } from './password-policy';
 import { EmailVerificationService } from './email-verification.service';
 import { hashPassword, verifyPassword } from './password-crypto';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class AuthService {
@@ -20,6 +21,7 @@ export class AuthService {
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
     private readonly emailVerification: EmailVerificationService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   async register(email: string, password: string, name?: string) {
@@ -52,6 +54,7 @@ export class AuthService {
     });
 
     const verifyToken = await this.emailVerification.createToken(user.id);
+    await this.notifications.ensureWelcomeNotification(user.id);
     const session = await this.issueSession(user);
     const expose = process.env.OTP_DEV_EXPOSE === 'true';
 
@@ -96,7 +99,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    return this.issueSession(user);
+    return this.issueSession(user, { ensureWelcome: true });
   }
 
   async googleSignIn(idToken: string, staffOnly = false) {
@@ -139,7 +142,7 @@ export class AuthService {
       });
     }
 
-    return this.issueSession(user);
+    return this.issueSession(user, { ensureWelcome: true });
   }
 
   async facebookSignIn(accessToken: string, staffOnly = false) {
@@ -196,7 +199,7 @@ export class AuthService {
       });
     }
 
-    return this.issueSession(user);
+    return this.issueSession(user, { ensureWelcome: true });
   }
 
   isSocialAuthDevMode(): boolean {
@@ -265,7 +268,7 @@ export class AuthService {
       });
     }
 
-    return this.issueSession(user);
+    return this.issueSession(user, { ensureWelcome: true });
   }
 
   async setPasswordHash(userId: number, plainPassword: string) {
@@ -283,11 +286,15 @@ export class AuthService {
     });
   }
 
-  async issueSession(user: User) {
+  async issueSession(user: User, options?: { ensureWelcome?: boolean }) {
     await this.prisma.user.update({
       where: { id: user.id },
       data: { lastLogin: new Date() },
     });
+
+    if (options?.ensureWelcome) {
+      await this.notifications.ensureWelcomeNotification(user.id);
+    }
 
     const token = this.jwtService.sign({
       sub: user.id,

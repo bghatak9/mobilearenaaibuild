@@ -1,9 +1,10 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ContentEntityType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { slugify } from '../common/slug';
+import { ContentTranslationService } from '../content-translation/content-translation.service';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 
@@ -15,38 +16,72 @@ export class ReviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    private readonly translations: ContentTranslationService,
   ) {}
 
-  findAll(deviceId?: number) {
+  async findAll(deviceId?: number, locale?: string) {
+    const loc = locale ?? 'en';
     return this.cache.wrap(
-      `${CACHE_PREFIX}list:${deviceId ?? 'all'}`,
+      `${CACHE_PREFIX}list:${loc}:${deviceId ?? 'all'}`,
       CACHE_TTL,
-      () =>
-        this.prisma.review.findMany({
+      async () => {
+        const rows = await this.prisma.review.findMany({
           where: deviceId ? { deviceId } : {},
           orderBy: { publishedAt: 'desc' },
           include: {
             device: { select: { id: true, name: true, slug: true } },
           },
-        }),
+        });
+        return this.translations.localizeMany(
+          ContentEntityType.REVIEW,
+          rows,
+          loc,
+        );
+      },
     );
   }
 
-  async findBySlug(slug: string) {
+  async findBySlug(slug: string, locale?: string) {
+    const loc = locale ?? 'en';
     return this.cache.wrap(
-      `${CACHE_PREFIX}slug:${slug}`,
+      `${CACHE_PREFIX}slug:${loc}:${slug}`,
       CACHE_TTL,
       async () => {
-        const review = await this.prisma.review.findUnique({
+        let review = await this.prisma.review.findUnique({
           where: { slug },
           include: { device: true },
         });
 
         if (!review) {
+          const translatedId =
+            await this.translations.resolveEntityIdByLocalizedSlug(
+              ContentEntityType.REVIEW,
+              slug,
+              loc,
+            );
+          if (translatedId) {
+            review = await this.prisma.review.findUnique({
+              where: { id: translatedId },
+              include: { device: true },
+            });
+          }
+        }
+
+        if (!review) {
           throw new NotFoundException(`Review "${slug}" not found.`);
         }
 
-        return review;
+        const localized = await this.translations.localizeOne(
+          ContentEntityType.REVIEW,
+          review,
+          loc,
+        );
+        const localeSlugs = await this.translations.localeSlugMap(
+          ContentEntityType.REVIEW,
+          review.id,
+          review.slug,
+        );
+        return { ...localized, localeSlugs };
       },
     );
   }
@@ -100,7 +135,6 @@ export class ReviewService {
     return review;
   }
 
-  // Reviews are embedded in device detail payloads, so bust both caches.
   private async invalidate() {
     await this.cache.delByPrefix(CACHE_PREFIX);
     await this.cache.delByPrefix('devices:');

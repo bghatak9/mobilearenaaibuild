@@ -2,6 +2,8 @@ import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 
+import { NotificationsModule } from '../notifications/notifications.module';
+import { PrismaModule } from '../prisma/prisma.module';
 import { AuthService } from './auth.service';
 import { AdminAuthController, AuthController } from './auth.controller';
 import { JwtStrategy } from './jwt.strategy';
@@ -11,6 +13,8 @@ import { PasswordResetService } from './password-reset.service';
 @Module({
   imports: [
     PassportModule,
+    PrismaModule,
+    NotificationsModule,
     JwtModule.register({
       secret: process.env.JWT_SECRET || 'secretKey',
       signOptions: { expiresIn: '1d' },

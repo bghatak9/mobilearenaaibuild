@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "Berita",
+    "loadError": "Gagal memuat berita. Apakah API berjalan?",
+    "empty": "Belum ada berita.",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

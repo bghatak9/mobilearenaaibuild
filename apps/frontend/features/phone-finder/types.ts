@@ -248,8 +248,12 @@ export const DEFAULT_PHONE_FINDER_FILTERS: PhoneFinderFilters = {
 export type PhoneFinderPreset = {
   id: string;
   label: string;
+  /** i18n key under `finder.*` (useTranslations("finder")). */
+  labelKey: string;
   emoji: string;
   category: "discovery" | "lifestyle";
   description: string;
+  /** i18n key under `finder.*` (useTranslations("finder")). */
+  descriptionKey: string;
   patch: Partial<PhoneFinderFilters>;
 };

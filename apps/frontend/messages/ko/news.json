@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "뉴스",
+    "loadError": "뉴스를 불러올 수 없습니다. API가 실행 중인가요?",
+    "empty": "아직 뉴스가 없습니다.",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

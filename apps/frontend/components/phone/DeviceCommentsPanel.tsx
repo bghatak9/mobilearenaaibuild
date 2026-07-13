@@ -1,12 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import { useSearchParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { Flag, Pencil, Trash2 } from "lucide-react";
 
 import { Avatar } from "@/design-system/feedback/Avatar";
 import { Button } from "@/design-system/buttons/Button";
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
+import { TechnicalText } from "@/components/i18n/TechnicalText";
+import { DeviceName } from "@/components/brands/DeviceName";
+import {
+  DEVICE_DISCUSSIONS_SECTION_ID,
+  discussionTopicLabel,
+} from "@/features/device-intelligence";
+import { localizeTechnicalText } from "@/features/i18n";
 import {
   createComment,
   deleteComment,
@@ -15,15 +24,19 @@ import {
   updateComment,
   type DeviceComment,
 } from "@/lib/api";
+import { formatDate } from "@/lib/format-datetime";
 import { getToken } from "@/lib/api";
 import { useSiteAuth } from "@/lib/site-auth";
+import { useSiteLanguage } from "@/lib/site-language";
 
 export function DeviceCommentsPanel({
   deviceId,
   deviceName,
+  deviceBrand,
 }: {
   deviceId: number;
   deviceName: string;
+  deviceBrand?: string | null;
 }) {
   const [comments, setComments] = useState<DeviceComment[]>([]);
   const [body, setBody] = useState("");
@@ -37,6 +50,18 @@ export function DeviceCommentsPanel({
   const [savingId, setSavingId] = useState<number | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
   const { user } = useSiteAuth();
+  const { resolved } = useSiteLanguage();
+  const tPhones = useTranslations("phones");
+  const searchParams = useSearchParams();
+  const activeTopic = discussionTopicLabel(searchParams.get("topic"));
+  const commentPlaceholder = loggedIn
+    ? activeTopic
+      ? localizeTechnicalText(
+          `Share your ${activeTopic.toLowerCase()} experience…`,
+          resolved,
+        )
+      : tPhones("writeComment")
+    : localizeTechnicalText("Sign in to comment", resolved);
 
   useEffect(() => {
     setLoggedIn(Boolean(getToken()));
@@ -138,30 +163,51 @@ export function DeviceCommentsPanel({
   }
 
   return (
-    <SpectrumPanel className="mt-8 p-6">
+    <SpectrumPanel
+      id={DEVICE_DISCUSSIONS_SECTION_ID}
+      className="mt-8 scroll-mt-28 p-6"
+    >
       <h2 className="text-xl font-bold text-[var(--text-primary)]">
-        Community comments
+        <TechnicalText value="Community comments" />
       </h2>
       <p className="mt-1 text-sm text-[var(--text-secondary)]">
-        Share your take on {deviceName}
+        {activeTopic ? (
+          <>
+            <TechnicalText value="Join the" />{" "}
+            <TechnicalText value={activeTopic.toLowerCase()} />{" "}
+            <TechnicalText value="discussion about" />{" "}
+            <DeviceName name={deviceName} brand={deviceBrand} />
+          </>
+        ) : (
+          <>
+            <TechnicalText value="Share your take on" />{" "}
+            <DeviceName name={deviceName} brand={deviceBrand} />
+          </>
+        )}
       </p>
+
+      {activeTopic ? (
+        <p className="mt-3 inline-flex items-center rounded-full border border-[var(--electric-cyan)]/30 bg-[var(--electric-cyan)]/10 px-3 py-1 text-xs font-semibold text-[var(--electric-cyan)]">
+          <TechnicalText value={`Topic: ${activeTopic}`} />
+        </p>
+      ) : null}
 
       <form onSubmit={(e) => void handleSubmit(e)} className="mt-4 space-y-3">
         <textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          placeholder={loggedIn ? "Write a comment…" : "Sign in to comment"}
+          placeholder={commentPlaceholder}
           disabled={!loggedIn || posting}
           rows={3}
           className="w-full rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]"
         />
         <div className="flex items-center gap-3">
           <Button type="submit" disabled={!body.trim() || posting || !loggedIn}>
-            {posting ? "Posting…" : "Post comment"}
+            <TechnicalText value={posting ? "Posting…" : "Post comment"} />
           </Button>
           {!loggedIn && (
             <Link href="/login" className="text-sm text-[var(--electric-cyan)] hover:underline">
-              Sign in
+              <TechnicalText value="Sign in" />
             </Link>
           )}
         </div>
@@ -176,10 +222,12 @@ export function DeviceCommentsPanel({
 
       <ul className="mt-6 space-y-4">
         {loading ? (
-          <li className="text-sm text-[var(--text-secondary)]">Loading comments…</li>
+          <li className="text-sm text-[var(--text-secondary)]">
+            <TechnicalText value="Loading comments…" />
+          </li>
         ) : comments.length === 0 ? (
           <li className="text-sm text-[var(--text-secondary)]">
-            No comments yet — be the first.
+            <TechnicalText value={tPhones("noComments")} />
           </li>
         ) : (
           comments.map((c) => {
@@ -196,10 +244,12 @@ export function DeviceCommentsPanel({
               <Avatar src={c.user?.avatar} name={c.user?.name} size="sm" />
               <div className="min-w-0 flex-1">
                 <p className="text-sm font-semibold text-[var(--text-primary)]">
-                  {c.user?.name ?? "Arena member"}
+                  {c.user?.name ?? (
+                    <TechnicalText value="Arena member" />
+                  )}
                   {isOwn && (
                     <span className="ml-2 text-xs font-normal text-[var(--text-secondary)]">
-                      (you)
+                      <TechnicalText value="(you)" />
                     </span>
                   )}
                 </p>
@@ -218,7 +268,7 @@ export function DeviceCommentsPanel({
                         disabled={isSaving || !draftBody.trim()}
                         onClick={() => void saveEdit(c.id)}
                       >
-                        {isSaving ? "Saving…" : "Save"}
+                        <TechnicalText value={isSaving ? "Saving…" : "Save"} />
                       </Button>
                       <Button
                         type="button"
@@ -226,7 +276,7 @@ export function DeviceCommentsPanel({
                         disabled={isSaving}
                         onClick={cancelEdit}
                       >
-                        Cancel
+                        <TechnicalText value="Cancel" />
                       </Button>
                     </div>
                   </div>
@@ -234,9 +284,7 @@ export function DeviceCommentsPanel({
                   <p className="mt-1 text-sm text-[var(--text-secondary)]">{c.body}</p>
                 )}
                 <div className="mt-2 flex items-center gap-3 text-xs text-[var(--text-secondary)]">
-                  <time dateTime={c.createdAt}>
-                    {new Date(c.createdAt).toLocaleDateString()}
-                  </time>
+                  <time dateTime={c.createdAt}>{formatDate(c.createdAt)}</time>
                   {isOwn && !isEditing && (
                     <>
                       <button
@@ -246,7 +294,7 @@ export function DeviceCommentsPanel({
                         className="inline-flex items-center gap-1 hover:text-[var(--electric-cyan)] disabled:opacity-50"
                       >
                         <Pencil size={12} />
-                        Edit
+                        <TechnicalText value="Edit" />
                       </button>
                       <button
                         type="button"
@@ -255,7 +303,7 @@ export function DeviceCommentsPanel({
                         className="inline-flex items-center gap-1 hover:text-[var(--rose-alert)] disabled:opacity-50"
                       >
                         <Trash2 size={12} />
-                        {isDeleting ? "Deleting…" : "Delete"}
+                        <TechnicalText value={isDeleting ? "Deleting…" : "Delete"} />
                       </button>
                     </>
                   )}
@@ -266,7 +314,7 @@ export function DeviceCommentsPanel({
                       className="inline-flex items-center gap-1 hover:text-[var(--rose-alert)]"
                     >
                       <Flag size={12} />
-                      Report
+                      <TechnicalText value="Report" />
                     </button>
                   )}
                 </div>

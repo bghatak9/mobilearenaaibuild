@@ -51,17 +51,24 @@ export class NewsController {
   findAll(
     @Query('status') status?: PostStatus,
     @Query('featured') featured?: string,
+    @Query('locale') locale?: string,
+    @Query('search') search?: string,
   ) {
     return this.newsService.findAll({
       status,
       featured:
         featured === undefined ? undefined : featured === 'true',
+      locale,
+      search,
     });
   }
 
   @Get(':slug')
-  findBySlug(@Param('slug') slug: string) {
-    return this.newsService.findBySlug(slug);
+  findBySlug(
+    @Param('slug') slug: string,
+    @Query('locale') locale?: string,
+  ) {
+    return this.newsService.findBySlug(slug, { locale });
   }
 
   @Post()

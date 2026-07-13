@@ -10,6 +10,7 @@ import { ImportLifecycleService } from './import-lifecycle.service';
 import { parseUpload } from './import.parser';
 import type {
   BulkImportKind,
+  EvUploadSubkind,
   ImportActor,
   ImportIssue,
   ImportRunResult,
@@ -45,6 +46,27 @@ function strFrom(row: Record<string, unknown>, ...keys: string[]): string {
     if (value) return value;
   }
   return '';
+}
+
+const EV_CATEGORIES = new Set(['cars', 'suvs', 'trucks', 'vans', 'bikes']);
+
+function normalizeEvCategory(raw: string): string {
+  const c = raw.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  if (c === 'car' || c === 'electric_car') return 'cars';
+  if (c === 'suv' || c === 'crossover' || c === 'electric_suv') return 'suvs';
+  if (c === 'truck' || c === 'pickup') return 'trucks';
+  if (c === 'van') return 'vans';
+  if (c === 'bike' || c === 'bikes' || c === 'scooter' || c === 'motorcycle') {
+    return 'bikes';
+  }
+  return c;
+}
+
+function numFrom(row: Record<string, unknown>, ...keys: string[]): number | null {
+  const raw = strFrom(row, ...keys);
+  if (!raw) return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
 }
 
 type DeviceImportKind = 'phones' | 'upcoming-devices';
@@ -95,6 +117,10 @@ function issue(
   return { rowIndex, row, reason, severity };
 }
 
+function evSubkindOf(options: { subkind?: EvUploadSubkind } = {}): EvUploadSubkind {
+  return options.subkind ?? 'vehicles';
+}
+
 @Injectable()
 export class ImportExecutor {
   constructor(
@@ -107,6 +133,7 @@ export class ImportExecutor {
     kind: BulkImportKind,
     file: Express.Multer.File,
     role: UserRole,
+    options: { slug?: string; subkind?: EvUploadSubkind } = {},
   ): Promise<ImportValidationResult> {
     if (!file) {
       return {
@@ -123,12 +150,18 @@ export class ImportExecutor {
     }
 
     try {
-      const parsed = await parseUpload(file, kind, role);
+      const parsed = await parseUpload(file, kind, role, options);
+      const evSk = kind === 'ev' ? evSubkindOf(options) : undefined;
       if (parsed.format === 'articles') {
-        if (kind === 'reviews') {
-          return this.validateReviewArticles(file.originalname, parsed.articles);
+        if (kind === 'reviews' || (kind === 'ev' && evSk === 'reviews')) {
+          const result = this.validateReviewArticles(
+            file.originalname,
+            parsed.articles,
+          );
+          return kind === 'ev' ? { ...result, kind: 'ev' } : result;
         }
-        return this.validateArticleImport(kind, file.originalname, parsed.articles);
+        const articleKind = kind === 'ev' ? 'ev' : kind;
+        return this.validateArticleImport(articleKind, file.originalname, parsed.articles);
       }
       if (parsed.format === 'images') {
         return this.validateImageZip(kind, file.originalname, parsed.files);
@@ -160,6 +193,21 @@ export class ImportExecutor {
           return this.validateReviews(file.originalname, parsed.rows);
         case 'advertisements':
           return this.validateAdvertisements(file.originalname, parsed.rows);
+        case 'ev': {
+          const sk = evSubkindOf(options);
+          if (sk === 'news') {
+            const result = this.validateNews(file.originalname, parsed.rows);
+            return { ...result, kind: 'ev' };
+          }
+          if (sk === 'reviews') {
+            const result = this.validateReviews(file.originalname, parsed.rows);
+            return { ...result, kind: 'ev' };
+          }
+          if (sk === 'upcoming') {
+            return this.validateEvUpcoming(file.originalname, parsed.rows);
+          }
+          return this.validateEv(file.originalname, parsed.rows);
+        }
         default:
           return this.emptyValidation(
             kind,
@@ -180,9 +228,17 @@ export class ImportExecutor {
     kind: BulkImportKind,
     file: Express.Multer.File,
     actor: ImportActor,
-    options: { atomic?: boolean; background?: boolean } = {},
+    options: {
+      atomic?: boolean;
+      background?: boolean;
+      slug?: string;
+      subkind?: EvUploadSubkind;
+    } = {},
   ): Promise<ImportRunResult & { jobId?: string }> {
-    const validation = await this.validate(kind, file, actor.role);
+    const validation = await this.validate(kind, file, actor.role, {
+      slug: options.slug,
+      subkind: options.subkind,
+    });
     if (!validation.canImport) {
       return ImportJobService.buildResult({
         success: false,
@@ -211,7 +267,11 @@ export class ImportExecutor {
       onProgress: (processed: number, total: number) => void,
       jobId: string,
     ) => {
-      const parsed = await parseUpload(file, kind, actor.role);
+      const parsed = await parseUpload(file, kind, actor.role, {
+        slug: options.slug,
+        subkind: options.subkind,
+      });
+      const evSk = kind === 'ev' ? evSubkindOf(options) : undefined;
       if (parsed.format === 'articles') {
         if (kind === 'reviews') {
           return this.executeReviewArticles(
@@ -219,6 +279,16 @@ export class ImportExecutor {
             validation,
             options.atomic ?? true,
             onProgress,
+            { ...runContext, jobId: jobId || undefined },
+          );
+        }
+        if (kind === 'ev' && evSk === 'reviews') {
+          return this.executeEvReviewsFromArticles(
+            parsed.articles,
+            validation,
+            options.atomic ?? true,
+            onProgress,
+            { ...runContext, jobId: jobId || undefined },
           );
         }
         if (kind === 'documentation') {
@@ -227,6 +297,16 @@ export class ImportExecutor {
             validation,
             options.atomic ?? true,
             onProgress,
+            { ...runContext, jobId: jobId || undefined },
+          );
+        }
+        if (kind === 'ev' && evSk === 'news') {
+          return this.executeEvArticleNews(
+            parsed.articles,
+            validation,
+            options.atomic ?? true,
+            onProgress,
+            { ...runContext, jobId: jobId || undefined },
           );
         }
         return this.executeArticleNews(
@@ -238,7 +318,12 @@ export class ImportExecutor {
         );
       }
       if (parsed.format === 'images') {
-        return this.executeImageZip(parsed.files, options.atomic ?? true, onProgress);
+        return this.executeImageZip(
+          kind,
+          parsed.files,
+          options.atomic ?? true,
+          onProgress,
+        );
       }
       if (parsed.format === 'ads') {
         return this.executeAdDocuments(
@@ -291,13 +376,20 @@ export class ImportExecutor {
             validation,
             options.atomic ?? true,
             onProgress,
+            { ...runContext, jobId: jobId || undefined },
           );
         case 'users':
           return this.executeUsers(parsed.rows, validation, options.atomic ?? true, onProgress);
         case 'prices':
           return this.executePrices(parsed.rows, validation, options.atomic ?? true, onProgress);
         case 'reviews':
-          return this.executeReviews(parsed.rows, validation, options.atomic ?? true, onProgress);
+          return this.executeReviews(
+            parsed.rows,
+            validation,
+            options.atomic ?? true,
+            onProgress,
+            { ...runContext, jobId: jobId || undefined },
+          );
         case 'advertisements':
           return this.executeAdvertisements(
             parsed.rows,
@@ -306,6 +398,34 @@ export class ImportExecutor {
             onProgress,
             { ...runContext, jobId: jobId || undefined },
           );
+        case 'ev': {
+          const sk = evSubkindOf(options);
+          if (sk === 'news') {
+            return this.executeEvNews(
+              parsed.rows,
+              validation,
+              options.atomic ?? true,
+              onProgress,
+              { ...runContext, jobId: jobId || undefined },
+            );
+          }
+          if (sk === 'reviews') {
+            return this.executeEvReviews(
+              parsed.rows,
+              validation,
+              options.atomic ?? true,
+              onProgress,
+              { ...runContext, jobId: jobId || undefined },
+            );
+          }
+          return this.executeEv(
+            parsed.rows,
+            validation,
+            options.atomic ?? true,
+            onProgress,
+            { ...runContext, jobId: jobId || undefined, subkind: sk },
+          );
+        }
         default:
           return ImportJobService.buildResult({
             success: false,
@@ -763,6 +883,663 @@ export class ImportExecutor {
     }
   }
 
+  /* ---- EV (electric vehicles) ---- */
+
+  private validateEv(
+    fileName: string,
+    rows: Record<string, unknown>[],
+  ): ImportValidationResult {
+    const issues: ImportIssue[] = [];
+    const seen = new Set<string>();
+    let validCount = 0;
+
+    rows.forEach((row, index) => {
+      const name = strFrom(row, 'name', 'vehicle', 'vehicle_name', 'model');
+      if (!name) {
+        issues.push(issue(index + 2, row, 'Missing vehicle name'));
+        return;
+      }
+      const categoryRaw = strFrom(row, 'category', 'type', 'vehicle_type', 'segment');
+      const category = normalizeEvCategory(categoryRaw);
+      if (!categoryRaw || !EV_CATEGORIES.has(category)) {
+        issues.push(
+          issue(
+            index + 2,
+            row,
+            'Category must be cars, suvs, trucks, vans, or bikes',
+          ),
+        );
+        return;
+      }
+      const slug = slugify(str(row, 'slug') || name);
+      if (seen.has(slug)) {
+        issues.push(issue(index + 2, row, 'Duplicate in file', 'duplicate'));
+        return;
+      }
+      seen.add(slug);
+      validCount++;
+    });
+
+    return this.buildValidation('ev', fileName, rows, validCount, issues);
+  }
+
+  private validateEvUpcoming(
+    fileName: string,
+    rows: Record<string, unknown>[],
+  ): ImportValidationResult {
+    const base = this.validateEv(fileName, rows);
+    const issues = [...base.issues];
+    let validCount = base.validCount;
+    const currentYear = new Date().getFullYear();
+
+    rows.forEach((row, index) => {
+      const rowNum = index + 2;
+      if (issues.some((x) => x.rowIndex === rowNum && x.severity === 'error')) {
+        return;
+      }
+      const modelYear = numFrom(row, 'model_year', 'year', 'modelyear');
+      const announced = this.parseOptionalDate(
+        strFrom(row, 'announced_at', 'announced_date'),
+      );
+      const release = this.parseOptionalDate(
+        strFrom(row, 'release_at', 'released_date', 'launch_date'),
+      );
+      const futureYear = modelYear != null && modelYear >= currentYear;
+      const futureDate =
+        (announced && announced.getTime() > Date.now()) ||
+        (release && release.getTime() > Date.now());
+      if (!futureYear && !futureDate) {
+        issues.push(
+          issue(
+            rowNum,
+            row,
+            'Upcoming EVs need a future model_year or announced_at/release_at',
+          ),
+        );
+        validCount = Math.max(0, validCount - 1);
+      }
+    });
+
+    const errorCount = issues.filter((x) => x.severity === 'error').length;
+    return {
+      ...base,
+      validCount,
+      invalidCount: errorCount,
+      canImport: validCount > 0 && errorCount === 0,
+      issues,
+    };
+  }
+
+  private async executeEv(
+    rows: Record<string, unknown>[],
+    validation: ImportValidationResult,
+    atomic: boolean,
+    onProgress: (p: number, t: number) => void,
+    meta?: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+      subkind?: EvUploadSubkind;
+    },
+  ): Promise<ImportRunResult> {
+    const validRows = rows.filter((_, i) => {
+      const rowNum = i + 2;
+      return !validation.issues.some(
+        (x) => x.rowIndex === rowNum && x.severity === 'error',
+      );
+    });
+
+    let inserted = 0;
+    let updated = 0;
+    let skipped = 0;
+    let batchId: number | undefined;
+    const batchItems: {
+      entityType: string;
+      entityId: number;
+      entitySlug: string;
+      entityName: string;
+    }[] = [];
+
+    try {
+      await this.prisma.$transaction(async (tx) => {
+        let batch:
+          | Awaited<ReturnType<typeof tx.importBatch.create>>
+          | undefined;
+        if (meta) {
+          batch = await tx.importBatch.create({
+            data: {
+              kind: 'ev',
+              fileName: meta.fileName,
+              jobId: meta.jobId ?? null,
+              totalRows: rows.length,
+              importedById: meta.actor.userId,
+            },
+          });
+          batchId = batch.id;
+        }
+
+        for (let i = 0; i < validRows.length; i++) {
+          const row = validRows[i]!;
+          const name = strFrom(row, 'name', 'vehicle', 'vehicle_name', 'model');
+          const slug = slugify(str(row, 'slug') || name);
+          const category = normalizeEvCategory(
+            strFrom(row, 'category', 'type', 'vehicle_type', 'segment'),
+          );
+          const data = {
+            name,
+            slug,
+            category,
+            brand: strFrom(row, 'brand', 'make', 'manufacturer') || null,
+            modelYear: numFrom(row, 'model_year', 'year', 'modelyear'),
+            rangeKm: numFrom(row, 'range_km', 'range', 'epa_range'),
+            batteryKwh: numFrom(row, 'battery_kwh', 'battery', 'battery_capacity'),
+            price: numFrom(row, 'price', 'msrp'),
+            currency: str(row, 'currency') || 'USD',
+            status:
+              meta?.subkind === 'upcoming'
+                ? 'upcoming'
+                : str(row, 'status') || 'available',
+            description: strFrom(row, 'description', 'summary') || null,
+            announcedAt: this.parseOptionalDate(
+              strFrom(row, 'announced_at', 'announced_date'),
+            ),
+            releaseAt: this.parseOptionalDate(
+              strFrom(row, 'release_at', 'released_date', 'launch_date'),
+            ),
+            importBatchId: batch?.id,
+          };
+
+          const existing = await tx.evVehicle.findUnique({ where: { slug } });
+          if (existing) {
+            const vehicle = await tx.evVehicle.update({
+              where: { id: existing.id },
+              data,
+            });
+            updated++;
+            batchItems.push({
+              entityType: 'ev_vehicle',
+              entityId: vehicle.id,
+              entitySlug: vehicle.slug,
+              entityName: vehicle.name,
+            });
+          } else {
+            const vehicle = await tx.evVehicle.create({ data });
+            inserted++;
+            batchItems.push({
+              entityType: 'ev_vehicle',
+              entityId: vehicle.id,
+              entitySlug: vehicle.slug,
+              entityName: vehicle.name,
+            });
+          }
+          onProgress(i + 1, validRows.length);
+        }
+
+        if (batch) {
+          if (batchItems.length > 0) {
+            await tx.importBatchItem.createMany({
+              data: batchItems.map((item) => ({
+                batchId: batch.id,
+                ...item,
+              })),
+            });
+          }
+          await tx.importBatch.update({
+            where: { id: batch.id },
+            data: { inserted, skipped, totalRows: rows.length },
+          });
+        }
+      });
+
+      return ImportJobService.buildResult({
+        success: inserted > 0 || updated > 0,
+        kind: 'ev',
+        status: 'completed',
+        totalRows: rows.length,
+        inserted,
+        updated,
+        skipped,
+        rolledBack: false,
+        issues: validation.issues,
+        batchId,
+        message:
+          inserted > 0 && updated > 0
+            ? `${inserted} EV(s) added; ${updated} updated.`
+            : inserted > 0
+              ? `${inserted} EV(s) added.`
+              : updated > 0
+                ? `${updated} EV(s) updated.`
+                : 'No EV rows imported.',
+      });
+    } catch (err) {
+      return ImportJobService.buildResult({
+        success: false,
+        kind: 'ev',
+        status: atomic ? 'rolled_back' : 'failed',
+        totalRows: rows.length,
+        inserted: 0,
+        updated: 0,
+        skipped: rows.length,
+        rolledBack: atomic,
+        message: err instanceof Error ? err.message : 'EV upload failed',
+        issues: validation.issues,
+      });
+    }
+  }
+
+  private async executeEvNews(
+    rows: Record<string, unknown>[],
+    validation: ImportValidationResult,
+    atomic: boolean,
+    onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
+  ): Promise<ImportRunResult> {
+    const validRows = rows.filter((_, i) => {
+      const rowNum = i + 2;
+      return !validation.issues.some(
+        (x) => x.rowIndex === rowNum && x.severity === 'error',
+      );
+    });
+
+    try {
+      const insertedNewsIds: number[] = [];
+      await this.prisma.$transaction(async (tx) => {
+        for (let i = 0; i < validRows.length; i++) {
+          const row = validRows[i]!;
+          const title = str(row, 'title');
+          const slug = slugify(title);
+          const existing = await tx.news.findUnique({ where: { slug } });
+          if (existing) continue;
+
+          const status = this.parsePostStatus(str(row, 'status'));
+          const article = await tx.news.create({
+            data: {
+              title,
+              slug,
+              content: str(row, 'content'),
+              excerpt: 'ev-news',
+              featured: this.parseBool(row.featured),
+              status,
+              publishedAt: status === PostStatus.PUBLISHED ? new Date() : null,
+            },
+          });
+          insertedNewsIds.push(article.id);
+          onProgress(i + 1, validRows.length);
+        }
+      });
+
+      let batchId: number | undefined;
+      if (insertedNewsIds.length > 0) {
+        const batch = await this.lifecycle.recordNewsBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: rows.length,
+          inserted: insertedNewsIds.length,
+          skipped: rows.length - insertedNewsIds.length,
+          newsIds: insertedNewsIds,
+          batchKind: 'ev',
+        });
+        batchId = batch?.id;
+      }
+
+      return ImportJobService.buildResult({
+        success: true,
+        kind: 'ev',
+        status: 'completed',
+        totalRows: rows.length,
+        inserted: insertedNewsIds.length,
+        updated: 0,
+        skipped: rows.length - insertedNewsIds.length,
+        rolledBack: false,
+        issues: validation.issues,
+        batchId,
+      });
+    } catch (err) {
+      return ImportJobService.buildResult({
+        success: false,
+        kind: 'ev',
+        status: atomic ? 'rolled_back' : 'failed',
+        totalRows: rows.length,
+        inserted: 0,
+        updated: 0,
+        skipped: rows.length,
+        rolledBack: atomic,
+        message: err instanceof Error ? err.message : 'Upload rolled back',
+        issues: validation.issues,
+      });
+    }
+  }
+
+  private async executeEvArticleNews(
+    articles: { title: string; content: string; author?: string }[],
+    validation: ImportValidationResult,
+    atomic: boolean,
+    onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
+  ): Promise<ImportRunResult> {
+    const validArticles = articles.filter((_, i) => {
+      const rowNum = i + 1;
+      return !validation.issues.some(
+        (x) => x.rowIndex === rowNum && x.severity === 'error',
+      );
+    });
+
+    try {
+      const insertedNewsIds: number[] = [];
+      await this.prisma.$transaction(async (tx) => {
+        for (let i = 0; i < validArticles.length; i++) {
+          const article = validArticles[i]!;
+          const slug = slugify(article.title);
+          const existing = await tx.news.findUnique({ where: { slug } });
+          if (existing) continue;
+
+          const created = await tx.news.create({
+            data: {
+              title: article.title,
+              slug,
+              content: article.content,
+              excerpt: 'ev-news',
+              status: PostStatus.DRAFT,
+            },
+          });
+          insertedNewsIds.push(created.id);
+          onProgress(i + 1, validArticles.length);
+        }
+      });
+
+      let batchId: number | undefined;
+      if (insertedNewsIds.length > 0) {
+        const batch = await this.lifecycle.recordNewsBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: articles.length,
+          inserted: insertedNewsIds.length,
+          skipped: articles.length - insertedNewsIds.length,
+          newsIds: insertedNewsIds,
+          batchKind: 'ev',
+        });
+        batchId = batch?.id;
+      }
+
+      return ImportJobService.buildResult({
+        success: true,
+        kind: 'ev',
+        status: 'completed',
+        totalRows: articles.length,
+        inserted: insertedNewsIds.length,
+        updated: 0,
+        skipped: articles.length - insertedNewsIds.length,
+        rolledBack: false,
+        issues: validation.issues,
+        batchId,
+      });
+    } catch (err) {
+      return ImportJobService.buildResult({
+        success: false,
+        kind: 'ev',
+        status: atomic ? 'rolled_back' : 'failed',
+        totalRows: articles.length,
+        inserted: 0,
+        updated: 0,
+        skipped: articles.length,
+        rolledBack: atomic,
+        message: err instanceof Error ? err.message : 'Upload rolled back',
+        issues: validation.issues,
+      });
+    }
+  }
+
+  private async executeEvReviews(
+    rows: Record<string, unknown>[],
+    validation: ImportValidationResult,
+    atomic: boolean,
+    onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
+  ): Promise<ImportRunResult> {
+    const validRows = rows.filter((_, i) => {
+      const rowNum = i + 2;
+      return !validation.issues.some(
+        (x) => x.rowIndex === rowNum && x.severity === 'error',
+      );
+    });
+
+    try {
+      let inserted = 0;
+      const insertedReviews: { id: number; slug: string; title: string }[] = [];
+      await this.prisma.$transaction(async (tx) => {
+        for (let i = 0; i < validRows.length; i++) {
+          const row = validRows[i]!;
+          const title = str(row, 'title');
+          const slug = slugify(title);
+          const existing = await tx.review.findUnique({ where: { slug } });
+          if (existing) continue;
+
+          const vehicleKey = strFrom(row, 'vehicle', 'ev', 'device', 'model');
+          const vehicle = await tx.evVehicle.findFirst({
+            where: {
+              OR: [{ name: vehicleKey }, { slug: slugify(vehicleKey) }],
+            },
+          });
+          if (!vehicle) continue;
+
+          const pros = str(row, 'pros')
+            .split('|')
+            .map((s) => s.trim())
+            .filter(Boolean);
+          const cons = str(row, 'cons')
+            .split('|')
+            .map((s) => s.trim())
+            .filter(Boolean);
+
+          const review = await tx.review.create({
+            data: {
+              title,
+              slug,
+              content: str(row, 'content') || title,
+              score: Number(str(row, 'score') || str(row, 'rating')),
+              pros,
+              cons,
+              evVehicleId: vehicle.id,
+            },
+          });
+          insertedReviews.push({
+            id: review.id,
+            slug: review.slug,
+            title: review.title,
+          });
+          inserted++;
+          onProgress(i + 1, validRows.length);
+        }
+      });
+
+      let batchId: number | undefined;
+      if (insertedReviews.length > 0) {
+        const batch = await this.lifecycle.recordReviewBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: rows.length,
+          inserted: insertedReviews.length,
+          skipped: rows.length - insertedReviews.length,
+          reviews: insertedReviews,
+          batchKind: 'ev',
+        });
+        batchId = batch?.id;
+      }
+
+      return ImportJobService.buildResult({
+        success: true,
+        kind: 'ev',
+        status: 'completed',
+        totalRows: rows.length,
+        inserted,
+        updated: 0,
+        skipped: rows.length - inserted,
+        rolledBack: false,
+        issues: validation.issues,
+        batchId,
+        message:
+          inserted === 0
+            ? 'No EV reviews imported — upload EV catalog first so vehicle slugs exist.'
+            : undefined,
+      });
+    } catch (err) {
+      return ImportJobService.buildResult({
+        success: false,
+        kind: 'ev',
+        status: atomic ? 'rolled_back' : 'failed',
+        totalRows: rows.length,
+        inserted: 0,
+        updated: 0,
+        skipped: rows.length,
+        rolledBack: atomic,
+        message: err instanceof Error ? err.message : 'Upload rolled back',
+        issues: validation.issues,
+      });
+    }
+  }
+
+  private async executeEvReviewsFromArticles(
+    articles: { title: string; content: string }[],
+    validation: ImportValidationResult,
+    atomic: boolean,
+    onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
+  ): Promise<ImportRunResult> {
+    const validArticles = articles.filter((_, i) => {
+      const rowNum = i + 1;
+      return !validation.issues.some(
+        (x) => x.rowIndex === rowNum && x.severity === 'error',
+      );
+    });
+
+    try {
+      let inserted = 0;
+      let skipped = 0;
+      const insertedReviews: { id: number; slug: string; title: string }[] = [];
+      await this.prisma.$transaction(async (tx) => {
+        for (let i = 0; i < validArticles.length; i++) {
+          const article = validArticles[i]!;
+          const slug = slugify(article.title);
+          const existing = await tx.review.findUnique({ where: { slug } });
+          if (existing) {
+            skipped++;
+            continue;
+          }
+
+          const vehicleKey = this.extractEvVehicleFromArticle(
+            article.title,
+            article.content,
+          );
+          if (!vehicleKey) {
+            skipped++;
+            continue;
+          }
+
+          const vehicle = await tx.evVehicle.findFirst({
+            where: {
+              OR: [{ name: vehicleKey }, { slug: slugify(vehicleKey) }],
+            },
+          });
+          if (!vehicle) {
+            skipped++;
+            continue;
+          }
+
+          const scoreMatch = article.content.match(/score:\s*([\d.]+)/i);
+          const score = scoreMatch ? Number(scoreMatch[1]) : 0;
+
+          const review = await tx.review.create({
+            data: {
+              title: article.title,
+              slug,
+              content: article.content,
+              score,
+              pros: [],
+              cons: [],
+              evVehicleId: vehicle.id,
+            },
+          });
+          insertedReviews.push({
+            id: review.id,
+            slug: review.slug,
+            title: review.title,
+          });
+          inserted++;
+          onProgress(i + 1, validArticles.length);
+        }
+      });
+
+      let batchId: number | undefined;
+      if (insertedReviews.length > 0) {
+        const batch = await this.lifecycle.recordReviewBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: articles.length,
+          inserted: insertedReviews.length,
+          skipped,
+          reviews: insertedReviews,
+          batchKind: 'ev',
+        });
+        batchId = batch?.id;
+      }
+
+      return ImportJobService.buildResult({
+        success: true,
+        kind: 'ev',
+        status: 'completed',
+        totalRows: articles.length,
+        inserted,
+        updated: 0,
+        skipped,
+        rolledBack: false,
+        issues: validation.issues,
+        batchId,
+      });
+    } catch (err) {
+      return ImportJobService.buildResult({
+        success: false,
+        kind: 'ev',
+        status: atomic ? 'rolled_back' : 'failed',
+        totalRows: articles.length,
+        inserted: 0,
+        updated: 0,
+        skipped: articles.length,
+        rolledBack: atomic,
+        message: err instanceof Error ? err.message : 'Upload rolled back',
+        issues: validation.issues,
+      });
+    }
+  }
+
+  private extractEvVehicleFromArticle(title: string, content: string): string | null {
+    const vehicleLine = content.match(/^\s*vehicle:\s*(.+)$/im)?.[1]?.trim();
+    if (vehicleLine) return vehicleLine;
+    const deviceLine = content.match(/^\s*device:\s*(.+)$/im)?.[1]?.trim();
+    if (deviceLine) return deviceLine;
+    const fromTitle = title.match(/^(.+?)\s+review$/i)?.[1]?.trim();
+    return fromTitle || null;
+  }
+
   /* ---- News ---- */
 
   private validateNews(
@@ -1075,6 +1852,11 @@ export class ImportExecutor {
     validation: ImportValidationResult,
     atomic: boolean,
     onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
   ): Promise<ImportRunResult> {
     const validRows = rows.filter((_, i) => {
       const rowNum = i + 2;
@@ -1084,7 +1866,7 @@ export class ImportExecutor {
     });
 
     try {
-      let inserted = 0;
+      const insertedNewsIds: number[] = [];
       await this.prisma.$transaction(async (tx) => {
         for (let i = 0; i < validRows.length; i++) {
           const row = validRows[i]!;
@@ -1094,7 +1876,7 @@ export class ImportExecutor {
           if (existing) continue;
 
           const status = this.parsePostStatus(str(row, 'status'));
-          await tx.news.create({
+          const article = await tx.news.create({
             data: {
               title,
               slug,
@@ -1103,21 +1885,37 @@ export class ImportExecutor {
               status,
             },
           });
-          inserted++;
+          insertedNewsIds.push(article.id);
           onProgress(i + 1, validRows.length);
         }
       });
+
+      let batchId: number | undefined;
+      if (insertedNewsIds.length > 0) {
+        const batch = await this.lifecycle.recordNewsBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: rows.length,
+          inserted: insertedNewsIds.length,
+          skipped: rows.length - insertedNewsIds.length,
+          newsIds: insertedNewsIds,
+          batchKind: 'documentation',
+        });
+        batchId = batch?.id;
+      }
 
       return ImportJobService.buildResult({
         success: true,
         kind: 'documentation',
         status: 'completed',
         totalRows: rows.length,
-        inserted,
+        inserted: insertedNewsIds.length,
         updated: 0,
-        skipped: rows.length - inserted,
+        skipped: rows.length - insertedNewsIds.length,
         rolledBack: false,
         issues: validation.issues,
+        batchId,
       });
     } catch (err) {
       return ImportJobService.buildResult({
@@ -1140,6 +1938,11 @@ export class ImportExecutor {
     validation: ImportValidationResult,
     atomic: boolean,
     onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
   ): Promise<ImportRunResult> {
     const validArticles = articles.filter((_, i) => {
       const rowNum = i + 1;
@@ -1149,7 +1952,7 @@ export class ImportExecutor {
     });
 
     try {
-      let inserted = 0;
+      const insertedNewsIds: number[] = [];
       await this.prisma.$transaction(async (tx) => {
         for (let i = 0; i < validArticles.length; i++) {
           const article = validArticles[i]!;
@@ -1157,7 +1960,7 @@ export class ImportExecutor {
           const existing = await tx.news.findUnique({ where: { slug } });
           if (existing) continue;
 
-          await tx.news.create({
+          const created = await tx.news.create({
             data: {
               title: article.title,
               slug,
@@ -1166,21 +1969,37 @@ export class ImportExecutor {
               status: PostStatus.DRAFT,
             },
           });
-          inserted++;
+          insertedNewsIds.push(created.id);
           onProgress(i + 1, validArticles.length);
         }
       });
+
+      let batchId: number | undefined;
+      if (insertedNewsIds.length > 0) {
+        const batch = await this.lifecycle.recordNewsBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: articles.length,
+          inserted: insertedNewsIds.length,
+          skipped: articles.length - insertedNewsIds.length,
+          newsIds: insertedNewsIds,
+          batchKind: 'documentation',
+        });
+        batchId = batch?.id;
+      }
 
       return ImportJobService.buildResult({
         success: true,
         kind: 'documentation',
         status: 'completed',
         totalRows: articles.length,
-        inserted,
+        inserted: insertedNewsIds.length,
         updated: 0,
-        skipped: articles.length - inserted,
+        skipped: articles.length - insertedNewsIds.length,
         rolledBack: false,
         issues: validation.issues,
+        batchId,
       });
     } catch (err) {
       return ImportJobService.buildResult({
@@ -1203,6 +2022,11 @@ export class ImportExecutor {
     validation: ImportValidationResult,
     atomic: boolean,
     onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
   ): Promise<ImportRunResult> {
     const validArticles = articles.filter((_, i) => {
       const rowNum = i + 1;
@@ -1216,6 +2040,7 @@ export class ImportExecutor {
     try {
       let inserted = 0;
       let skipped = 0;
+      const insertedReviews: { id: number; slug: string; title: string }[] = [];
       await this.prisma.$transaction(async (tx) => {
         for (let i = 0; i < validArticles.length; i++) {
           const article = validArticles[i]!;
@@ -1267,7 +2092,7 @@ export class ImportExecutor {
           const scoreMatch = article.content.match(/score:\s*([\d.]+)/i);
           const score = scoreMatch ? Number(scoreMatch[1]) : 0;
 
-          await tx.review.create({
+          const review = await tx.review.create({
             data: {
               title: article.title,
               slug,
@@ -1278,10 +2103,29 @@ export class ImportExecutor {
               deviceId: device.id,
             },
           });
+          insertedReviews.push({
+            id: review.id,
+            slug: review.slug,
+            title: review.title,
+          });
           inserted++;
           onProgress(i + 1, validArticles.length);
         }
       });
+
+      let batchId: number | undefined;
+      if (insertedReviews.length > 0) {
+        const batch = await this.lifecycle.recordReviewBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: articles.length,
+          inserted: insertedReviews.length,
+          skipped: skipped + (articles.length - validArticles.length),
+          reviews: insertedReviews,
+        });
+        batchId = batch?.id;
+      }
 
       return ImportJobService.buildResult({
         success: inserted > 0,
@@ -1293,6 +2137,7 @@ export class ImportExecutor {
         skipped: skipped + (articles.length - validArticles.length),
         rolledBack: false,
         issues: extraIssues,
+        batchId,
         message:
           inserted === 0
             ? 'No reviews uploaded — link devices via CSV or add device: in PDF content'
@@ -1546,6 +2391,11 @@ export class ImportExecutor {
     validation: ImportValidationResult,
     atomic: boolean,
     onProgress: (p: number, t: number) => void,
+    meta: {
+      fileName: string;
+      actor: ImportActor;
+      jobId?: string;
+    },
   ): Promise<ImportRunResult> {
     const validRows = rows.filter((_, i) => {
       const rowNum = i + 2;
@@ -1556,6 +2406,7 @@ export class ImportExecutor {
 
     try {
       let inserted = 0;
+      const insertedReviews: { id: number; slug: string; title: string }[] = [];
       await this.prisma.$transaction(async (tx) => {
         for (let i = 0; i < validRows.length; i++) {
           const row = validRows[i]!;
@@ -1581,7 +2432,7 @@ export class ImportExecutor {
             .map((s) => s.trim())
             .filter(Boolean);
 
-          await tx.review.create({
+          const review = await tx.review.create({
             data: {
               title,
               slug,
@@ -1592,10 +2443,29 @@ export class ImportExecutor {
               deviceId: device.id,
             },
           });
+          insertedReviews.push({
+            id: review.id,
+            slug: review.slug,
+            title: review.title,
+          });
           inserted++;
           onProgress(i + 1, validRows.length);
         }
       });
+
+      let batchId: number | undefined;
+      if (insertedReviews.length > 0) {
+        const batch = await this.lifecycle.recordReviewBatch({
+          fileName: meta.fileName,
+          jobId: meta.jobId,
+          actor: meta.actor,
+          totalRows: rows.length,
+          inserted: insertedReviews.length,
+          skipped: rows.length - insertedReviews.length,
+          reviews: insertedReviews,
+        });
+        batchId = batch?.id;
+      }
 
       return ImportJobService.buildResult({
         success: true,
@@ -1607,6 +2477,7 @@ export class ImportExecutor {
         skipped: rows.length - inserted,
         rolledBack: false,
         issues: validation.issues,
+        batchId,
       });
     } catch (err) {
       return ImportJobService.buildResult({
@@ -2024,6 +2895,7 @@ export class ImportExecutor {
   }
 
   private async executeImageZip(
+    kind: BulkImportKind,
     files: { path: string; deviceSlug: string; fileName: string }[],
     atomic: boolean,
     onProgress: (p: number, t: number) => void,
@@ -2034,6 +2906,55 @@ export class ImportExecutor {
       await this.prisma.$transaction(async (tx) => {
         for (let i = 0; i < files.length; i++) {
           const file = files[i]!;
+          const url = `/uploads/import/${file.deviceSlug}/${file.fileName}`;
+
+          if (kind === 'news' || kind === 'documentation') {
+            const article = await tx.news.findFirst({
+              where: {
+                slug: file.deviceSlug,
+                deletedAt: null,
+                ...(kind === 'documentation'
+                  ? { excerpt: 'documentation' }
+                  : {
+                      OR: [
+                        { excerpt: null },
+                        { excerpt: { not: 'documentation' } },
+                      ],
+                    }),
+              },
+            });
+            if (!article) {
+              skipped++;
+              onProgress(i + 1, files.length);
+              continue;
+            }
+            await tx.news.update({
+              where: { id: article.id },
+              data: { thumbnail: url },
+            });
+            inserted++;
+            onProgress(i + 1, files.length);
+            continue;
+          }
+
+          if (kind === 'ev') {
+            const vehicle = await tx.evVehicle.findFirst({
+              where: { slug: file.deviceSlug },
+            });
+            if (!vehicle) {
+              skipped++;
+              onProgress(i + 1, files.length);
+              continue;
+            }
+            await tx.evVehicle.update({
+              where: { id: vehicle.id },
+              data: { imageUrl: url },
+            });
+            inserted++;
+            onProgress(i + 1, files.length);
+            continue;
+          }
+
           const device = await tx.device.findFirst({
             where: { slug: file.deviceSlug },
           });
@@ -2043,7 +2964,6 @@ export class ImportExecutor {
             continue;
           }
 
-          const url = `/uploads/import/${file.deviceSlug}/${file.fileName}`;
           const isLogo =
             file.fileName.toLowerCase().includes('logo') ||
             file.path.toLowerCase().includes('/logos/');
@@ -2074,7 +2994,7 @@ export class ImportExecutor {
 
       return ImportJobService.buildResult({
         success: true,
-        kind: 'images',
+        kind,
         status: 'completed',
         totalRows: files.length,
         inserted,
@@ -2082,11 +3002,15 @@ export class ImportExecutor {
         skipped,
         rolledBack: false,
         issues: [],
+        message:
+          skipped > 0
+            ? `${skipped} image(s) skipped — upload records first so slugs exist.`
+            : undefined,
       });
     } catch (err) {
       return ImportJobService.buildResult({
         success: false,
-        kind: 'images',
+        kind,
         status: atomic ? 'rolled_back' : 'failed',
         totalRows: files.length,
         inserted: 0,

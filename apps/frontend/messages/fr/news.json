@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "Actualités",
+    "loadError": "Impossible de charger les actualités. L’API tourne-t-elle ?",
+    "empty": "Pas encore d’actualités.",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

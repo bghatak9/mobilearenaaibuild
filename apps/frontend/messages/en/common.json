@@ -1,0 +1,411 @@
+{
+  "common": {
+    "home": "Home",
+    "clear": "Clear",
+    "reset": "Reset",
+    "loading": "Loading…",
+    "any": "Any",
+    "yes": "Yes",
+    "no": "No",
+    "save": "Save",
+    "cancel": "Cancel",
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "previous": "Previous",
+    "more": "More",
+    "less": "Less",
+    "viewAll": "View all",
+    "learnMore": "Learn more",
+    "share": "Share",
+    "copy": "Copy",
+    "copied": "Copied",
+    "pagination": "Pagination",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "pageOf": "Page {page} of {total}",
+    "swipeNext": "Swipe for next page",
+    "swipePrev": "Swipe for previous page",
+    "breadcrumb": "Breadcrumb",
+    "guides": "Guides",
+    "brands": "Brands",
+    "brandsPage": {
+      "title": "Brands",
+      "subtitle": "Explore every smartphone brand in the Arena.",
+      "empty": "No brands available yet.",
+      "deviceCount": "{count} devices",
+      "noDevices": "No devices for this brand yet."
+    }
+  },
+  "finder": {
+    "title": "Phone Finder",
+    "filterTitle": "Phone Finder filters",
+    "matchCount": "{filtered} of {total} phones match your filters",
+    "empty": "No phones match these filters",
+    "emptyHint": "Adjust filters in the sidebar or reset to start over.",
+    "resetAll": "Reset all filters",
+    "moreTools": "More discovery tools",
+    "tapFilters": "Tap Filters above to refine results.",
+    "showCount": "Show {count} phones",
+    "aiMatch": "AI Match Me",
+    "bestCamera": "Best Camera Phones",
+    "bestBattery": "Best Battery Phones",
+    "bestValue": "Best Value Phones",
+    "flagship": "Flagship Phones",
+    "gaming": "Gaming Phones",
+    "filters": {
+      "title": "Filters",
+      "reset": "Reset",
+      "activeCount": "{count} active",
+      "matchDevices": "{resultCount} of {totalCount} devices match",
+      "device": "Device",
+      "brands": "Brands",
+      "price": "Price",
+      "display": "Display",
+      "chooseDisplay": "Choose display",
+      "processor": "Processor",
+      "chooseProcessor": "Choose processor",
+      "camera": "Camera",
+      "mainCameraMp": "Main Camera Resolution",
+      "frontCameraMp": "Front Camera Resolution",
+      "ultraWide": "Ultra-Wide Camera",
+      "telephoto": "Telephoto Camera",
+      "opticalZoom": "Optical Zoom",
+      "ois": "OIS Support",
+      "video4k": "4K Recording",
+      "video8k": "8K Recording",
+      "batteryCapacity": "Battery Capacity",
+      "connectivity": "Connectivity",
+      "network": "Network",
+      "wifiVersion": "Wi-Fi Version",
+      "bluetoothVersion": "Bluetooth Version",
+      "nfc": "NFC",
+      "irBlaster": "IR Blaster",
+      "esimSupport": "eSIM Support",
+      "simType": "SIM Type",
+      "securityBuild": "Security & Build",
+      "fingerprintType": "Fingerprint Type",
+      "ipRating": "IP Rating",
+      "buildMaterial": "Build Material",
+      "operatingSystem": "Operating System",
+      "gamingAi": "Gaming & AI",
+      "gamingFeatures": "Gaming Features",
+      "shoulderTriggers": "Shoulder Triggers",
+      "coolingFan": "Cooling Fan",
+      "highTouchSampling": "High Touch Sampling Rate",
+      "aiFeatures": "AI Features",
+      "aiPhotography": "AI Photography",
+      "aiTranslation": "AI Translation",
+      "aiCallSummary": "AI Call Summary",
+      "circleToSearch": "Circle to Search",
+      "onDeviceAi": "On-device AI Models",
+      "currencyUsd": "$ US Dollar (USD)",
+      "currencyInr": "₹ Indian Rupee (INR)"
+    },
+    "catalog": {
+      "deviceType": {
+        "any": "Any type",
+        "smartphone": "Smartphone",
+        "foldable": "Foldable",
+        "flip": "Flip Phone",
+        "tablet": "Tablet",
+        "gaming": "Gaming Phone",
+        "feature": "Feature Phone"
+      },
+      "availability": {
+        "any": "Any availability",
+        "available": "Available",
+        "upcoming": "Upcoming",
+        "discontinued": "Discontinued"
+      },
+      "displayTech": {
+        "all": "All displays",
+        "amoled": "AMOLED",
+        "dynamicAmoled": "Dynamic AMOLED",
+        "oled": "OLED",
+        "ltpoOled": "LTPO OLED",
+        "ipsLcd": "IPS LCD",
+        "miniLed": "Mini-LED"
+      },
+      "resolution": {
+        "any": "Any resolution",
+        "hd": "HD+",
+        "fhd": "Full HD+",
+        "qhd": "QHD+",
+        "uhd4k": "4K"
+      },
+      "refreshRate": {
+        "any": "Any refresh rate",
+        "hz60": "60Hz",
+        "hz90": "90Hz",
+        "hz120": "120Hz",
+        "hz144": "144Hz",
+        "hz165": "165Hz"
+      },
+      "hdr": {
+        "any": "Any HDR",
+        "hdr10": "HDR10",
+        "hdr10Plus": "HDR10+",
+        "dolbyVision": "Dolby Vision"
+      },
+      "processorBrand": {
+        "all": "All processors",
+        "snapdragon": "Snapdragon",
+        "mediatek": "MediaTek",
+        "appleSilicon": "Apple Silicon",
+        "exynos": "Exynos",
+        "tensor": "Tensor",
+        "kirin": "Kirin",
+        "unisoc": "Unisoc"
+      },
+      "ram": {
+        "any": "Any RAM",
+        "gb4": "4GB",
+        "gb6": "6GB",
+        "gb8": "8GB",
+        "gb12": "12GB",
+        "gb16": "16GB",
+        "gb24": "24GB"
+      },
+      "storage": {
+        "any": "Any storage",
+        "gb64": "64GB",
+        "gb128": "128GB",
+        "gb256": "256GB",
+        "gb512": "512GB",
+        "tb1": "1TB"
+      },
+      "storageExpansion": {
+        "any": "Any expansion",
+        "microsd": "microSD Supported",
+        "hybrid": "Hybrid Slot",
+        "none": "No Expansion"
+      },
+      "batteryBucket": {
+        "any": "Any capacity",
+        "under4000": "Under 4000mAh",
+        "range4000to5000": "4000–5000mAh",
+        "range5000to6000": "5000–6000mAh",
+        "above10000": "Above 10000mAh"
+      },
+      "chargeTier": {
+        "any": "Any charging",
+        "w18": "18W+",
+        "w33": "33W+",
+        "w45": "45W+",
+        "w67": "67W+",
+        "w100": "100W+"
+      },
+      "batteryReplacement": {
+        "any": "Any battery type",
+        "userReplaceable": "User Replaceable",
+        "nonRemovable": "Non-removable"
+      },
+      "cellular": {
+        "any": "Any network",
+        "g2": "2G",
+        "g3": "3G",
+        "g5": "5G"
+      },
+      "wifi": {
+        "any": "Any Wi-Fi",
+        "wifi6": "Wi-Fi 6",
+        "wifi6e": "Wi-Fi 6E",
+        "wifi7": "Wi-Fi 7"
+      },
+      "bluetooth": {
+        "any": "Any Bluetooth",
+        "v50": "Bluetooth 5.0",
+        "v53": "Bluetooth 5.3",
+        "v54": "Bluetooth 5.4",
+        "v6": "Bluetooth 6"
+      },
+      "sim": {
+        "any": "Any SIM",
+        "single": "Single SIM",
+        "dual": "Dual SIM",
+        "esim": "eSIM",
+        "dualEsim": "Dual Physical + eSIM"
+      },
+      "fingerprint": {
+        "any": "Any unlock",
+        "underDisplay": "Under Display",
+        "side": "Side Mounted",
+        "rear": "Rear Mounted",
+        "faceOnly": "Face Unlock Only"
+      },
+      "ipRating": {
+        "any": "Any IP rating",
+        "ip52": "IP52",
+        "ip54": "IP54",
+        "ip67": "IP67",
+        "ip68": "IP68",
+        "ip69": "IP69"
+      },
+      "buildMaterial": {
+        "any": "Any material",
+        "plastic": "Plastic",
+        "aluminum": "Aluminum",
+        "glass": "Glass",
+        "titanium": "Titanium"
+      },
+      "osFamily": {
+        "any": "Any OS",
+        "android": "Android",
+        "ios": "iOS",
+        "harmonyos": "HarmonyOS"
+      },
+      "updatePolicy": {
+        "any": "Any update policy",
+        "years2": "2 Years",
+        "years3": "3 Years",
+        "years4": "4 Years",
+        "years7": "7 Years"
+      },
+      "sort": {
+        "popularity": "Popularity",
+        "newest": "Newest",
+        "priceAsc": "Price ↑",
+        "priceDesc": "Price ↓",
+        "rating": "Rating"
+      }
+    },
+    "presets": {
+      "camera": {
+        "label": "Best Camera Phones",
+        "description": "48MP+ sensors with OIS"
+      },
+      "battery": {
+        "label": "Best Battery Phones",
+        "description": "5000 mAh and up"
+      },
+      "gaming": {
+        "label": "Best Gaming Phones",
+        "description": "120Hz+ displays and gaming hardware"
+      },
+      "value": {
+        "label": "Best Value for Money",
+        "description": "Strong ratings under $600"
+      },
+      "compact": {
+        "label": "Compact Phones",
+        "description": "Screens under 6.3\""
+      },
+      "flagshipKiller": {
+        "label": "Flagship Killers",
+        "description": "Flagship specs below flagship prices"
+      },
+      "foldables": {
+        "label": "Foldables",
+        "description": "Foldable form factor"
+      },
+      "under10kInr": {
+        "label": "Phones Under ₹10,000",
+        "description": "Budget picks in India"
+      },
+      "under20kInr": {
+        "label": "Phones Under ₹20,000",
+        "description": "Mid-budget picks in India"
+      },
+      "under30kInr": {
+        "label": "Phones Under ₹30,000",
+        "description": "Upper mid-range in India"
+      },
+      "premiumFlagships": {
+        "label": "Premium Flagships",
+        "description": "Top-tier premium devices"
+      },
+      "student": {
+        "label": "Student Picks",
+        "description": "Affordable · 6GB+ RAM"
+      },
+      "business": {
+        "label": "Business Phones",
+        "description": "NFC · solid battery"
+      },
+      "creator": {
+        "label": "Content Creator Phones",
+        "description": "Camera · storage · video"
+      },
+      "trending": {
+        "title": "Trending today",
+        "bestCamera": "Best camera",
+        "under20k": "Under ₹20,000",
+        "foldables": "Foldables",
+        "gaming": "Gaming phones",
+        "premiumFlagships": "Premium flagships",
+        "fiveG": "5G phones",
+        "hz120Amoled": "120Hz AMOLED",
+        "voltFlagships": "Volt flagships"
+      },
+      "popularQuick": "Popular quick filters",
+      "picksCount": "{count} picks"
+    }
+  },
+  "contact": {
+    "eyebrow": "Contact Us",
+    "title": "Contact MobileArena",
+    "breadcrumb": "Contact Us",
+    "intro": "We're here for product questions, editorial feedback, advertising inquiries, and account help. Reach us by form or email at <email></email>.",
+    "name": "Name",
+    "email": "Email",
+    "subject": "Subject",
+    "message": "Message",
+    "namePlaceholder": "Your name",
+    "subjectPlaceholder": "How can we help?",
+    "messagePlaceholder": "Tell us what's on your mind…",
+    "send": "Send message",
+    "fullPage": "Full contact page",
+    "topics": {
+      "support": {
+        "title": "Product support",
+        "description": "Account help, device pages, wishlists, and site features."
+      },
+      "editorial": {
+        "title": "Editorial & reviews",
+        "description": "Corrections, review feedback, and community guidelines."
+      },
+      "advertising": {
+        "title": "Advertising",
+        "description": "Sponsored placements, campaigns, and partnership opportunities."
+      },
+      "privacy": {
+        "title": "Privacy & security",
+        "description": "Data requests, account security, and policy questions."
+      },
+      "general": {
+        "title": "General inquiry",
+        "description": "Anything else for the MobileArena team."
+      }
+    }
+  },
+  "about": {
+    "title": "About Us",
+    "subtitle": "Discover. Compare. Decide. Together.",
+    "intro": "MobileArena is a community-driven smartphone platform built to help people cut through noise and make clearer device decisions. We bring specs, reviews, comparisons, and conversation into one place — with an original identity and a focus on practical answers.",
+    "whatWeBuild": "What we build",
+    "buildDiscovery": "Phone discovery tools that go beyond marketing claims.",
+    "buildCompare": "Side-by-side comparisons for real trade-offs.",
+    "buildNews": "News and reviews that stay useful after launch day.",
+    "buildCommunity": "A community space for discussions, polls, and shared experience.",
+    "howWeWork": "How we work",
+    "howBody": "We prioritize clarity over hype. Whether you are choosing a daily driver, tracking upcoming launches, or exploring EV options, MobileArena is designed to help you move from research to decision with confidence.",
+    "getInTouch": "Get in touch",
+    "contactLead": "Questions, partnerships, or feedback? Reach us through",
+    "contactLink": "Contact",
+    "contactTrail": "— we read every message."
+  },
+  "guides": {
+    "title": "Guides",
+    "subtitle": "Buying guides and how-tos to help you choose with confidence.",
+    "empty": "Guides are coming soon.",
+    "readGuide": "Read guide",
+    "breadcrumb": "Guides",
+    "buyingGuide": "How to buy a phone",
+    "buyingGuideBody": "Use Phone Finder filters for camera, battery, and budget to shortlist devices that fit your needs.",
+    "compareGuide": "How to compare devices",
+    "compareGuideBody": "Add 2–4 phones to Compare, review differences, and use labs to decide with confidence.",
+    "cameraGuide": "Camera buying tips",
+    "cameraGuideBody": "Look beyond megapixels — sensor size, OIS, and night performance matter more for real photos."
+  }
+}

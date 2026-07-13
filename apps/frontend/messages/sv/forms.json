@@ -1,0 +1,21 @@
+{
+  "forms": {
+    "name": "Full name",
+    "email": "Email address",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "submit": "Submit",
+    "required": "Required",
+    "invalidEmail": "Enter a valid email address.",
+    "passwordsMismatch": "Passwords do not match.",
+    "passwordTooWeak": "Password does not meet the security requirements.",
+    "passwordRequirements": "Use at least 8 characters with a mix of letters and numbers.",
+    "save": "Save",
+    "cancel": "Cancel",
+    "sending": "Sending…",
+    "sent": "Sent",
+    "messageSent": "Message sent — we’ll get back to you soon.",
+    "sendFailed": "Could not send. Please try again.",
+    "optional": "Optional"
+  }
+}

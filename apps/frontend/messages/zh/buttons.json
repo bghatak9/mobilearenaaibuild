@@ -1,0 +1,27 @@
+{
+  "action": {
+    "signIn": "登录",
+    "myProfile": "我的资料",
+    "notifications": "通知",
+    "favorites": "收藏手机",
+    "search": "搜索",
+    "openMenu": "打开菜单",
+    "language": "语言",
+    "theme": "切换主题",
+    "voiceSearch": "Voice search",
+    "closeMenu": "Close menu",
+    "menu": "Menu"
+  },
+  "languagePicker": {
+    "search": "Search language…",
+    "close": "Close",
+    "favorites": "Favorites",
+    "recent": "Recently used",
+    "popular": "Popular",
+    "all": "All languages ({count})",
+    "matches": "{count} matches",
+    "empty": "No languages found",
+    "addFavorite": "Add favorite",
+    "removeFavorite": "Remove favorite"
+  }
+}

@@ -1,4 +1,4 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, Query } from '@nestjs/common';
 
 import { CompareService } from './compare.service';
 
@@ -6,9 +6,9 @@ import { CompareService } from './compare.service';
 export class CompareController {
   constructor(private readonly compareService: CompareService) {}
 
-  // e.g. GET /compare/iphone-15-vs-galaxy-s24
+  // e.g. GET /compare/iphone-15-vs-galaxy-s24?locale=hi
   @Get(':slug')
-  compare(@Param('slug') slug: string) {
-    return this.compareService.compare(slug);
+  compare(@Param('slug') slug: string, @Query('locale') locale?: string) {
+    return this.compareService.compare(slug, locale);
   }
 }

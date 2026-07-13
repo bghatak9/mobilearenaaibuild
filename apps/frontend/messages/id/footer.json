@@ -1,0 +1,31 @@
+{
+  "footer": {
+    "promise": "Temukan. Bandingkan. Putuskan. Bersama.",
+    "arena": "Arena",
+    "workWithUs": "Bekerja dengan kami",
+    "discover": "Jelajahi",
+    "support": "Dukungan",
+    "aboutUs": "Tentang kami",
+    "contact": "Kontak",
+    "guidelines": "Panduan komunitas",
+    "discussions": "Diskusi",
+    "createAccount": "Buat akun",
+    "advertise": "Iklan",
+    "partnerships": "Kemitraan",
+    "press": "Pers",
+    "home": "Beranda",
+    "news": "Berita",
+    "phones": "Ponsel",
+    "brands": "Brands",
+    "reviews": "Ulasan",
+    "compare": "Bandingkan",
+    "phoneFinder": "Pencari ponsel",
+    "guides": "Guides",
+    "community": "Komunitas",
+    "evHub": "Hub EV",
+    "terms": "Ketentuan",
+    "privacy": "Privasi",
+    "help": "Bantuan",
+    "copyright": "© {year} MobileArena. Hak cipta dilindungi."
+  }
+}

@@ -1,0 +1,124 @@
+{
+  "nav": {
+    "brands": "Mga brand",
+    "phoneFinder": "Hanapin ang telepono",
+    "comparisonTools": "Ihambing",
+    "upcomingDevices": "Paparating",
+    "news": "Balita",
+    "reviews": "Mga review",
+    "community": "Komunidad",
+    "ev": "EV",
+    "contact": "Makipag-ugnayan",
+    "contactShort": "Contact",
+    "a11y": {
+      "main": "Main navigation",
+      "sectionLinks": "Section links"
+    },
+    "menus": {
+      "phones": {
+        "browse": "Browse",
+        "allPhones": "All phones",
+        "allPhonesDesc": "Full device catalog",
+        "favoritePhones": "Favorite phones",
+        "favoritePhonesDesc": "Your saved picks",
+        "upcoming": "Upcoming Devices",
+        "upcomingDesc": "Not yet released",
+        "popularBrands": "Popular brands"
+      },
+      "finder": {
+        "title": "Phone Finder",
+        "open": "Open Phone Finder",
+        "openDesc": "Smart search and filters",
+        "bestCamera": "Best camera phones",
+        "bestCameraDesc": "48MP+ with OIS",
+        "bestBattery": "Best battery phones",
+        "bestBatteryDesc": "5000 mAh and up",
+        "gaming": "Gaming phones",
+        "gamingDesc": "120Hz+ displays",
+        "bestValue": "Best value picks",
+        "bestValueDesc": "Strong ratings under $600",
+        "foldables": "Foldables",
+        "foldablesDesc": "Foldable form factor",
+        "quickPicks": "Quick picks",
+        "compact": "Compact phones",
+        "flagshipKillers": "Flagship killers",
+        "under20k": "Under ₹20,000",
+        "premiumFlagships": "Premium flagships"
+      },
+      "compare": {
+        "title": "Comparison Tools",
+        "pick": "Pick phones to compare",
+        "pickDesc": "Side-by-side spec scoring",
+        "mine": "My comparisons",
+        "mineDesc": "Saved compare sessions",
+        "finder": "Phone Finder",
+        "finderDesc": "Find devices to add"
+      },
+      "upcoming": {
+        "title": "Upcoming Devices",
+        "all": "All upcoming devices",
+        "allDesc": "Rumored and announced",
+        "allPhones": "All phones",
+        "allPhonesDesc": "Full catalog",
+        "finder": "Phone Finder",
+        "finderDesc": "Filter by launch window"
+      },
+      "news": {
+        "title": "News",
+        "latest": "Latest news",
+        "latestDesc": "Launches and industry updates",
+        "reviews": "Reviews",
+        "reviewsDesc": "Editor deep dives",
+        "community": "Community",
+        "communityDesc": "Polls and discussions"
+      },
+      "reviews": {
+        "title": "Reviews",
+        "all": "All reviews",
+        "allDesc": "Editor's Arena scores",
+        "community": "Community reviews",
+        "communityDesc": "User ratings and media",
+        "compare": "Compare devices",
+        "compareDesc": "Spec-by-spec scoring"
+      },
+      "community": {
+        "title": "Community",
+        "hub": "Community hub",
+        "hubDesc": "Polls, reviews, rankings",
+        "discussions": "Discussions",
+        "discussionsDesc": "Threads and buying advice",
+        "guidelines": "Community guidelines",
+        "guidelinesDesc": "Rules and etiquette"
+      },
+      "ev": {
+        "title": "EV",
+        "hub": "EV hub",
+        "hubDesc": "All electric vehicles — not phones",
+        "cars": "Electric cars",
+        "carsDesc": "Sedans and hatchbacks",
+        "suvs": "Electric SUVs",
+        "suvsDesc": "Crossovers and family EVs",
+        "trucks": "Electric trucks & vans",
+        "trucksDesc": "Work and commercial EVs",
+        "bikes": "E-bikes & scooters",
+        "bikesDesc": "Two-wheel micromobility",
+        "news": "EV news",
+        "newsDesc": "Industry launches and policy",
+        "reviews": "EV reviews",
+        "reviewsDesc": "Range, charging, ownership",
+        "compare": "Compare EVs",
+        "compareDesc": "Side-by-side vehicle specs",
+        "upcoming": "Upcoming EVs",
+        "upcomingDesc": "Models not yet on sale"
+      },
+      "contact": {
+        "title": "Contact Us",
+        "us": "Contact us",
+        "usDesc": "Support and partnerships",
+        "guidelines": "Community guidelines",
+        "terms": "Terms of service",
+        "privacy": "Privacy policy"
+      }
+    }
+  }
+}

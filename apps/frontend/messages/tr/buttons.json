@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Giriş yap",
+    "myProfile": "Profilim",
+    "notifications": "Bildirimler",
+    "favorites": "Favoriler",
+    "search": "Ara",
+    "openMenu": "Menüyü aç",
+    "language": "Dil",
+    "theme": "Temayı değiştir",
+    "voiceSearch": "Sesli arama",
+    "closeMenu": "Menüyü kapat",
+    "menu": "Menü"
+  },
+  "languagePicker": {
+    "search": "Dil ara…",
+    "close": "Kapat",
+    "favorites": "Favoriler",
+    "recent": "Son kullanılanlar",
+    "popular": "Popüler",
+    "all": "Tüm diller ({count})",
+    "matches": "{count} eşleşme",
+    "empty": "Dil bulunamadı",
+    "addFavorite": "Favorilere ekle",
+    "removeFavorite": "Favorilerden kaldır",
+    "changed": "Language changed to {language}"
+  }
+}

@@ -14,6 +14,7 @@ import {
 import { UpdateProfileDto } from './dto/update-profile.dto';
 import { ProfileCollectionsService } from './profile-collections.service';
 import { displayHeadline } from './profile-headline';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const PROFILE_SELECT = {
   id: true,
@@ -38,6 +39,7 @@ export class ProfileService implements OnModuleInit {
   constructor(
     private readonly prisma: PrismaService,
     private readonly collections: ProfileCollectionsService,
+    private readonly notifications: NotificationsService,
   ) {}
 
   /** Prevent concurrent gamification sync races for the same user. */
@@ -65,7 +67,7 @@ export class ProfileService implements OnModuleInit {
 
   async getProfile(userId: number) {
     await this.syncGamification(userId);
-    await this.collections.ensureWelcomeNotification(userId);
+    await this.notifications.ensureWelcomeNotification(userId);
 
     const user = await this.prisma.user.findUnique({
       where: { id: userId },

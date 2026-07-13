@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "সাইন ইন",
+    "myProfile": "আমার প্রোফাইল",
+    "notifications": "বিজ্ঞপ্তি",
+    "favorites": "প্রিয় ফোন",
+    "search": "অনুসন্ধান",
+    "openMenu": "মেনু খুলুন",
+    "language": "ভাষা",
+    "theme": "থিম বদলান",
+    "voiceSearch": "ভয়েস অনুসন্ধান",
+    "closeMenu": "মেনু বন্ধ করুন",
+    "menu": "মেনু"
+  },
+  "languagePicker": {
+    "search": "ভাষা অনুসন্ধান…",
+    "close": "বন্ধ করুন",
+    "favorites": "পছন্দসই",
+    "recent": "সম্প্রতি ব্যবহৃত",
+    "popular": "জনপ্রিয়",
+    "all": "সব ভাষা ({count})",
+    "matches": "{count} মিল",
+    "empty": "কোনো ভাষা পাওয়া যায়নি",
+    "addFavorite": "পছন্দে যোগ করুন",
+    "removeFavorite": "পছন্দ থেকে সরান",
+    "changed": "Language changed to {language}"
+  }
+}

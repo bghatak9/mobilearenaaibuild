@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Anmelden",
+    "myProfile": "Mein Profil",
+    "notifications": "Benachrichtigungen",
+    "favorites": "Favoriten",
+    "search": "Suchen",
+    "openMenu": "Menü öffnen",
+    "language": "Sprache",
+    "theme": "Design wechseln",
+    "voiceSearch": "Sprachsuche",
+    "closeMenu": "Menü schließen",
+    "menu": "Menü"
+  },
+  "languagePicker": {
+    "search": "Sprache suchen…",
+    "close": "Schließen",
+    "favorites": "Favoriten",
+    "recent": "Zuletzt verwendet",
+    "popular": "Beliebt",
+    "all": "Alle Sprachen ({count})",
+    "matches": "{count} Treffer",
+    "empty": "Keine Sprachen gefunden",
+    "addFavorite": "Favorit hinzufügen",
+    "removeFavorite": "Favorit entfernen",
+    "changed": "Language changed to {language}"
+  }
+}

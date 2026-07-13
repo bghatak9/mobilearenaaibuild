@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "রিভিউ",
+    "loadError": "রিভিউ লোড করা যায়নি। API চলছে কি?",
+    "empty": "এখনো কোনো রিভিউ নেই।",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

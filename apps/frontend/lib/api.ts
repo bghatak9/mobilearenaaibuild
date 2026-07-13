@@ -1,16 +1,32 @@
 import { countryName } from "@/lib/countries";
 
-import { browserApiBase, serverApiBase } from "@/lib/api-base";
+import { browserApiBase, resolveClientApiBase, resolveUploadApiBase, serverApiBase } from "@/lib/api-base";
 import { catalogImportedOnlyFromEnv } from "@/lib/catalog-mode";
+import { withLocaleQuery } from "@/lib/content-locale";
 
 /** Browser uses same-origin /api proxy; SSR uses BACKEND_URL. */
-export const API_URL =
-  typeof window !== "undefined" ? browserApiBase() : serverApiBase();
+export function getApiUrl(): string {
+  return typeof window !== "undefined" ? resolveClientApiBase() : serverApiBase();
+}
+
+/** Resolved per request so SSR module init never freezes the wrong base in the browser. */
+function apiBase(): string {
+  return getApiUrl();
+}
 
 export type Device = {
   id: number;
   slug: string;
   name: string;
+  /** Localized marketing copy — never replace `name` / brand / chipset. */
+  description?: string | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  keywords?: string | null;
+  locale?: string;
+  localeFallback?: "exact" | "en" | "canonical";
+  /** Per-locale URL slugs for hreflang (canonical EN always present). */
+  localeSlugs?: Record<string, string>;
   price?: number | null;
   rating?: number | null;
   ramGb?: number | null;
@@ -79,6 +95,8 @@ export type Device = {
     priority: number;
   }[];
   communityRatingCount?: number;
+  /** Extended intelligence JSON from DeviceIntelligence.payload */
+  intelligence?: Record<string, unknown>;
 };
 
 export type CompareResult = {
@@ -86,10 +104,14 @@ export type CompareResult = {
   winners: Record<string, number[]>;
 };
 
-export async function getDevices(search?: string): Promise<Device[]> {
-  const url = search
-    ? `${API_URL}/devices?search=${encodeURIComponent(search)}`
-    : `${API_URL}/devices`;
+export async function getDevices(
+  search?: string,
+  locale?: string,
+): Promise<Device[]> {
+  const base = search
+    ? `${apiBase()}/devices?search=${encodeURIComponent(search)}`
+    : `${apiBase()}/devices`;
+  const url = withLocaleQuery(base, locale);
 
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch devices");
@@ -97,8 +119,13 @@ export async function getDevices(search?: string): Promise<Device[]> {
 }
 
 /** Devices bulk-uploaded via Admin → Upcoming Devices (not seed or regular phone uploads). */
-export async function getBulkUpcomingDevices(): Promise<Device[]> {
-  const res = await fetch(`${API_URL}/devices/upcoming`, { cache: "no-store" });
+export async function getBulkUpcomingDevices(
+  locale?: string,
+): Promise<Device[]> {
+  const res = await fetch(
+    withLocaleQuery(`${apiBase()}/devices/upcoming`, locale),
+    { cache: "no-store" },
+  );
   if (!res.ok) throw new Error("Failed to fetch upcoming devices");
   return res.json();
 }
@@ -106,7 +133,7 @@ export async function getBulkUpcomingDevices(): Promise<Device[]> {
 export async function getCatalogStatus(): Promise<{ importedOnly: boolean }> {
   const fallback = catalogImportedOnlyFromEnv();
   try {
-    const res = await fetch(`${API_URL}/catalog/status`, {
+    const res = await fetch(`${apiBase()}/catalog/status`, {
       cache: "no-store",
       signal: AbortSignal.timeout(4_000),
     });
@@ -118,24 +145,52 @@ export async function getCatalogStatus(): Promise<{ importedOnly: boolean }> {
   }
 }
 
-export async function getDeviceById(id: string): Promise<Device> {
-  const res = await fetch(`${API_URL}/devices/${id}`, { cache: "no-store" });
+export async function getDeviceById(
+  id: string,
+  locale?: string,
+): Promise<Device> {
+  const res = await fetch(
+    withLocaleQuery(`${apiBase()}/devices/${id}`, locale),
+    { cache: "no-store" },
+  );
   if (!res.ok) throw new Error("Failed to fetch device");
   return res.json();
 }
 
-export async function getDeviceBySlug(slug: string): Promise<Device> {
-  const res = await fetch(`${API_URL}/devices/slug/${slug}`, {
-    cache: "no-store",
-  });
-  if (!res.ok) throw new Error("Failed to fetch device");
+export async function getDeviceBySlug(
+  slug: string,
+  locale?: string,
+): Promise<Device> {
+  let res: Response;
+  try {
+    res = await fetch(
+      withLocaleQuery(`${apiBase()}/devices/slug/${slug}`, locale),
+      { cache: "no-store" },
+    );
+  } catch (error) {
+    throw new Error(
+      `Device API unreachable for slug "${slug}": ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    );
+  }
+  if (res.status === 404) {
+    throw new Error(`Device not found: ${slug}`);
+  }
+  if (!res.ok) {
+    throw new Error(`Failed to fetch device (${res.status})`);
+  }
   return res.json();
 }
 
 export async function compareDevices(
   slug: string,
+  locale?: string,
 ): Promise<CompareResult | null> {
-  const res = await fetch(`${API_URL}/compare/${slug}`, { cache: "no-store" });
+  const res = await fetch(
+    withLocaleQuery(`${apiBase()}/compare/${slug}`, locale),
+    { cache: "no-store" },
+  );
   if (!res.ok) return null;
   return res.json();
 }
@@ -151,6 +206,12 @@ export type NewsArticle = {
   status: "DRAFT" | "REVIEW" | "PUBLISHED";
   publishedAt?: string | null;
   createdAt: string;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  keywords?: string | null;
+  locale?: string;
+  localeFallback?: "exact" | "en" | "canonical";
+  localeSlugs?: Record<string, string>;
 };
 
 export type Review = {
@@ -164,31 +225,47 @@ export type Review = {
   deviceId: number;
   publishedAt: string;
   device?: Device;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  keywords?: string | null;
+  locale?: string;
+  localeFallback?: "exact" | "en" | "canonical";
+  localeSlugs?: Record<string, string>;
 };
 
 export async function getNews(params?: {
   status?: NewsArticle["status"];
   featured?: boolean;
+  locale?: string;
+  search?: string;
 }): Promise<NewsArticle[]> {
   const qs = new URLSearchParams();
   qs.set("status", params?.status ?? "PUBLISHED");
   if (params?.featured !== undefined) qs.set("featured", String(params.featured));
+  if (params?.locale) qs.set("locale", params.locale);
+  if (params?.search?.trim()) qs.set("search", params.search.trim());
 
-  const res = await fetch(`${API_URL}/news?${qs.toString()}`, {
+  const res = await fetch(`${apiBase()}/news?${qs.toString()}`, {
     cache: "no-store",
   });
   if (!res.ok) throw new Error("Failed to fetch news");
   return res.json();
 }
 
-export async function getNewsBySlug(slug: string): Promise<NewsArticle> {
-  const res = await fetch(`${API_URL}/news/${slug}`, { cache: "no-store" });
+export async function getNewsBySlug(
+  slug: string,
+  locale?: string,
+): Promise<NewsArticle> {
+  const res = await fetch(
+    withLocaleQuery(`${apiBase()}/news/${slug}`, locale),
+    { cache: "no-store" },
+  );
   if (!res.ok) throw new Error("Failed to fetch article");
   return res.json();
 }
 
 export async function getAdminNewsBySlug(slug: string): Promise<NewsArticle> {
-  const res = await fetch(`${API_URL}/news/admin/slug/${slug}`, {
+  const res = await fetch(`${apiBase()}/news/admin/slug/${slug}`, {
     cache: "no-store",
     headers: authHeaders(),
   });
@@ -196,17 +273,26 @@ export async function getAdminNewsBySlug(slug: string): Promise<NewsArticle> {
   return res.json();
 }
 
-export async function getReviews(deviceId?: number): Promise<Review[]> {
-  const url = deviceId
-    ? `${API_URL}/reviews?deviceId=${deviceId}`
-    : `${API_URL}/reviews`;
-  const res = await fetch(url, { cache: "no-store" });
+export async function getReviews(
+  deviceId?: number,
+  locale?: string,
+): Promise<Review[]> {
+  const base = deviceId
+    ? `${apiBase()}/reviews?deviceId=${deviceId}`
+    : `${apiBase()}/reviews`;
+  const res = await fetch(withLocaleQuery(base, locale), { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to fetch reviews");
   return res.json();
 }
 
-export async function getReviewBySlug(slug: string): Promise<Review> {
-  const res = await fetch(`${API_URL}/reviews/${slug}`, { cache: "no-store" });
+export async function getReviewBySlug(
+  slug: string,
+  locale?: string,
+): Promise<Review> {
+  const res = await fetch(
+    withLocaleQuery(`${apiBase()}/reviews/${slug}`, locale),
+    { cache: "no-store" },
+  );
   if (!res.ok) throw new Error("Failed to fetch review");
   return res.json();
 }
@@ -245,7 +331,7 @@ export async function getActiveAdvertisements(options?: {
   if (options?.placement) params.set("placement", options.placement);
   if (options?.adType) params.set("adType", options.adType);
   const qs = params.toString() ? `?${params.toString()}` : "";
-  const res = await fetch(`${API_URL}/advertisements/active${qs}`, {
+  const res = await fetch(`${apiBase()}/advertisements/active${qs}`, {
     cache: "no-store",
   });
   if (!res.ok) throw new Error("Failed to fetch advertisements");
@@ -253,7 +339,7 @@ export async function getActiveAdvertisements(options?: {
 }
 
 export async function getAdCatalog(): Promise<AdCatalogResponse> {
-  const res = await fetch(`${API_URL}/advertisements/catalog`, {
+  const res = await fetch(`${apiBase()}/advertisements/catalog`, {
     cache: "no-store",
   });
   if (!res.ok) throw new Error("Failed to fetch ad catalog");
@@ -328,7 +414,7 @@ export type ContentReport = {
 };
 
 export async function getComments(): Promise<Comment[]> {
-  const res = await fetch(`${API_URL}/comments`, {
+  const res = await fetch(`${apiBase()}/comments`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -340,15 +426,15 @@ export async function getCommentModerationQueue(
   status?: CommentStatus,
 ): Promise<Comment[]> {
   const url = status
-    ? `${API_URL}/comments/moderation/queue?status=${status}`
-    : `${API_URL}/comments/moderation/queue`;
+    ? `${apiBase()}/comments/moderation/queue?status=${status}`
+    : `${apiBase()}/comments/moderation/queue`;
   const res = await fetch(url, { headers: authHeaders(), cache: "no-store" });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load queue"));
   return res.json();
 }
 
 export async function getCommentModerationStats(): Promise<CommentModerationStats> {
-  const res = await fetch(`${API_URL}/comments/moderation/stats`, {
+  const res = await fetch(`${apiBase()}/comments/moderation/stats`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -357,7 +443,7 @@ export async function getCommentModerationStats(): Promise<CommentModerationStat
 }
 
 export async function getCommentAiSpamStatus(): Promise<CommentAiSpamStatus> {
-  const res = await fetch(`${API_URL}/comments/moderation/ai-status`, {
+  const res = await fetch(`${apiBase()}/comments/moderation/ai-status`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -368,7 +454,7 @@ export async function getCommentAiSpamStatus(): Promise<CommentAiSpamStatus> {
 export async function getCommentModerationAudit(
   limit = 50,
 ): Promise<CommentAuditLog[]> {
-  const res = await fetch(`${API_URL}/comments/moderation/audit?limit=${limit}`, {
+  const res = await fetch(`${apiBase()}/comments/moderation/audit?limit=${limit}`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -381,7 +467,7 @@ export async function moderateComment(
   action: "approve" | "reject" | "spam",
   notes?: string,
 ): Promise<Comment> {
-  const res = await fetch(`${API_URL}/comments/${id}/moderate`, {
+  const res = await fetch(`${apiBase()}/comments/${id}/moderate`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ action, notes }),
@@ -394,7 +480,7 @@ export async function bulkModerateComments(
   ids: number[],
   action: "approve" | "reject" | "spam",
 ): Promise<{ count: number; items: Comment[] }> {
-  const res = await fetch(`${API_URL}/comments/moderation/bulk`, {
+  const res = await fetch(`${apiBase()}/comments/moderation/bulk`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ ids, action }),
@@ -404,7 +490,7 @@ export async function bulkModerateComments(
 }
 
 export async function getOpenReports(): Promise<ContentReport[]> {
-  const res = await fetch(`${API_URL}/community/reports`, {
+  const res = await fetch(`${apiBase()}/community/reports`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -417,7 +503,7 @@ export async function reviewReport(
   status: "REVIEWED" | "DISMISSED",
   notes?: string,
 ): Promise<ContentReport> {
-  const res = await fetch(`${API_URL}/community/reports/${id}/review`, {
+  const res = await fetch(`${apiBase()}/community/reports/${id}/review`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ status, notes }),
@@ -442,7 +528,7 @@ export type DeviceComment = {
 };
 
 export async function getDeviceComments(deviceId: number): Promise<DeviceComment[]> {
-  const res = await fetch(`${API_URL}/comments/device/${deviceId}`, {
+  const res = await fetch(`${apiBase()}/comments/device/${deviceId}`, {
     cache: "no-store",
   });
   if (!res.ok) throw new Error("Failed to fetch comments");
@@ -453,7 +539,7 @@ export async function createComment(input: {
   deviceId: number;
   body: string;
 }): Promise<DeviceComment> {
-  const res = await fetch(`${API_URL}/comments`, {
+  const res = await fetch(`${apiBase()}/comments`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -466,7 +552,7 @@ export async function updateComment(
   id: number,
   body: string,
 ): Promise<DeviceComment> {
-  const res = await fetch(`${API_URL}/comments/${id}`, {
+  const res = await fetch(`${apiBase()}/comments/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify({ body }),
@@ -487,15 +573,15 @@ export async function getCommunityPolls(
   type?: "DEVICE" | "WEEKLY" | "COMPARISON",
 ): Promise<ActivePoll[]> {
   const url = type
-    ? `${API_URL}/community/polls?type=${type}`
-    : `${API_URL}/community/polls`;
+    ? `${apiBase()}/community/polls?type=${type}`
+    : `${apiBase()}/community/polls`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
 }
 
 export async function getActivePoll(): Promise<ActivePoll | null> {
-  const res = await fetch(`${API_URL}/community/polls/active`, { cache: "no-store" });
+  const res = await fetch(`${apiBase()}/community/polls/active`, { cache: "no-store" });
   if (!res.ok) return null;
   const data = await res.json();
   return data ?? null;
@@ -505,7 +591,7 @@ export async function voteOnPoll(input: {
   pollSlug: string;
   choiceId: string;
 }): Promise<ActivePoll> {
-  const res = await fetch(`${API_URL}/community/polls/vote`, {
+  const res = await fetch(`${apiBase()}/community/polls/vote`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -518,8 +604,8 @@ export async function getCommunityReviews(deviceId?: number): Promise<
   import("@/lib/community-types").CommunityReviewItem[]
 > {
   const url = deviceId
-    ? `${API_URL}/community/reviews?deviceId=${deviceId}`
-    : `${API_URL}/community/reviews`;
+    ? `${apiBase()}/community/reviews?deviceId=${deviceId}`
+    : `${apiBase()}/community/reviews`;
   const res = await fetch(url, { cache: "no-store" });
   if (!res.ok) return [];
   return res.json();
@@ -528,7 +614,7 @@ export async function getCommunityReviews(deviceId?: number): Promise<
 export async function getTopReviewers(): Promise<
   import("@/lib/community-types").TopReviewer[]
 > {
-  const res = await fetch(`${API_URL}/community/reviews/top-reviewers`, {
+  const res = await fetch(`${apiBase()}/community/reviews/top-reviewers`, {
     cache: "no-store",
   });
   if (!res.ok) return [];
@@ -544,7 +630,7 @@ export async function createCommunityReview(input: {
   photoUrls?: string[];
   videoUrls?: string[];
 }): Promise<import("@/lib/community-types").CommunityReviewItem> {
-  const res = await fetch(`${API_URL}/community/reviews`, {
+  const res = await fetch(`${apiBase()}/community/reviews`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -557,7 +643,7 @@ export async function replyToCommunityReview(
   reviewId: number,
   body: string,
 ): Promise<{ id: number; body: string }> {
-  const res = await fetch(`${API_URL}/community/reviews/${reviewId}/replies`, {
+  const res = await fetch(`${apiBase()}/community/reviews/${reviewId}/replies`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ body }),
@@ -569,7 +655,7 @@ export async function replyToCommunityReview(
 export async function voteReviewHelpful(
   reviewId: number,
 ): Promise<{ helpfulCount: number }> {
-  const res = await fetch(`${API_URL}/community/reviews/${reviewId}/helpful`, {
+  const res = await fetch(`${apiBase()}/community/reviews/${reviewId}/helpful`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -582,7 +668,7 @@ export async function reportContent(input: {
   entityId: number;
   reason: string;
 }): Promise<{ id: number }> {
-  const res = await fetch(`${API_URL}/community/reports`, {
+  const res = await fetch(`${apiBase()}/community/reports`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -595,7 +681,7 @@ export async function verifyEmail(input: {
   email: string;
   token: string;
 }): Promise<{ message: string }> {
-  const res = await fetch(`${API_URL}/auth/verify-email`, {
+  const res = await fetch(`${apiBase()}/auth/verify-email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -607,7 +693,7 @@ export async function verifyEmail(input: {
 export async function resendVerification(
   email: string,
 ): Promise<{ message: string; devToken?: string }> {
-  const res = await fetch(`${API_URL}/auth/resend-verification`, {
+  const res = await fetch(`${apiBase()}/auth/resend-verification`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -627,7 +713,7 @@ export type DiscussionThread = {
 };
 
 export async function getDiscussions(): Promise<DiscussionThread[]> {
-  const res = await fetch(`${API_URL}/community/discussions`, { cache: "no-store" });
+  const res = await fetch(`${apiBase()}/community/discussions`, { cache: "no-store" });
   if (!res.ok) throw new Error("Failed to load discussions");
   return res.json();
 }
@@ -678,7 +764,7 @@ export async function login(
   email: string,
   password: string,
 ): Promise<{ access_token: string; user: AuthUser }> {
-  const res = await fetch(`${API_URL}/auth/login`, {
+  const res = await fetch(`${apiBase()}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -699,7 +785,7 @@ export async function registerUser(input: {
   verificationRequired?: boolean;
   devVerifyToken?: string;
 }> {
-  const res = await fetch(`${API_URL}/auth/register`, {
+  const res = await fetch(`${apiBase()}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -720,7 +806,7 @@ export type SocialAuthConfig = {
 };
 
 export async function fetchSocialAuthConfig(): Promise<SocialAuthConfig> {
-  const res = await fetch(`${API_URL}/auth/social-config`, {
+  const res = await fetch(`${apiBase()}/auth/social-config`, {
     cache: "no-store",
   });
   if (!res.ok) {
@@ -733,7 +819,7 @@ export async function devSocialSignIn(
   provider: "google" | "facebook",
   email: string,
 ): Promise<{ access_token: string; user: AuthUser }> {
-  const res = await fetch(`${API_URL}/auth/dev/social`, {
+  const res = await fetch(`${apiBase()}/auth/dev/social`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ provider, email }),
@@ -747,7 +833,7 @@ export async function devSocialSignIn(
 export async function googleSignIn(
   idToken: string,
 ): Promise<{ access_token: string; user: AuthUser }> {
-  const res = await fetch(`${API_URL}/auth/google`, {
+  const res = await fetch(`${apiBase()}/auth/google`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
@@ -761,7 +847,7 @@ export async function googleSignIn(
 export async function facebookSignIn(
   accessToken: string,
 ): Promise<{ access_token: string; user: AuthUser }> {
-  const res = await fetch(`${API_URL}/auth/facebook`, {
+  const res = await fetch(`${apiBase()}/auth/facebook`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ accessToken }),
@@ -776,7 +862,7 @@ export async function adminLogin(
   email: string,
   password: string,
 ): Promise<{ access_token: string; user: AuthUser }> {
-  const res = await fetch(`${API_URL}/admin/auth/login`, {
+  const res = await fetch(`${apiBase()}/admin/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -790,7 +876,7 @@ export async function adminLogin(
 export async function adminGoogleSignIn(
   idToken: string,
 ): Promise<{ access_token: string; user: AuthUser }> {
-  const res = await fetch(`${API_URL}/admin/auth/google`, {
+  const res = await fetch(`${apiBase()}/admin/auth/google`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ idToken }),
@@ -804,7 +890,7 @@ export async function adminGoogleSignIn(
 export async function requestPasswordReset(input: {
   email: string;
 }): Promise<{ message: string; devOtp?: string; devNote?: string }> {
-  const res = await fetch(`${API_URL}/auth/forgot-password/request`, {
+  const res = await fetch(`${apiBase()}/auth/forgot-password/request`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -820,7 +906,7 @@ export async function resetPasswordWithOtp(input: {
   otp: string;
   newPassword: string;
 }): Promise<{ message: string }> {
-  const res = await fetch(`${API_URL}/auth/forgot-password/reset`, {
+  const res = await fetch(`${apiBase()}/auth/forgot-password/reset`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -855,7 +941,7 @@ export type AdminUser = {
 };
 
 export async function getUsers(): Promise<AdminUser[]> {
-  const res = await fetch(`${API_URL}/users`, {
+  const res = await fetch(`${apiBase()}/users`, {
     cache: "no-store",
     headers: authHeaders(),
   });
@@ -864,7 +950,7 @@ export async function getUsers(): Promise<AdminUser[]> {
 }
 
 export async function getUser(id: number): Promise<AdminUser> {
-  const res = await fetch(`${API_URL}/users/${id}`, {
+  const res = await fetch(`${apiBase()}/users/${id}`, {
     cache: "no-store",
     headers: authHeaders(),
   });
@@ -878,7 +964,7 @@ export async function createUser(input: {
   name?: string;
   role: AuthUser["role"];
 }): Promise<AdminUser> {
-  const res = await fetch(`${API_URL}/users`, {
+  const res = await fetch(`${apiBase()}/users`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -897,7 +983,7 @@ export async function updateUser(
     isBlocked: boolean;
   }>,
 ): Promise<AdminUser> {
-  const res = await fetch(`${API_URL}/users/${id}`, {
+  const res = await fetch(`${apiBase()}/users/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -907,7 +993,7 @@ export async function updateUser(
 }
 
 export async function deleteUser(id: number): Promise<void> {
-  const res = await fetch(`${API_URL}/users/${id}`, {
+  const res = await fetch(`${apiBase()}/users/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -937,7 +1023,7 @@ export async function getAuthPolicy(): Promise<{
     };
   }>;
 }> {
-  const res = await fetch(`${API_URL}/admin/config/auth-policy`, {
+  const res = await fetch(`${apiBase()}/admin/config/auth-policy`, {
     cache: "no-store",
     headers: authHeaders(),
   });
@@ -952,7 +1038,7 @@ export async function sendUserPasswordReset(
   devOtp?: string;
   devNote?: string;
 }> {
-  const res = await fetch(`${API_URL}/users/${id}/send-password-reset`, {
+  const res = await fetch(`${apiBase()}/users/${id}/send-password-reset`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({}),
@@ -975,7 +1061,7 @@ export type NewsInput = {
 };
 
 export async function getAllNews(): Promise<NewsArticle[]> {
-  const res = await fetch(`${API_URL}/news/admin/all`, {
+  const res = await fetch(`${apiBase()}/news/admin/all`, {
     cache: "no-store",
     headers: authHeaders(),
   });
@@ -983,8 +1069,33 @@ export async function getAllNews(): Promise<NewsArticle[]> {
   return res.json();
 }
 
+export type TranslationCoverageRow = {
+  locale: string;
+  percent: number;
+  news: { done: number; total: number };
+  reviews: { done: number; total: number };
+  devices: { done: number; total: number };
+  brands?: { done: number; total: number };
+  categories?: { done: number; total: number };
+};
+
+export async function getTranslationCoverage(
+  locales?: string[],
+): Promise<TranslationCoverageRow[]> {
+  const qs =
+    locales && locales.length > 0
+      ? `?locales=${encodeURIComponent(locales.join(","))}`
+      : "";
+  const res = await fetch(
+    `${apiBase()}/content-translations/workspace/coverage${qs}`,
+    { cache: "no-store", headers: authHeaders() },
+  );
+  if (!res.ok) throw new Error("Failed to fetch translation coverage");
+  return res.json();
+}
+
 export async function createNews(input: NewsInput): Promise<NewsArticle> {
-  const res = await fetch(`${API_URL}/news`, {
+  const res = await fetch(`${apiBase()}/news`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -997,7 +1108,7 @@ export async function updateNews(
   id: number,
   input: Partial<NewsInput>,
 ): Promise<NewsArticle> {
-  const res = await fetch(`${API_URL}/news/${id}`, {
+  const res = await fetch(`${apiBase()}/news/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -1007,7 +1118,7 @@ export async function updateNews(
 }
 
 export async function deleteNews(id: number): Promise<void> {
-  const res = await fetch(`${API_URL}/news/${id}`, {
+  const res = await fetch(`${apiBase()}/news/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -1026,7 +1137,7 @@ export type ReviewInput = {
 };
 
 export async function createReview(input: ReviewInput): Promise<Review> {
-  const res = await fetch(`${API_URL}/reviews`, {
+  const res = await fetch(`${apiBase()}/reviews`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -1039,7 +1150,7 @@ export async function updateReview(
   id: number,
   input: Partial<ReviewInput>,
 ): Promise<Review> {
-  const res = await fetch(`${API_URL}/reviews/${id}`, {
+  const res = await fetch(`${apiBase()}/reviews/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -1049,7 +1160,7 @@ export async function updateReview(
 }
 
 export async function deleteReview(id: number): Promise<void> {
-  const res = await fetch(`${API_URL}/reviews/${id}`, {
+  const res = await fetch(`${apiBase()}/reviews/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -1057,7 +1168,7 @@ export async function deleteReview(id: number): Promise<void> {
 }
 
 export async function deleteComment(id: number): Promise<void> {
-  const res = await fetch(`${API_URL}/comments/${id}`, {
+  const res = await fetch(`${apiBase()}/comments/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -1302,7 +1413,7 @@ export type AdRevenueReport = {
 };
 
 export async function listAdCampaigns(): Promise<AdCampaign[]> {
-  const res = await fetch(`${API_URL}/advertisements/admin/campaigns`, {
+  const res = await fetch(`${apiBase()}/advertisements/admin/campaigns`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -1322,7 +1433,7 @@ export async function createAdCampaign(input: {
   startsAt?: string;
   endsAt?: string;
 }): Promise<AdCampaign> {
-  const res = await fetch(`${API_URL}/advertisements/admin/campaigns`, {
+  const res = await fetch(`${apiBase()}/advertisements/admin/campaigns`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -1346,7 +1457,7 @@ export async function updateAdCampaign(
     endsAt: string | null;
   }>,
 ): Promise<AdCampaign> {
-  const res = await fetch(`${API_URL}/advertisements/admin/campaigns/${id}`, {
+  const res = await fetch(`${apiBase()}/advertisements/admin/campaigns/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -1356,7 +1467,7 @@ export async function updateAdCampaign(
 }
 
 export async function deleteAdCampaign(id: number): Promise<void> {
-  const res = await fetch(`${API_URL}/advertisements/admin/campaigns/${id}`, {
+  const res = await fetch(`${apiBase()}/advertisements/admin/campaigns/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -1364,7 +1475,7 @@ export async function deleteAdCampaign(id: number): Promise<void> {
 }
 
 export async function listManagedAds(): Promise<ManagedAdvertisement[]> {
-  const res = await fetch(`${API_URL}/advertisements/admin/ads`, {
+  const res = await fetch(`${apiBase()}/advertisements/admin/ads`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -1383,7 +1494,7 @@ export async function updateManagedAd(
     placement: string;
   }>,
 ): Promise<ManagedAdvertisement> {
-  const res = await fetch(`${API_URL}/advertisements/admin/ads/${id}`, {
+  const res = await fetch(`${apiBase()}/advertisements/admin/ads/${id}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -1402,7 +1513,7 @@ export async function getAdRevenueReport(query?: {
   if (query?.to) params.set("to", query.to);
   if (query?.country && query.country !== "ALL") params.set("country", query.country);
   const qs = params.toString() ? `?${params.toString()}` : "";
-  const res = await fetch(`${API_URL}/advertisements/admin/reports/revenue${qs}`, {
+  const res = await fetch(`${apiBase()}/advertisements/admin/reports/revenue${qs}`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -1438,7 +1549,7 @@ export async function trackPageView(input: {
   });
 
   try {
-    const res = await fetch(`${API_URL}/analytics/track`, {
+    const res = await fetch(`${apiBase()}/analytics/track`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: payload,
@@ -1450,7 +1561,7 @@ export async function trackPageView(input: {
     try {
       if (typeof navigator !== "undefined" && navigator.sendBeacon) {
         navigator.sendBeacon(
-          `${API_URL}/analytics/track`,
+          `${apiBase()}/analytics/track`,
           new Blob([payload], { type: "application/json" }),
         );
       }
@@ -1464,7 +1575,7 @@ export async function getAnalyticsDashboard(
   query: AnalyticsQuery = {},
 ): Promise<AnalyticsDashboard> {
   const res = await fetch(
-    `${API_URL}/analytics/dashboard${analyticsQueryString(query)}`,
+    `${apiBase()}/analytics/dashboard${analyticsQueryString(query)}`,
     {
       cache: "no-store",
       headers: authHeaders(),
@@ -1504,7 +1615,7 @@ export async function exportCountryTrafficCsv(
   query: AnalyticsQuery = {},
 ): Promise<Blob> {
   const res = await fetch(
-    `${API_URL}/analytics/countries/export${analyticsQueryString(query)}`,
+    `${apiBase()}/analytics/countries/export${analyticsQueryString(query)}`,
     { headers: authHeaders() },
   );
   if (!res.ok) throw new Error("Failed to export country traffic");
@@ -1567,32 +1678,44 @@ export type ImportJobSnapshot = {
 async function uploadImport(
   path: string,
   file: File,
+  query?: Record<string, string>,
 ): Promise<Response> {
   const token = getToken();
   const form = new FormData();
   form.append("file", file);
+  const qs = query
+    ? `?${new URLSearchParams(query).toString()}`
+    : "";
   try {
-    return await fetch(`${API_URL}${path}`, {
+    return await fetch(`${resolveUploadApiBase()}${path}${qs}`, {
       method: "POST",
       headers: token ? { Authorization: `Bearer ${token}` } : {},
       body: form,
     });
   } catch (err) {
-    const base = `Cannot reach the API at ${API_URL}.`;
+    const base = resolveUploadApiBase();
+    const hint = base.startsWith("/")
+      ? `${window.location.origin}${base}`
+      : base;
+    const message = `Cannot reach the API at ${hint}.`;
     if (err instanceof TypeError) {
       throw new Error(
-        `${base} Start the backend from the repo root: npm run dev:backend (port 4000). Then restart the frontend so /api proxy picks up .env.local.`,
+        `${message} Start the backend from the repo root: npm run dev:backend (port 4000). Then restart the frontend so the /api proxy picks up .env.local.`,
       );
     }
-    throw err instanceof Error ? err : new Error(`${base} Upload failed.`);
+    throw err instanceof Error ? err : new Error(`${message} Upload failed.`);
   }
 }
 
 export async function validateImportFile(
   kind: import("@/lib/content-permissions").BulkImportKind,
   file: File,
+  options?: { slug?: string; subkind?: import("@/lib/content-permissions").EvUploadSubkind },
 ): Promise<ImportValidationResult> {
-  const res = await uploadImport(`/import/${kind}/validate`, file);
+  const query: Record<string, string> = {};
+  if (options?.slug?.trim()) query.slug = options.slug.trim();
+  if (options?.subkind) query.subkind = options.subkind;
+  const res = await uploadImport(`/import/${kind}/validate`, file, query);
   if (!res.ok) {
     throw new Error(await readApiError(res, "Validation failed"));
   }
@@ -1602,11 +1725,18 @@ export async function validateImportFile(
 export async function runImportFile(
   kind: import("@/lib/content-permissions").BulkImportKind,
   file: File,
-  options?: { atomic?: boolean; background?: boolean },
+  options?: {
+    atomic?: boolean;
+    background?: boolean;
+    slug?: string;
+    subkind?: import("@/lib/content-permissions").EvUploadSubkind;
+  },
 ): Promise<ImportRunResult> {
   const params = new URLSearchParams();
   if (options?.atomic === false) params.set("atomic", "false");
   if (options?.background === false) params.set("background", "false");
+  if (options?.slug?.trim()) params.set("slug", options.slug.trim());
+  if (options?.subkind) params.set("subkind", options.subkind);
   const qs = params.toString();
   const res = await uploadImport(
     `/import/${kind}/run${qs ? `?${qs}` : ""}`,
@@ -1619,7 +1749,7 @@ export async function runImportFile(
 }
 
 export async function getImportJob(jobId: string): Promise<ImportJobSnapshot> {
-  const res = await fetch(`${API_URL}/import/jobs/${jobId}`, {
+  const res = await fetch(`${apiBase()}/import/jobs/${jobId}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to fetch upload job");
@@ -1627,7 +1757,7 @@ export async function getImportJob(jobId: string): Promise<ImportJobSnapshot> {
 }
 
 export async function downloadImportErrorReport(jobId: string): Promise<Blob> {
-  const res = await fetch(`${API_URL}/import/jobs/${jobId}/error-report`, {
+  const res = await fetch(`${apiBase()}/import/jobs/${jobId}/error-report`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error("Failed to download error report");
@@ -1695,6 +1825,13 @@ export type ImportBatchDetail = ImportBatchSummary & {
       slug: string;
       deletedAt: string | null;
     } | null;
+    news: {
+      id: number;
+      title: string;
+      slug: string;
+      status: string;
+      deletedAt: string | null;
+    } | null;
   }[];
 };
 
@@ -1715,7 +1852,7 @@ export async function listImportBatches(options?: {
   if (options?.kind) params.set("kind", options.kind);
   if (options?.includeDeleted) params.set("includeDeleted", "true");
   const qs = params.toString();
-  const res = await fetch(`${API_URL}/import/batches${qs ? `?${qs}` : ""}`, {
+  const res = await fetch(`${apiBase()}/import/batches${qs ? `?${qs}` : ""}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load upload history"));
@@ -1723,7 +1860,7 @@ export async function listImportBatches(options?: {
 }
 
 export async function getImportBatch(id: number): Promise<ImportBatchDetail> {
-  const res = await fetch(`${API_URL}/import/batches/${id}`, {
+  const res = await fetch(`${apiBase()}/import/batches/${id}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load upload batch"));
@@ -1731,7 +1868,7 @@ export async function getImportBatch(id: number): Promise<ImportBatchDetail> {
 }
 
 export async function deleteImportBatch(id: number) {
-  const res = await fetch(`${API_URL}/import/batches/${id}/delete`, {
+  const res = await fetch(`${apiBase()}/import/batches/${id}/delete`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -1740,7 +1877,7 @@ export async function deleteImportBatch(id: number) {
 }
 
 export async function restoreImportBatch(id: number) {
-  const res = await fetch(`${API_URL}/import/batches/${id}/restore`, {
+  const res = await fetch(`${apiBase()}/import/batches/${id}/restore`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -1749,7 +1886,7 @@ export async function restoreImportBatch(id: number) {
 }
 
 export async function purgeImportBatch(id: number) {
-  const res = await fetch(`${API_URL}/import/batches/${id}/purge`, {
+  const res = await fetch(`${apiBase()}/import/batches/${id}/purge`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -1758,7 +1895,7 @@ export async function purgeImportBatch(id: number) {
 }
 
 export async function bulkDeleteAdvertisements(ids: number[]) {
-  const res = await fetch(`${API_URL}/import/advertisements/bulk-delete`, {
+  const res = await fetch(`${apiBase()}/import/advertisements/bulk-delete`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ ids }),
@@ -1770,7 +1907,7 @@ export async function bulkDeleteAdvertisements(ids: number[]) {
 }
 
 export async function deleteAdvertisement(id: number) {
-  const res = await fetch(`${API_URL}/import/advertisements/bulk-delete`, {
+  const res = await fetch(`${apiBase()}/import/advertisements/bulk-delete`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ ids: [id] }),
@@ -1783,8 +1920,8 @@ export async function deleteAdvertisement(id: number) {
 
 export async function restoreAdvertisement(id: number, batchId?: number) {
   const endpoints = [
-    `${API_URL}/import/batches/advertisements/restore`,
-    `${API_URL}/import/advertisements/bulk-restore`,
+    `${apiBase()}/import/batches/advertisements/restore`,
+    `${apiBase()}/import/advertisements/bulk-restore`,
   ];
 
   let lastError = "Failed to restore advertisement";
@@ -1812,8 +1949,8 @@ export async function restoreAdvertisement(id: number, batchId?: number) {
 
 export async function bulkRestoreAdvertisements(ids: number[]) {
   const endpoints = [
-    `${API_URL}/import/batches/advertisements/restore`,
-    `${API_URL}/import/advertisements/bulk-restore`,
+    `${apiBase()}/import/batches/advertisements/restore`,
+    `${apiBase()}/import/advertisements/bulk-restore`,
   ];
 
   let lastError = "Failed to restore advertisements";
@@ -1836,7 +1973,7 @@ export async function bulkRestoreAdvertisements(ids: number[]) {
 }
 
 export async function bulkDeletePhones(ids: number[]) {
-  const res = await fetch(`${API_URL}/import/phones/bulk-delete`, {
+  const res = await fetch(`${apiBase()}/import/phones/bulk-delete`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ ids }),
@@ -1846,7 +1983,7 @@ export async function bulkDeletePhones(ids: number[]) {
 }
 
 export async function bulkDeleteBrands(ids: number[]) {
-  const res = await fetch(`${API_URL}/import/brands/bulk-delete`, {
+  const res = await fetch(`${apiBase()}/import/brands/bulk-delete`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ ids }),
@@ -1856,7 +1993,7 @@ export async function bulkDeleteBrands(ids: number[]) {
 }
 
 export async function deleteBrand(id: number) {
-  const res = await fetch(`${API_URL}/import/brands/bulk-delete`, {
+  const res = await fetch(`${apiBase()}/import/brands/bulk-delete`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ ids: [id] }),
@@ -1866,7 +2003,7 @@ export async function deleteBrand(id: number) {
 }
 
 export async function restoreBrand(id: number, batchId?: number) {
-  const res = await fetch(`${API_URL}/import/batches/brands/restore`, {
+  const res = await fetch(`${apiBase()}/import/batches/brands/restore`, {
     method: "POST",
     headers: { ...authHeaders(), "Content-Type": "application/json" },
     body: JSON.stringify({ ids: [id] }),
@@ -1882,7 +2019,7 @@ export async function restoreBrand(id: number, batchId?: number) {
 }
 
 export async function deletePhone(id: number) {
-  const res = await fetch(`${API_URL}/devices/${id}`, {
+  const res = await fetch(`${apiBase()}/devices/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -1891,7 +2028,7 @@ export async function deletePhone(id: number) {
 }
 
 export async function getAuditLogs(limit = 50): Promise<AuditLogEntry[]> {
-  const res = await fetch(`${API_URL}/audit-logs?limit=${limit}&scope=import`, {
+  const res = await fetch(`${apiBase()}/audit-logs?limit=${limit}&scope=import`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load audit logs"));
@@ -1899,7 +2036,7 @@ export async function getAuditLogs(limit = 50): Promise<AuditLogEntry[]> {
 }
 
 export async function clearDeletedImportHistory() {
-  const res = await fetch(`${API_URL}/import/batches/clear-deleted`, {
+  const res = await fetch(`${apiBase()}/import/batches/clear-deleted`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -1910,7 +2047,7 @@ export async function clearDeletedImportHistory() {
 }
 
 export async function clearImportAuditLogs() {
-  const res = await fetch(`${API_URL}/audit-logs/clear-import`, {
+  const res = await fetch(`${apiBase()}/audit-logs/clear-import`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -2072,20 +2209,48 @@ export type BrandCategoryGroup = {
   brands: BrandSummary[];
 };
 
-export async function getBrands(): Promise<BrandSummary[]> {
-  const res = await fetch(`${API_URL}/brands`, { cache: "no-store" });
+export async function getBrands(locale?: string): Promise<BrandSummary[]> {
+  const res = await fetch(withLocaleQuery(`${apiBase()}/brands`, locale), {
+    cache: "no-store",
+  });
   if (!res.ok) throw new Error("Failed to load brands");
   return res.json();
 }
 
-export async function getBrandsGrouped(): Promise<BrandCategoryGroup[]> {
-  const res = await fetch(`${API_URL}/brands/grouped`, { cache: "no-store" });
+export async function getBrandsGrouped(
+  locale?: string,
+): Promise<BrandCategoryGroup[]> {
+  const res = await fetch(
+    withLocaleQuery(`${apiBase()}/brands/grouped`, locale),
+    { cache: "no-store" },
+  );
   if (!res.ok) throw new Error("Failed to load brands");
+  return res.json();
+}
+
+export type BrandDetail = BrandSummary & {
+  locale?: string;
+  localeSlugs?: Record<string, string>;
+  devices: Device[];
+};
+
+export async function getBrandBySlug(
+  slug: string,
+  locale?: string,
+): Promise<BrandDetail> {
+  const res = await fetch(
+    withLocaleQuery(
+      `${apiBase()}/brands/slug/${encodeURIComponent(slug)}`,
+      locale,
+    ),
+    { cache: "no-store" },
+  );
+  if (!res.ok) throw new Error("Failed to load brand");
   return res.json();
 }
 
 export async function getMyProfile(): Promise<UserProfile> {
-  const res = await fetch(`${API_URL}/profile/me`, {
+  const res = await fetch(`${apiBase()}/profile/me`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2099,7 +2264,7 @@ export async function updateMyProfile(input: {
   headline?: string | null;
   avatar?: string | null;
 }): Promise<UserProfile> {
-  const res = await fetch(`${API_URL}/profile/me`, {
+  const res = await fetch(`${apiBase()}/profile/me`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -2115,7 +2280,7 @@ export async function updateProfileSettings(input: {
   notifyNewsletter?: boolean;
   profilePublic?: boolean;
 }): Promise<UserProfile> {
-  const res = await fetch(`${API_URL}/profile/me/settings`, {
+  const res = await fetch(`${apiBase()}/profile/me/settings`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -2128,7 +2293,7 @@ export async function changeProfilePassword(input: {
   currentPassword: string;
   newPassword: string;
 }): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API_URL}/profile/me/change-password`, {
+  const res = await fetch(`${apiBase()}/profile/me/change-password`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -2142,7 +2307,7 @@ export async function setProfileTwoFactor(input: {
   enabled: boolean;
 }): Promise<{ ok: boolean; twoFactorEnabled: boolean }> {
   const path = input.enabled ? "enable" : "disable";
-  const res = await fetch(`${API_URL}/profile/me/2fa/${path}`, {
+  const res = await fetch(`${apiBase()}/profile/me/2fa/${path}`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ currentPassword: input.currentPassword }),
@@ -2152,7 +2317,7 @@ export async function setProfileTwoFactor(input: {
 }
 
 export async function getMyComments(): Promise<ProfileComment[]> {
-  const res = await fetch(`${API_URL}/profile/me/comments`, {
+  const res = await fetch(`${apiBase()}/profile/me/comments`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2161,7 +2326,7 @@ export async function getMyComments(): Promise<ProfileComment[]> {
 }
 
 export async function getMyRatings(): Promise<ProfileRating[]> {
-  const res = await fetch(`${API_URL}/profile/me/ratings`, {
+  const res = await fetch(`${apiBase()}/profile/me/ratings`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2170,7 +2335,7 @@ export async function getMyRatings(): Promise<ProfileRating[]> {
 }
 
 export async function getMyBookmarks(): Promise<UserBookmark[]> {
-  const res = await fetch(`${API_URL}/profile/me/bookmarks`, {
+  const res = await fetch(`${apiBase()}/profile/me/bookmarks`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2184,7 +2349,7 @@ export async function addBookmark(input: {
   title?: string;
   slug?: string;
 }): Promise<UserBookmark> {
-  const res = await fetch(`${API_URL}/profile/me/bookmarks`, {
+  const res = await fetch(`${apiBase()}/profile/me/bookmarks`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -2198,7 +2363,7 @@ export async function removeBookmark(
   entityId: number,
 ): Promise<{ ok: boolean }> {
   const res = await fetch(
-    `${API_URL}/profile/me/bookmarks/${entityType}/${entityId}`,
+    `${apiBase()}/profile/me/bookmarks/${entityType}/${entityId}`,
     { method: "DELETE", headers: authHeaders() },
   );
   if (!res.ok) throw new Error(await readApiError(res, "Failed to remove bookmark"));
@@ -2206,7 +2371,7 @@ export async function removeBookmark(
 }
 
 export async function getFavoriteDevices(): Promise<FavoriteDevice[]> {
-  const res = await fetch(`${API_URL}/profile/me/favorite-devices`, {
+  const res = await fetch(`${apiBase()}/profile/me/favorite-devices`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2215,7 +2380,7 @@ export async function getFavoriteDevices(): Promise<FavoriteDevice[]> {
 }
 
 export async function addFavoriteDevice(deviceId: number): Promise<FavoriteDevice[]> {
-  const res = await fetch(`${API_URL}/profile/favorite-devices/${deviceId}`, {
+  const res = await fetch(`${apiBase()}/profile/favorite-devices/${deviceId}`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -2224,7 +2389,7 @@ export async function addFavoriteDevice(deviceId: number): Promise<FavoriteDevic
 }
 
 export async function removeFavoriteDevice(deviceId: number): Promise<FavoriteDevice[]> {
-  const res = await fetch(`${API_URL}/profile/favorite-devices/${deviceId}`, {
+  const res = await fetch(`${apiBase()}/profile/favorite-devices/${deviceId}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -2233,7 +2398,7 @@ export async function removeFavoriteDevice(deviceId: number): Promise<FavoriteDe
 }
 
 export async function getWishlist(): Promise<WishlistItem[]> {
-  const res = await fetch(`${API_URL}/profile/me/wishlist`, {
+  const res = await fetch(`${apiBase()}/profile/me/wishlist`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2245,7 +2410,7 @@ export async function addWishlistItem(
   deviceId: number,
   input?: { targetPrice?: number | null; alertEnabled?: boolean },
 ): Promise<WishlistItem> {
-  const res = await fetch(`${API_URL}/profile/wishlist/${deviceId}`, {
+  const res = await fetch(`${apiBase()}/profile/wishlist/${deviceId}`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input ?? {}),
@@ -2258,7 +2423,7 @@ export async function updateWishlistItem(
   deviceId: number,
   input: { targetPrice?: number | null; alertEnabled?: boolean },
 ): Promise<WishlistItem> {
-  const res = await fetch(`${API_URL}/profile/wishlist/${deviceId}`, {
+  const res = await fetch(`${apiBase()}/profile/wishlist/${deviceId}`, {
     method: "PATCH",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -2268,11 +2433,19 @@ export async function updateWishlistItem(
 }
 
 export async function removeWishlistItem(deviceId: number): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API_URL}/profile/wishlist/${deviceId}`, {
+  const res = await fetch(`${apiBase()}/profile/wishlist/${deviceId}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to remove from wishlist"));
+  return res.json();
+}
+
+export async function getPublicNotifications(): Promise<
+  import("@/lib/notification-inbox").PublicNotification[]
+> {
+  const res = await fetch(`${apiBase()}/notifications/public`, { cache: "no-store" });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load notifications"));
   return res.json();
 }
 
@@ -2281,8 +2454,8 @@ export async function getProfileNotifications(options?: {
 }): Promise<ProfileNotification[]> {
   const scope = options?.scope === "replies" ? "replies" : undefined;
   const url = scope
-    ? `${API_URL}/profile/me/notifications?scope=replies`
-    : `${API_URL}/profile/me/notifications`;
+    ? `${apiBase()}/profile/me/notifications?scope=replies`
+    : `${apiBase()}/profile/me/notifications`;
   const res = await fetch(url, {
     headers: authHeaders(),
     cache: "no-store",
@@ -2292,7 +2465,7 @@ export async function getProfileNotifications(options?: {
 }
 
 export async function markNotificationRead(id: number): Promise<ProfileNotification> {
-  const res = await fetch(`${API_URL}/profile/me/notifications/${id}/read`, {
+  const res = await fetch(`${apiBase()}/profile/me/notifications/${id}/read`, {
     method: "PATCH",
     headers: authHeaders(),
   });
@@ -2305,8 +2478,8 @@ export async function markAllNotificationsRead(
 ): Promise<{ ok: boolean }> {
   const url =
     scope === "replies"
-      ? `${API_URL}/profile/me/notifications/read-all?scope=replies`
-      : `${API_URL}/profile/me/notifications/read-all`;
+      ? `${apiBase()}/profile/me/notifications/read-all?scope=replies`
+      : `${apiBase()}/profile/me/notifications/read-all`;
   const res = await fetch(url, {
     method: "POST",
     headers: authHeaders(),
@@ -2316,7 +2489,7 @@ export async function markAllNotificationsRead(
 }
 
 export async function deleteNotification(id: number): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API_URL}/profile/me/notifications/${id}`, {
+  const res = await fetch(`${apiBase()}/profile/me/notifications/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -2325,7 +2498,7 @@ export async function deleteNotification(id: number): Promise<{ ok: boolean }> {
 }
 
 export async function clearAllNotifications(): Promise<{ ok: boolean; cleared: number }> {
-  const res = await fetch(`${API_URL}/profile/me/notifications`, {
+  const res = await fetch(`${apiBase()}/profile/me/notifications`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -2334,7 +2507,7 @@ export async function clearAllNotifications(): Promise<{ ok: boolean; cleared: n
 }
 
 export async function getPollHistory(): Promise<ProfilePollVote[]> {
-  const res = await fetch(`${API_URL}/profile/me/polls`, {
+  const res = await fetch(`${apiBase()}/profile/me/polls`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2343,7 +2516,7 @@ export async function getPollHistory(): Promise<ProfilePollVote[]> {
 }
 
 export async function addFavoriteBrand(brandId: number): Promise<UserProfile> {
-  const res = await fetch(`${API_URL}/profile/favorite-brands/${brandId}`, {
+  const res = await fetch(`${apiBase()}/profile/favorite-brands/${brandId}`, {
     method: "POST",
     headers: authHeaders(),
   });
@@ -2356,7 +2529,7 @@ export async function addFavoriteBrand(brandId: number): Promise<UserProfile> {
 export async function removeFavoriteBrand(
   brandId: number,
 ): Promise<UserProfile> {
-  const res = await fetch(`${API_URL}/profile/favorite-brands/${brandId}`, {
+  const res = await fetch(`${apiBase()}/profile/favorite-brands/${brandId}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -2375,7 +2548,7 @@ export type SavedComparison = {
 };
 
 export async function subscribeNewsletter(email: string): Promise<{ id: number }> {
-  const res = await fetch(`${API_URL}/newsletter/subscribe`, {
+  const res = await fetch(`${apiBase()}/newsletter/subscribe`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email }),
@@ -2392,7 +2565,7 @@ export async function submitContactMessage(input: {
   subject?: string;
   message: string;
 }): Promise<{ id: number; createdAt: string }> {
-  const res = await fetch(`${API_URL}/contact`, {
+  const res = await fetch(`${apiBase()}/contact`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -2404,7 +2577,7 @@ export async function submitContactMessage(input: {
 }
 
 export async function getSavedComparisons(): Promise<SavedComparison[]> {
-  const res = await fetch(`${API_URL}/profile/me/comparisons`, {
+  const res = await fetch(`${apiBase()}/profile/me/comparisons`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2418,7 +2591,7 @@ export async function saveComparison(input: {
   deviceSlugs: string[];
   name?: string;
 }): Promise<SavedComparison> {
-  const res = await fetch(`${API_URL}/profile/me/comparisons`, {
+  const res = await fetch(`${apiBase()}/profile/me/comparisons`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify(input),
@@ -2430,7 +2603,7 @@ export async function saveComparison(input: {
 }
 
 export async function deleteSavedComparison(id: number): Promise<{ ok: boolean }> {
-  const res = await fetch(`${API_URL}/profile/me/comparisons/${id}`, {
+  const res = await fetch(`${apiBase()}/profile/me/comparisons/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -2455,7 +2628,7 @@ export type TranslateVoiceResponse = {
 };
 
 export async function getTranslateStatus(): Promise<{ configured: boolean }> {
-  const res = await fetch(`${API_URL}/translate/status`, { cache: "no-store" });
+  const res = await fetch(`${apiBase()}/translate/status`, { cache: "no-store" });
   if (!res.ok) return { configured: false };
   return res.json();
 }
@@ -2465,7 +2638,7 @@ export async function translateVoiceQuery(input: {
   source?: string;
   target?: string;
 }): Promise<TranslateVoiceResponse> {
-  const res = await fetch(`${API_URL}/translate/voice`, {
+  const res = await fetch(`${apiBase()}/translate/voice`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
@@ -2477,7 +2650,7 @@ export async function translateVoiceQuery(input: {
 }
 
 export async function getSearchHistory(): Promise<SearchHistoryItem[]> {
-  const res = await fetch(`${API_URL}/profile/me/search-history`, {
+  const res = await fetch(`${apiBase()}/profile/me/search-history`, {
     headers: authHeaders(),
     cache: "no-store",
   });
@@ -2486,7 +2659,7 @@ export async function getSearchHistory(): Promise<SearchHistoryItem[]> {
 }
 
 export async function addSearchHistory(query: string): Promise<SearchHistoryItem[]> {
-  const res = await fetch(`${API_URL}/profile/me/search-history`, {
+  const res = await fetch(`${apiBase()}/profile/me/search-history`, {
     method: "POST",
     headers: authHeaders(),
     body: JSON.stringify({ query }),
@@ -2496,7 +2669,7 @@ export async function addSearchHistory(query: string): Promise<SearchHistoryItem
 }
 
 export async function removeSearchHistory(id: number): Promise<SearchHistoryItem[]> {
-  const res = await fetch(`${API_URL}/profile/me/search-history/${id}`, {
+  const res = await fetch(`${apiBase()}/profile/me/search-history/${id}`, {
     method: "DELETE",
     headers: authHeaders(),
   });
@@ -2505,7 +2678,7 @@ export async function removeSearchHistory(id: number): Promise<SearchHistoryItem
 }
 
 export async function clearSearchHistory(): Promise<SearchHistoryItem[]> {
-  const res = await fetch(`${API_URL}/profile/me/search-history`, {
+  const res = await fetch(`${apiBase()}/profile/me/search-history`, {
     method: "DELETE",
     headers: authHeaders(),
   });

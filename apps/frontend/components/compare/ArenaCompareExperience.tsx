@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ChevronDown, ChevronUp, Trophy } from "lucide-react";
 
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";

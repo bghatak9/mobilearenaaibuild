@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Mag-sign in",
+    "myProfile": "Aking profile",
+    "notifications": "Mga abiso",
+    "favorites": "Mga paborito",
+    "search": "Maghanap",
+    "openMenu": "Buksan ang menu",
+    "language": "Wika",
+    "theme": "Palitan ang tema",
+    "voiceSearch": "Paghahanap sa boses",
+    "closeMenu": "Isara ang menu",
+    "menu": "Menu"
+  },
+  "languagePicker": {
+    "search": "Maghanap ng wika…",
+    "close": "Isara",
+    "favorites": "Mga paborito",
+    "recent": "Kamakailang ginamit",
+    "popular": "Sikat",
+    "all": "Lahat ng wika ({count})",
+    "matches": "{count} tugma",
+    "empty": "Walang nahanap na wika",
+    "addFavorite": "Idagdag sa paborito",
+    "removeFavorite": "Alisin sa paborito",
+    "changed": "Language changed to {language}"
+  }
+}

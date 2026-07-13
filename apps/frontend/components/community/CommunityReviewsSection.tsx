@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { ThumbsUp, Trophy } from "lucide-react";
 
+import { SwipePagedList } from "@/components/ui/SwipePagedList";
 import { Avatar } from "@/design-system/feedback/Avatar";
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Button } from "@/design-system/buttons/Button";
@@ -23,6 +24,7 @@ import {
   voteReviewHelpful,
   type Device,
 } from "@/lib/api";
+import { useLocale } from "next-intl";
 
 function StarPicker({
   value,
@@ -209,6 +211,7 @@ export function CommunityReviewsSection({
   reviews: CommunityReviewItem[];
   onRefresh: () => void;
 }) {
+  const locale = useLocale();
   const [reviews, setReviews] = useState(initial);
   const [topReviewers, setTopReviewers] = useState<TopReviewer[]>([]);
   const [devices, setDevices] = useState<Device[]>([]);
@@ -230,8 +233,8 @@ export function CommunityReviewsSection({
 
   useEffect(() => {
     getTopReviewers().then(setTopReviewers).catch(() => setTopReviewers([]));
-    getDevices().then(setDevices).catch(() => setDevices([]));
-  }, []);
+    getDevices(undefined, locale).then(setDevices).catch(() => setDevices([]));
+  }, [locale]);
 
   async function submitReview() {
     if (!getToken()) {
@@ -394,10 +397,12 @@ export function CommunityReviewsSection({
           </SpectrumPanel>
         )}
 
-        <div className="space-y-4">
-          {reviews.map((review) => (
+        <SwipePagedList
+          items={reviews}
+          getKey={(review) => review.id}
+          listClassName="space-y-4"
+          renderItem={(review) => (
             <ReviewCard
-              key={review.id}
               review={review}
               onHelpful={(id, count) =>
                 setReviews((list) =>
@@ -406,13 +411,13 @@ export function CommunityReviewsSection({
               }
               onReply={onRefresh}
             />
-          ))}
-          {!reviews.length && (
-            <SpectrumPanel className="p-8 text-center text-[var(--text-secondary)]">
-              No community reviews yet. Be the first to review a phone.
-            </SpectrumPanel>
           )}
-        </div>
+        />
+        {!reviews.length && (
+          <SpectrumPanel className="p-8 text-center text-[var(--text-secondary)]">
+            No community reviews yet. Be the first to review a phone.
+          </SpectrumPanel>
+        )}
       </section>
     </div>
   );

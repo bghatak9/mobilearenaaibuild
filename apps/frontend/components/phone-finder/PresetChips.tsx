@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { PresetChipGrid } from "@/components/phone-finder/PresetChipGrid";
 import {
   applyPreset,
@@ -17,14 +19,16 @@ export function PresetChips({
   onSelectPreset: (id: string) => void;
   className?: string;
 }) {
+  const t = useTranslations("finder");
+
   return (
     <div className={className}>
       <div className="mb-2 flex items-center justify-between gap-2">
         <p className="text-[10px] font-bold uppercase tracking-widest text-[var(--text-secondary)]">
-          Popular quick filters
+          {t("presets.popularQuick")}
         </p>
         <span className="text-[10px] font-semibold text-[var(--text-secondary)]">
-          {QUICK_DISCOVERY_PRESETS.length} picks
+          {t("presets.picksCount", { count: QUICK_DISCOVERY_PRESETS.length })}
         </span>
       </div>
       <PresetChipGrid

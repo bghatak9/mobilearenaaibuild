@@ -16,37 +16,52 @@ import {
 } from "lucide-react";
 
 export type ProfileNavItem = {
-  label: string;
+  /** next-intl key under `dashboard.*` */
+  labelKey:
+    | "title"
+    | "editProfile"
+    | "changeAvatar"
+    | "favorites"
+    | "bookmarks"
+    | "wishlist"
+    | "comparisons"
+    | "notifications"
+    | "comments"
+    | "reviews"
+    | "polls"
+    | "reputation"
+    | "settings"
+    | "security";
   href: string;
   icon: LucideIcon;
   badgeKey?: keyof import("@/lib/api").UserProfile["stats"];
 };
 
 export const PROFILE_NAV: ProfileNavItem[] = [
-  { label: "Dashboard", href: "/profile", icon: LayoutDashboard },
-  { label: "Edit Profile", href: "/profile/edit", icon: UserPen },
-  { label: "Change Avatar", href: "/profile/avatar", icon: Image },
-  { label: "Favorites", href: "/profile/favorites", icon: Heart, badgeKey: "favoriteDevices" },
-  { label: "Bookmarks", href: "/profile/bookmarks", icon: Bookmark, badgeKey: "bookmarks" },
-  { label: "Wishlist", href: "/profile/wishlist", icon: Star, badgeKey: "wishlist" },
+  { labelKey: "title", href: "/profile", icon: LayoutDashboard },
+  { labelKey: "editProfile", href: "/profile/edit", icon: UserPen },
+  { labelKey: "changeAvatar", href: "/profile/avatar", icon: Image },
+  { labelKey: "favorites", href: "/profile/favorites", icon: Heart, badgeKey: "favoriteDevices" },
+  { labelKey: "bookmarks", href: "/profile/bookmarks", icon: Bookmark, badgeKey: "bookmarks" },
+  { labelKey: "wishlist", href: "/profile/wishlist", icon: Star, badgeKey: "wishlist" },
   {
-    label: "Saved Comparisons",
+    labelKey: "comparisons",
     href: "/profile/comparisons",
     icon: GitCompare,
     badgeKey: "savedComparisons",
   },
   {
-    label: "Notifications",
+    labelKey: "notifications",
     href: "/notifications",
     icon: Bell,
     badgeKey: "notificationsUnread",
   },
-  { label: "My Comments", href: "/profile/comments", icon: MessageSquare, badgeKey: "comments" },
-  { label: "My Reviews", href: "/profile/reviews", icon: Star, badgeKey: "ratings" },
-  { label: "Poll History", href: "/profile/polls", icon: Vote, badgeKey: "pollVotes" },
-  { label: "Reputation & Badges", href: "/profile/reputation", icon: Award },
-  { label: "Account Settings", href: "/profile/settings", icon: Settings },
-  { label: "Security", href: "/profile/security", icon: Shield },
+  { labelKey: "comments", href: "/profile/comments", icon: MessageSquare, badgeKey: "comments" },
+  { labelKey: "reviews", href: "/profile/reviews", icon: Star, badgeKey: "ratings" },
+  { labelKey: "polls", href: "/profile/polls", icon: Vote, badgeKey: "pollVotes" },
+  { labelKey: "reputation", href: "/profile/reputation", icon: Award },
+  { labelKey: "settings", href: "/profile/settings", icon: Settings },
+  { labelKey: "security", href: "/profile/security", icon: Shield },
 ];
 
 export function bookmarkHref(

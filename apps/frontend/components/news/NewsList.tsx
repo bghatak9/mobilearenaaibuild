@@ -1,19 +1,11 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 import { SwipePagedList } from "@/components/ui/SwipePagedList";
+import { FormattedDate } from "@/components/ui/FormattedDate";
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import type { NewsArticle } from "@/lib/api";
-
-function formatDate(value?: string | null): string {
-  if (!value) return "";
-  return new Date(value).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-}
 
 export function NewsList({ articles }: { articles: NewsArticle[] }) {
   return (
@@ -52,7 +44,10 @@ export function NewsList({ articles }: { articles: NewsArticle[] }) {
                 </p>
               )}
               <p className="mt-auto pt-3 text-xs text-[var(--text-secondary)]">
-                {formatDate(article.publishedAt ?? article.createdAt)}
+                <FormattedDate
+                  value={article.publishedAt ?? article.createdAt}
+                  variant="long"
+                />
               </p>
             </div>
           </SpectrumPanel>

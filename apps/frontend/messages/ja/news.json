@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "ニュース",
+    "loadError": "ニュースを読み込めません。APIは稼働していますか？",
+    "empty": "まだニュースがありません。",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

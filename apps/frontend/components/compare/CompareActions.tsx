@@ -6,7 +6,7 @@ import { Check, Link2, BookmarkPlus } from "lucide-react";
 import { Button } from "@/design-system/buttons/Button";
 import { saveComparison } from "@/lib/api";
 import { getToken } from "@/lib/api";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 export function CompareActions({
   slug,

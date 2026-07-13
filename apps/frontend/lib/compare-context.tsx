@@ -12,7 +12,7 @@ import {
 
 import { recordCompareSlug } from "@/features/phone-finder";
 
-export const MAX_COMPARE = 4;
+export const MAX_COMPARE = 6;
 const STORAGE_KEY = "mobilearena:compare";
 
 export type CompareItem = {

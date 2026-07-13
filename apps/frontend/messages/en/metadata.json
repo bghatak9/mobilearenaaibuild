@@ -1,0 +1,52 @@
+{
+  "title": "MobileArena — Discover. Compare. Decide. Together.",
+  "description": "A premium, community-driven smartphone platform. Browse specs, compare devices, read reviews, and join the Arena.",
+  "phones": {
+    "title": "Phones — MobileArena",
+    "description": "Browse smartphones by brand, price, and specs. Compare devices and find your next phone."
+  },
+  "finder": {
+    "title": "Phone Finder — MobileArena",
+    "description": "Filter phones by camera, battery, display, budget, and more to find your perfect match."
+  },
+  "compare": {
+    "title": "Compare Phones — MobileArena",
+    "description": "Side-by-side smartphone comparison with scoring, labs, and export tools."
+  },
+  "news": {
+    "title": "News — MobileArena",
+    "description": "Latest smartphone news, launches, and industry updates from the Arena Desk."
+  },
+  "reviews": {
+    "title": "Reviews — MobileArena",
+    "description": "In-depth smartphone reviews, scores, pros and cons from MobileArena."
+  },
+  "guides": {
+    "title": "Guides — MobileArena",
+    "description": "Buying guides, tips, and how-tos to help you choose the right device."
+  },
+  "brands": {
+    "title": "Brands — MobileArena",
+    "description": "Browse smartphones by brand. Explore every manufacturer in the Arena."
+  },
+  "community": {
+    "title": "Community — MobileArena",
+    "description": "Polls, discussions, and community reviews from MobileArena members."
+  },
+  "contact": {
+    "title": "Contact — MobileArena",
+    "description": "Get in touch with the MobileArena team about devices, partnerships, or your account."
+  },
+  "about": {
+    "title": "About Us — MobileArena",
+    "description": "Learn about MobileArena — a community-driven platform to discover, compare, and decide on phones together."
+  },
+  "login": {
+    "title": "Sign in — MobileArena",
+    "description": "Sign in to save favorites, join discussions, and unlock member benefits."
+  },
+  "signup": {
+    "title": "Create account — MobileArena",
+    "description": "Join MobileArena free — save favorites, compare devices, and join the community."
+  }
+}

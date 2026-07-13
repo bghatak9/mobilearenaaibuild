@@ -1,27 +1,15 @@
 import type { BrandSummary, Device } from "@/lib/api";
 
-/** Curated showcase brands for the home page Brand Universe section. */
-export const GLOBAL_BRAND_UNIVERSE_SLUGS = [
-  "volt-mobile",
-  "nimbus-tech",
-  "orbit-devices",
-  "prism-labs",
-] as const;
+/** How many tier-one global brands to feature on the home page. */
+export const GLOBAL_BRAND_TIER_LIMIT = 4;
 
-const GLOBAL_BRAND_UNIVERSE_NAMES: Record<
-  (typeof GLOBAL_BRAND_UNIVERSE_SLUGS)[number],
-  string
-> = {
-  "volt-mobile": "Volt Mobile",
-  "nimbus-tech": "Nimbus Tech",
-  "orbit-devices": "Orbit Devices",
-  "prism-labs": "Prism Labs",
-};
-
-/** Canonical display order for global showcase brands. */
-export const GLOBAL_BRAND_NAMES: readonly string[] = GLOBAL_BRAND_UNIVERSE_SLUGS.map(
-  (slug) => GLOBAL_BRAND_UNIVERSE_NAMES[slug],
-);
+/** Canonical names for the first global brand tier (used in scoring + fallbacks). */
+export const GLOBAL_BRAND_NAMES: readonly string[] = [
+  "Apple",
+  "Samsung",
+  "Google",
+  "Oppo",
+];
 
 /** Major phone brands shoppers expect first (tier order). */
 const MAJOR_BRAND_TIER: { patterns: string[] }[] = [
@@ -103,29 +91,48 @@ export function groupBrandsByCategory(devices: Device[]): BrandCategoryGroup[] {
     }));
 }
 
-/** Pick the four global showcase brands, preferring catalog data when present. */
+function placeholderGlobalBrand(name: string, index: number): BrandSummary {
+  return {
+    id: -(index + 1),
+    name,
+    slug: name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, ""),
+    logo: null,
+  };
+}
+
+/** First four global brands (Apple, Samsung, Google/Pixel, Oppo), from catalog when available. */
 export function pickGlobalBrandUniverse(
   groups: BrandCategoryGroup[],
+  devices: Device[] = [],
 ): BrandSummary[] {
-  const bySlug = new Map<string, BrandSummary>();
-  for (const group of groups) {
-    for (const brand of group.brands) {
-      bySlug.set(brand.slug.toLowerCase(), brand);
+  const ranked = allBrandSummaries(groups, devices);
+  const tierBrands = ranked.filter(
+    (brand) => brandTierIndex(brand.name) < GLOBAL_BRAND_TIER_LIMIT,
+  );
+
+  const picked: BrandSummary[] = [];
+  for (const brand of tierBrands) {
+    if (picked.length >= GLOBAL_BRAND_TIER_LIMIT) break;
+    if (!picked.some((entry) => entry.slug === brand.slug)) picked.push(brand);
+  }
+
+  for (const brand of ranked) {
+    if (picked.length >= GLOBAL_BRAND_TIER_LIMIT) break;
+    if (!picked.some((entry) => entry.slug === brand.slug)) picked.push(brand);
+  }
+
+  if (picked.length < GLOBAL_BRAND_TIER_LIMIT) {
+    for (let index = 0; index < GLOBAL_BRAND_NAMES.length; index += 1) {
+      if (picked.length >= GLOBAL_BRAND_TIER_LIMIT) break;
+      const name = GLOBAL_BRAND_NAMES[index];
+      if (picked.some((entry) => entry.name.toLowerCase() === name.toLowerCase())) {
+        continue;
+      }
+      picked.push(placeholderGlobalBrand(name, index));
     }
   }
 
-  return GLOBAL_BRAND_UNIVERSE_SLUGS.map((slug, index) => {
-    const existing = bySlug.get(slug);
-    if (existing) return existing;
-
-    const name = GLOBAL_BRAND_UNIVERSE_NAMES[slug];
-    return {
-      id: -(index + 1),
-      name,
-      slug,
-      logo: null,
-    };
-  });
+  return picked.slice(0, GLOBAL_BRAND_TIER_LIMIT);
 }
 
 export function flattenBrandGroups(groups: BrandCategoryGroup[]): string[] {

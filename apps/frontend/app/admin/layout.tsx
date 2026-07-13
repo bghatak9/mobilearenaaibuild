@@ -19,12 +19,15 @@ import {
   Upload,
   Megaphone,
   DollarSign,
+  Languages,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { AdminAuthProvider, useAdminAuth } from "@/lib/admin-auth";
 import { getNavForRole, type AdminNavItemDef } from "@/lib/admin-nav";
 import { roleLabel } from "@/lib/roles";
+import { AdminProviders } from "./AdminProviders";
 
 import "./admin.css";
 
@@ -42,6 +45,7 @@ const ICONS: Record<AdminNavItemDef["icon"], LucideIcon> = {
   upload: Upload,
   megaphone: Megaphone,
   revenue: DollarSign,
+  languages: Languages,
 };
 
 function Shell({ children }: { children: ReactNode }) {
@@ -161,20 +165,27 @@ function Shell({ children }: { children: ReactNode }) {
         </Link>
       </aside>
 
-      <main className="admin-content min-w-0 flex-1 overflow-x-hidden bg-gray-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
-        <div className="flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950 lg:hidden">
+      <main className="admin-content flex min-w-0 flex-1 flex-col overflow-x-hidden bg-gray-100 text-zinc-900 dark:bg-zinc-900 dark:text-zinc-100">
+        <header className="sticky top-0 z-30 flex items-center gap-3 border-b border-gray-200 bg-white px-4 py-3 dark:border-zinc-800 dark:bg-zinc-950">
           <button
             type="button"
             onClick={() => setSidebarOpen(true)}
-            className="rounded-lg border border-gray-200 p-2 text-zinc-700 dark:border-zinc-700 dark:text-zinc-200"
+            className="rounded-lg border border-gray-200 p-2 text-zinc-700 lg:hidden dark:border-zinc-700 dark:text-zinc-200"
             aria-label="Open menu"
           >
             <Menu size={20} />
           </button>
-          <p className="text-sm font-bold text-zinc-900 dark:text-zinc-100">
+          <p className="min-w-0 flex-1 text-sm font-bold text-zinc-900 lg:hidden dark:text-zinc-100">
             Mobile<span className="text-red-600">Arena</span> admin
           </p>
-        </div>
+          <div className="ml-auto flex shrink-0 items-center">
+            <ThemeToggle
+              variant="admin"
+              showLabel
+              className="rounded-lg border border-gray-200 px-3 py-2 dark:border-zinc-700"
+            />
+          </div>
+        </header>
         {children}
       </main>
     </div>
@@ -183,8 +194,10 @@ function Shell({ children }: { children: ReactNode }) {
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
-    <AdminAuthProvider>
-      <Shell>{children}</Shell>
-    </AdminAuthProvider>
+    <AdminProviders>
+      <AdminAuthProvider>
+        <Shell>{children}</Shell>
+      </AdminAuthProvider>
+    </AdminProviders>
   );
 }

@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Увійти",
+    "myProfile": "Мій профіль",
+    "notifications": "Сповіщення",
+    "favorites": "Обране",
+    "search": "Пошук",
+    "openMenu": "Відкрити меню",
+    "language": "Мова",
+    "theme": "Змінити тему",
+    "voiceSearch": "Голосовий пошук",
+    "closeMenu": "Закрити меню",
+    "menu": "Меню"
+  },
+  "languagePicker": {
+    "search": "Пошук мови…",
+    "close": "Закрити",
+    "favorites": "Обране",
+    "recent": "Нещодавні",
+    "popular": "Популярні",
+    "all": "Усі мови ({count})",
+    "matches": "{count} збігів",
+    "empty": "Мов не знайдено",
+    "addFavorite": "Додати до обраного",
+    "removeFavorite": "Видалити з обраного",
+    "changed": "Language changed to {language}"
+  }
+}

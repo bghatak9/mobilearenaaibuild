@@ -1,10 +1,15 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { motion } from "framer-motion";
 import { ArrowRight, Sparkles, Zap } from "lucide-react";
+import { useTranslations } from "next-intl";
 
+import { DeviceBriefLink } from "@/components/device-brief/DeviceBriefLink";
+import { BrandName } from "@/components/brands/BrandName";
+import { DeviceName } from "@/components/brands/DeviceName";
 import type { Device } from "@/lib/api";
+import { formatCurrency } from "@/lib/format-locale";
 
 type HeroDevice = Pick<Device, "id" | "slug" | "name" | "price" | "brand"> & {
   images?: { url: string }[];
@@ -32,11 +37,9 @@ function CompactDeviceTile({
       transition={{ duration: 0.35, delay, ease: [0.22, 1, 0.36, 1] }}
       className={featured ? "z-10" : "z-0"}
     >
-      <Link
+      <DeviceBriefLink
         href={`/phones/${device.slug}`}
-        className={`aurora-hero-device-card group flex items-center gap-3 rounded-2xl p-2.5 transition duration-200 hover:-translate-y-0.5 ${
-          featured ? "border-[var(--border-accent)] shadow-[0_12px_32px_rgb(6_182_212/0.15)]" : ""
-        }`}
+        className={`aurora-hero-device-card group flex items-center gap-3 rounded-2xl p-2.5 transition duration-200 hover:-translate-y-0.5 ${ featured ? "border-[var(--border-accent)] shadow-[0_12px_32px_rgb(6_182_212/0.15)]" : "" }`}
       >
         <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[var(--border-muted)] bg-gradient-to-br from-[var(--arena-blue)]/15 to-[var(--aurora-purple)]/15">
           {image ? (
@@ -48,24 +51,30 @@ function CompactDeviceTile({
         </div>
         <div className="min-w-0 flex-1">
           <p className="truncate text-xs font-bold text-[var(--text-primary)]">
-            {device.name}
+            <DeviceName name={device.name} brand={device.brand?.name} />
           </p>
           <p className="truncate text-[10px] text-[var(--text-secondary)]">
-            {device.brand?.name}
+            {device.brand?.name ? <BrandName name={device.brand.name} /> : null}
           </p>
           {device.price != null && (
             <p className="mt-0.5 text-xs font-extrabold text-[var(--premium-gold)]">
-              ${device.price.toLocaleString()}
+              {formatCurrency(device.price)}
             </p>
           )}
         </div>
-      </Link>
+      </DeviceBriefLink>
     </motion.div>
   );
 }
 
 export function AuroraHero({ featuredDevices = [] }: AuroraHeroProps) {
+  const t = useTranslations("home");
   const showcase = featuredDevices.slice(0, 2);
+  const tags = [
+    t("hero.statDevices"),
+    t("hero.statCompare"),
+    t("hero.statCommunity"),
+  ] as const;
 
   return (
     <section className="arena-gradient-ring arena-gradient-ring-compact overflow-hidden">
@@ -91,7 +100,7 @@ export function AuroraHero({ featuredDevices = [] }: AuroraHeroProps) {
               className="inline-flex items-center gap-1.5 rounded-full border border-[var(--border-accent)] bg-[var(--electric-cyan)]/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-[var(--electric-cyan)]"
             >
               <Sparkles size={12} />
-              Discover · Compare · Decide
+              {t("hero.eyebrow")}
             </motion.div>
 
             <motion.h1
@@ -100,8 +109,9 @@ export function AuroraHero({ featuredDevices = [] }: AuroraHeroProps) {
               transition={{ duration: 0.3, delay: 0.04 }}
               className="aurora-hero-headline-glow mt-3 text-2xl font-extrabold leading-tight tracking-tight text-[var(--text-primary)] sm:text-3xl lg:text-[2rem]"
             >
-              The <span className="aurora-text">smartphone arena</span> built for
-              you
+              {t("hero.titleBefore")}{" "}
+              <span className="aurora-text">{t("hero.titleAccent")}</span>{" "}
+              {t("hero.titleAfter")}
             </motion.h1>
 
             <motion.p
@@ -110,8 +120,7 @@ export function AuroraHero({ featuredDevices = [] }: AuroraHeroProps) {
               transition={{ duration: 0.3, delay: 0.08 }}
               className="mt-2 max-w-md text-sm leading-relaxed text-[var(--text-secondary)]"
             >
-              Specs, comparisons, AI picks & community reviews — pick your next
-              phone with confidence.
+              {t("hero.body")}
             </motion.p>
 
             <motion.div
@@ -125,17 +134,17 @@ export function AuroraHero({ featuredDevices = [] }: AuroraHeroProps) {
                 className="arena-btn-primary gap-1.5 px-4 py-2 text-xs sm:text-sm"
               >
                 <Zap size={14} />
-                Explore phones
+                {t("hero.explorePhones")}
               </Link>
               <Link
                 href="/phone-finder"
                 className="arena-btn-secondary gap-1.5 px-4 py-2 text-xs sm:text-sm"
               >
-                Phone Finder
+                {t("hero.phoneFinder")}
                 <ArrowRight size={12} />
               </Link>
               <Link href="/compare" className="arena-btn-ghost px-3 py-2 text-xs">
-                Comparison Tools
+                {t("hero.comparisonTools")}
               </Link>
             </motion.div>
 
@@ -145,7 +154,7 @@ export function AuroraHero({ featuredDevices = [] }: AuroraHeroProps) {
               transition={{ delay: 0.18 }}
               className="mt-4 flex flex-wrap gap-1.5"
             >
-              {["500+ devices", "Live compare", "Community rated"].map((tag) => (
+              {tags.map((tag) => (
                 <span
                   key={tag}
                   className="aurora-hero-stat rounded-full px-2.5 py-1 text-[10px] font-semibold text-[var(--text-secondary)]"
@@ -158,7 +167,7 @@ export function AuroraHero({ featuredDevices = [] }: AuroraHeroProps) {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[var(--emerald-success)] opacity-50" />
                   <span className="relative h-1.5 w-1.5 rounded-full bg-[var(--emerald-success)]" />
                 </span>
-                Live now
+                {t("hero.liveNow")}
               </span>
             </motion.div>
           </div>

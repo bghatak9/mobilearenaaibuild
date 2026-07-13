@@ -6,6 +6,7 @@ import {
   BrandChip,
 } from "@/components/brands/BrandChip";
 import type { BrandCategoryGroup } from "@/lib/brand-categories";
+import { useSiteLanguage } from "@/lib/site-language";
 
 type CategorizedBrandFilterProps = {
   groups: BrandCategoryGroup[];
@@ -18,19 +19,21 @@ export default function CategorizedBrandFilter({
   selected,
   onSelect,
 }: CategorizedBrandFilterProps) {
+  const { t } = useSiteLanguage();
+
   return (
     <div className="space-y-5">
       <button
         type="button"
         onClick={() => onSelect("All")}
         className={cn(
-          "w-full rounded-2xl border px-3 py-2.5 text-left text-sm font-bold tracking-tight transition",
+          "w-full rounded-2xl border px-3 py-2.5 text-left text-sm font-bold tracking-tight transition ",
           selected === "All"
             ? "border-[var(--electric-cyan)]/60 bg-[var(--arena-blue)]/20 text-[var(--electric-cyan)]"
             : "border-white/10 bg-white/[0.04] text-[var(--text-primary)] hover:border-white/20",
         )}
       >
-        All brands
+        {t("phones.allBrands")}
       </button>
 
       {groups.map((group) => (

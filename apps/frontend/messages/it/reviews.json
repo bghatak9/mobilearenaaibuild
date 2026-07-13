@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "Recensioni",
+    "loadError": "Impossibile caricare le recensioni. L’API è attiva?",
+    "empty": "Ancora nessuna recensione.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

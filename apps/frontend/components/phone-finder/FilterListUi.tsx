@@ -1,5 +1,7 @@
 "use client";
 
+import { useTranslations } from "next-intl";
+
 import { cn } from "@/design-system/utils/cn";
 import { Badge } from "@/design-system/badges/Badge";
 import type { FilterOption } from "@/components/phone-finder/FilterOptionPicker";
@@ -15,7 +17,7 @@ export function FilterListSection({
   children: React.ReactNode;
 }) {
   return (
-    <section className="border-b border-white/5 py-4 last:border-0">
+    <section className="min-w-0 border-b border-white/5 py-4 last:border-0">
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <h3 className="text-sm font-bold text-[var(--text-primary)]">{title}</h3>
         {badge ? <Badge variant="cyan">{badge}</Badge> : null}
@@ -140,28 +142,34 @@ export function FilterPresetList({
   activeId,
   onSelect,
 }: {
-  presets: { id: string; label: string }[];
+  presets: { id: string; label: string; labelKey?: string }[];
   activeId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const t = useTranslations("finder");
   return (
     <ul className="space-y-1" role="list">
-      {presets.map((preset) => (
-        <li key={preset.id}>
-          <button
-            type="button"
-            onClick={() => onSelect(preset.id)}
-            className={cn(
-              "flex w-full items-center rounded-lg border px-3 py-2.5 text-left text-sm transition",
-              activeId === preset.id
-                ? "border-[var(--electric-cyan)]/50 bg-[var(--arena-blue)]/20 font-semibold text-[var(--electric-cyan)]"
-                : "border-transparent bg-white/[0.03] text-[var(--text-primary)] hover:border-white/10 hover:bg-white/[0.06]",
-            )}
-          >
-            🔥 {preset.label}
-          </button>
-        </li>
-      ))}
+      {presets.map((preset) => {
+        const label = preset.labelKey
+          ? t(preset.labelKey as Parameters<typeof t>[0])
+          : preset.label;
+        return (
+          <li key={preset.id}>
+            <button
+              type="button"
+              onClick={() => onSelect(preset.id)}
+              className={cn(
+                "flex w-full items-center rounded-lg border px-3 py-2.5 text-left text-sm transition",
+                activeId === preset.id
+                  ? "border-[var(--electric-cyan)]/50 bg-[var(--arena-blue)]/20 font-semibold text-[var(--electric-cyan)]"
+                  : "border-transparent bg-white/[0.03] text-[var(--text-primary)] hover:border-white/10 hover:bg-white/[0.06]",
+              )}
+            >
+              🔥 {label}
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }

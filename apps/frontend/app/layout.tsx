@@ -1,63 +1,22 @@
 import type { Metadata, Viewport } from "next";
-import { Inter, JetBrains_Mono, Space_Grotesk } from "next/font/google";
+import { cookies, headers } from "next/headers";
 import "./globals.css";
-import Providers from "./providers";
 import Analytics from "@/components/analytics/Analytics";
 import PageViewTracker from "@/components/analytics/PageViewTracker";
-import { ThemeInitScript } from "@/components/theme/ThemeInitScript";
-import { catalogImportedOnlyFromEnv } from "@/lib/catalog-mode";
+import { SITE_LANGUAGE_COOKIE } from "@/features/i18n/languages";
+import {
+  getLocaleMeta,
+  isRtlLocale,
+  negotiateAppLocale,
+} from "@/i18n/locales";
+import { siteFontVariables } from "@/lib/site-fonts";
+import { DEFAULT_THEME, THEME_COOKIE } from "@/design-system/themes";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
-
-const inter = Inter({
-  variable: "--font-inter",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const spaceGrotesk = Space_Grotesk({
-  variable: "--font-space-grotesk",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const jetbrainsMono = JetBrains_Mono({
-  variable: "--font-jetbrains-mono",
-  subsets: ["latin"],
-  display: "swap",
-});
-
-const TITLE = "MobileArena — Discover. Compare. Decide. Together.";
-const DESCRIPTION =
-  "A premium, community-driven smartphone platform. Browse specs, compare devices, read reviews, and join the Arena.";
+import type { Theme } from "@/lib/theme";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
-  title: {
-    default: TITLE,
-    template: `%s — ${SITE_NAME}`,
-  },
-  description: DESCRIPTION,
   applicationName: SITE_NAME,
-  keywords: [
-    "smartphones",
-    "phone specs",
-    "phone comparison",
-    "phone reviews",
-    "mobile news",
-  ],
-  alternates: { canonical: "/" },
-  openGraph: {
-    type: "website",
-    siteName: SITE_NAME,
-    url: SITE_URL,
-    title: TITLE,
-    description: DESCRIPTION,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: TITLE,
-    description: DESCRIPTION,
-  },
   robots: {
     index: true,
     follow: true,
@@ -79,22 +38,49 @@ export const viewport: Viewport = {
   themeColor: "#070B14",
 };
 
-export default function RootLayout({
+function readThemeCookie(raw: string | undefined): Theme {
+  if (raw === "light" || raw === "dark") return raw;
+  return DEFAULT_THEME;
+}
+
+/**
+ * Root shell shared by public `[locale]` routes and unprefixed `/admin`.
+ * Theme + lang/dir come from cookies/headers — no React <script> FOUC hacks
+ * (those trigger React 19 / Next 16 console errors and do not run on the client).
+ */
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const importedOnly = catalogImportedOnlyFromEnv();
+  const jar = await cookies();
+  const hdrs = await headers();
+  const cookieLocale = jar.get(SITE_LANGUAGE_COOKIE)?.value;
+  const locale = negotiateAppLocale(
+    cookieLocale ??
+      hdrs.get("accept-language") ??
+      hdrs.get("x-next-intl-locale") ??
+      "en",
+  );
+  const meta = getLocaleMeta(locale);
+  const dir = isRtlLocale(locale) ? "rtl" : "ltr";
+  const theme = readThemeCookie(jar.get(THEME_COOKIE)?.value);
+  const isDark = theme === "dark";
 
   return (
     <html
-      lang="en"
-      className={`${inter.variable} ${spaceGrotesk.variable} ${jetbrainsMono.variable} dark h-full antialiased`}
+      lang={meta.bcp47 || "en"}
+      dir={dir}
+      data-site-lang={locale}
+      className={`${siteFontVariables} ${isDark ? "dark" : ""} h-full antialiased`}
+      style={{ colorScheme: theme }}
       suppressHydrationWarning
     >
-      <body className="min-h-full min-h-[100dvh] flex flex-col bg-background text-foreground">
-        <ThemeInitScript />
-        <Providers importedOnly={importedOnly}>{children}</Providers>
+      <body
+        className="min-h-full min-h-[100dvh] flex flex-col bg-background text-foreground"
+        translate="yes"
+      >
+        {children}
         <PageViewTracker />
         <Analytics />
       </body>

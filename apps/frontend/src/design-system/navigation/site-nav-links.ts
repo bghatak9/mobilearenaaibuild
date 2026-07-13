@@ -1,12 +1,41 @@
+import type { MessageKey } from "@/features/i18n";
+
+export type SiteNavIcon =
+  | "brands"
+  | "finder"
+  | "compare"
+  | "upcoming"
+  | "news"
+  | "reviews"
+  | "community"
+  | "ev"
+  | "contact";
+
+export const SITE_NAV_MESSAGE_KEYS: Record<
+  SiteNavIcon,
+  { label: MessageKey; shortLabel: MessageKey }
+> = {
+  brands: { label: "nav.brands", shortLabel: "nav.brands" },
+  finder: { label: "nav.phoneFinder", shortLabel: "nav.phoneFinder" },
+  compare: { label: "nav.comparisonTools", shortLabel: "nav.comparisonTools" },
+  upcoming: { label: "nav.upcomingDevices", shortLabel: "nav.upcomingDevices" },
+  news: { label: "nav.news", shortLabel: "nav.news" },
+  reviews: { label: "nav.reviews", shortLabel: "nav.reviews" },
+  community: { label: "nav.community", shortLabel: "nav.community" },
+  ev: { label: "nav.ev", shortLabel: "nav.ev" },
+  contact: { label: "nav.contact", shortLabel: "nav.contactShort" },
+};
+
 export const SITE_NAV_LINKS = [
-  { label: "Brands", href: "/phones" },
-  { label: "Phone Finder", href: "/phone-finder" },
-  { label: "Comparison Tools", href: "/compare" },
-  { label: "Upcoming Devices", href: "/phones?upcoming=1" },
-  { label: "News", href: "/news" },
-  { label: "Reviews", href: "/reviews" },
-  { label: "Community", href: "/community" },
-  { label: "Contact", href: "/contact" },
+  { label: "Brands", shortLabel: "Brands", href: "/brands", icon: "brands" as const },
+  { label: "Phone Finder", shortLabel: "Phone Finder", href: "/phone-finder", icon: "finder" as const },
+  { label: "Comparison Tools", shortLabel: "Comparison Tools", href: "/compare", icon: "compare" as const },
+  { label: "Upcoming Devices", shortLabel: "Upcoming Devices", href: "/phones?upcoming=1", icon: "upcoming" as const },
+  { label: "News", shortLabel: "News", href: "/news", icon: "news" as const },
+  { label: "Reviews", shortLabel: "Reviews", href: "/reviews", icon: "reviews" as const },
+  { label: "Community", shortLabel: "Community", href: "/community", icon: "community" as const },
+  { label: "EV", shortLabel: "EV", href: "/ev", icon: "ev" as const },
+  { label: "Contact Us", shortLabel: "Contact", href: "/contact", icon: "contact" as const },
 ] as const;
 
 export const FAVORITES_HREF = "/phones?favorites=1";
@@ -41,6 +70,10 @@ export function isSiteNavLinkActive(
 
   if (path === "/") {
     return pathname === "/" && !search;
+  }
+
+  if (path === "/brands") {
+    return pathname === "/brands" || pathname.startsWith("/brands/");
   }
 
   if (path === "/phones") {

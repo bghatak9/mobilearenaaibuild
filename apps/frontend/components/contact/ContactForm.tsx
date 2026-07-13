@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 
 import { Button } from "@/design-system/buttons/Button";
 import { Input } from "@/design-system/forms/Input";
@@ -9,6 +9,7 @@ import { submitContactMessage } from "@/lib/api";
 import { CONTACT_EMAIL } from "@/lib/contact";
 import { useToast } from "@/design-system/feedback/Toast";
 import { cn } from "@/design-system/utils/cn";
+import { useSiteLanguage } from "@/lib/site-language";
 
 type ContactFormProps = {
   variant?: "home" | "page";
@@ -22,6 +23,7 @@ export function ContactForm({ variant = "home", className }: ContactFormProps) {
   const [message, setMessage] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useSiteLanguage();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -52,22 +54,22 @@ export function ContactForm({ variant = "home", className }: ContactFormProps) {
     <form
       onSubmit={(e) => void handleSubmit(e)}
       className={cn(
-        "grid gap-4",
+        "grid gap-4 ",
         isPage ? "sm:grid-cols-2" : "max-w-xl",
         className,
       )}
     >
       <Input
-        label="Name"
+        label={t("contact.name")}
         required
         value={name}
         onChange={(e) => setName(e.target.value)}
-        placeholder="Your name"
+        placeholder={t("contact.namePlaceholder")}
         className={isPage ? undefined : "sm:col-span-2"}
       />
       <Input
         type="email"
-        label="Email"
+        label={t("contact.email")}
         required
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -75,22 +77,22 @@ export function ContactForm({ variant = "home", className }: ContactFormProps) {
         className={isPage ? undefined : "sm:col-span-2"}
       />
       <Input
-        label="Subject"
+        label={t("contact.subject")}
         value={subject}
         onChange={(e) => setSubject(e.target.value)}
-        placeholder="How can we help?"
+        placeholder={t("contact.subjectPlaceholder")}
         className="sm:col-span-2"
       />
       <label className="block text-sm sm:col-span-2">
         <span className="mb-1.5 block font-medium text-[var(--text-primary)]">
-          Message
+          {t("contact.message")}
         </span>
         <textarea
           required
           rows={isPage ? 6 : 4}
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Tell us what's on your mind…"
+          placeholder={t("contact.messagePlaceholder")}
           className={cn(
             "w-full resize-y rounded-xl border border-[var(--border-subtle)] bg-[var(--surface-elevated)] px-4 py-2.5",
             "text-[var(--text-primary)] placeholder:text-[var(--text-secondary)]",
@@ -106,7 +108,6 @@ export function ContactForm({ variant = "home", className }: ContactFormProps) {
         )}
       >
         <p className="text-xs text-[var(--text-secondary)]">
-          Or email us at{" "}
           <a
             href={`mailto:${CONTACT_EMAIL}`}
             className="font-medium text-[var(--electric-cyan)] hover:underline"
@@ -121,13 +122,13 @@ export function ContactForm({ variant = "home", className }: ContactFormProps) {
                 href="/contact"
                 className="font-medium text-[var(--electric-cyan)] hover:underline"
               >
-                Full contact page
+                {t("contact.fullPage")}
               </Link>
             </>
           ) : null}
         </p>
         <Button type="submit" loading={loading} className="shrink-0">
-          Send message
+          {t("contact.send")}
         </Button>
       </div>
     </form>

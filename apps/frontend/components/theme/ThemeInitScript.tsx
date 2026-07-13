@@ -1,8 +1,8 @@
-import { DEFAULT_THEME, STORAGE_KEY } from "@/design-system/themes";
-
-/** Titan Spectrum is dark-only — always lock before paint. */
+/**
+ * @deprecated Theme/language bootstrap no longer injects <script> tags
+ * (React 19 / Next 16 forbid them in components). Theme is applied from
+ * cookie in `app/layout.tsx`; googtrans sync lives in SitePageTranslator.
+ */
 export function ThemeInitScript() {
-  const script = `(function(){try{document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';localStorage.setItem('${STORAGE_KEY}','${DEFAULT_THEME}');}catch(e){document.documentElement.classList.add('dark');document.documentElement.style.colorScheme='dark';}})();`;
-
-  return <script dangerouslySetInnerHTML={{ __html: script }} />;
+  return null;
 }

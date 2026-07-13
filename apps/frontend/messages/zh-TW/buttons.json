@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "登入",
+    "myProfile": "我的資料",
+    "notifications": "通知",
+    "favorites": "收藏手機",
+    "search": "搜尋",
+    "openMenu": "開啟選單",
+    "language": "語言",
+    "theme": "切換主題",
+    "voiceSearch": "語音搜尋",
+    "closeMenu": "關閉選單",
+    "menu": "選單"
+  },
+  "languagePicker": {
+    "search": "搜尋語言…",
+    "close": "關閉",
+    "favorites": "我的最愛",
+    "recent": "最近使用過",
+    "popular": "熱門",
+    "all": "所有語言（{count}）",
+    "matches": "{count} 個符合結果",
+    "empty": "找不到語言",
+    "addFavorite": "加入最愛",
+    "removeFavorite": "移除最愛",
+    "changed": "Language changed to {language}"
+  }
+}

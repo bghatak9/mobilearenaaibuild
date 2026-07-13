@@ -8,11 +8,13 @@ import { Input } from "@/design-system/forms/Input";
 import { Card } from "@/design-system/cards/Card";
 import { subscribeNewsletter } from "@/lib/api";
 import { useToast } from "@/design-system/feedback/Toast";
+import { useSiteLanguage } from "@/lib/site-language";
 
 export function NewsletterSignupSection() {
   const [email, setEmail] = useState("");
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
+  const { t } = useSiteLanguage();
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -39,17 +41,17 @@ export function NewsletterSignupSection() {
             <div className="mb-2 flex items-center gap-2 text-[var(--electric-cyan)]">
               <Mail size={20} />
               <span className="text-xs font-bold uppercase tracking-widest">
-                Arena Newsletter
+                {t("home.newsletterEyebrow")}
               </span>
             </div>
             <h2
               id="newsletter-signup"
               className="text-2xl font-extrabold text-[var(--text-primary)]"
             >
-              Stay ahead of every launch
+              {t("home.newsletterTitle")}
             </h2>
             <p className="mt-2 max-w-md text-sm text-[var(--text-secondary)]">
-              Weekly picks, deal alerts, and community highlights — no spam, unsubscribe anytime.
+              {t("home.newsletterBody")}
             </p>
           </div>
           <form
@@ -63,10 +65,10 @@ export function NewsletterSignupSection() {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="flex-1"
-              aria-label="Email for newsletter"
+              aria-label={t("contact.email")}
             />
             <Button type="submit" loading={loading} className="shrink-0">
-              Subscribe
+              {t("home.subscribe")}
             </Button>
           </form>
         </div>

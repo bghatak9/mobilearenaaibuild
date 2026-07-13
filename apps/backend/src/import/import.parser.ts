@@ -9,8 +9,12 @@ import * as XLSX from 'xlsx';
 import {
   assertFileAllowed,
   fileExtension,
+  isImageExtension,
+  resolveEvUploadKind,
+  evSubkindSupportsImages,
+  supportsEmbeddedImages,
 } from './import-file-policy';
-import type { BulkImportKind } from './import.types';
+import type { BulkImportKind, EvUploadSubkind } from './import.types';
 import type { UserRole } from '@prisma/client';
 
 import { isBlankImportRow } from './import-device-fields';
@@ -356,16 +360,64 @@ function parseImageZip(file: Express.Multer.File) {
   return files;
 }
 
+function zipHasContentArticles(file: Express.Multer.File): boolean {
+  const zip = new AdmZip(file.buffer);
+  for (const entry of zip.getEntries()) {
+    if (entry.isDirectory) continue;
+    const lower = entry.entryName.toLowerCase();
+    if (
+      lower.endsWith('.md') ||
+      lower.endsWith('.markdown') ||
+      lower.endsWith('.pdf')
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+export type ParseUploadOptions = {
+  slug?: string;
+  subkind?: EvUploadSubkind;
+};
+
 export async function parseUpload(
   file: Express.Multer.File,
   kind: BulkImportKind,
   role: UserRole,
+  options: ParseUploadOptions = {},
 ): Promise<ParsedUpload> {
-  assertFileAllowed(kind, file.originalname, role);
+  const effectiveKind =
+    kind === 'ev' ? resolveEvUploadKind(options.subkind) : kind;
+  const evSubkind = kind === 'ev' ? (options.subkind ?? 'vehicles') : undefined;
+
+  assertFileAllowed(kind, file.originalname, role, options);
   const ext = fileExtension(file.originalname);
 
+  if (isImageExtension(ext)) {
+    const imageOk =
+      supportsEmbeddedImages(kind) ||
+      (kind === 'ev' && evSubkind && evSubkindSupportsImages(evSubkind));
+    if (!imageOk && kind !== 'images') {
+      throw new Error(
+        'Single image uploads are only supported inside Phones, News, Documentation, or EV catalog/upcoming.',
+      );
+    }
+    const slug = options.slug?.trim().toLowerCase();
+    if (!slug) {
+      throw new Error(
+        'Entity slug is required for single image uploads (e.g. device or article slug).',
+      );
+    }
+    const fileName = file.originalname.split(/[/\\]/).pop() ?? file.originalname;
+    return {
+      format: 'images',
+      files: [{ path: file.originalname, deviceSlug: slug, fileName }],
+    };
+  }
+
   if (ext === 'pdf') {
-    if (kind === 'advertisements') {
+    if (effectiveKind === 'advertisements') {
       const ads = await parsePdfAds(file);
       return { format: 'ads', ads };
     }
@@ -373,15 +425,37 @@ export async function parseUpload(
     return { format: 'articles', articles };
   }
 
-  if (ext === 'json' && kind === 'advertisements') {
+  if (ext === 'json' && effectiveKind === 'advertisements') {
     return { format: 'rows', rows: parseAdJsonFeed(file) };
   }
 
   if (ext === 'zip') {
-    if (kind === 'images') {
-      return { format: 'images', files: parseImageZip(file) };
+    const imageZipOk =
+      effectiveKind === 'images' ||
+      supportsEmbeddedImages(effectiveKind) ||
+      (kind === 'ev' && evSubkind && evSubkindSupportsImages(evSubkind));
+    if (imageZipOk) {
+      const imageFiles = parseImageZip(file);
+      if (effectiveKind === 'news' || effectiveKind === 'documentation') {
+        if (zipHasContentArticles(file)) {
+          const articles = await parseContentZip(file);
+          if (articles.length > 0) {
+            return { format: 'articles', articles };
+          }
+        }
+        if (imageFiles.length > 0) {
+          return { format: 'images', files: imageFiles };
+        }
+        throw new Error(
+          'ZIP must contain image folders (one slug per folder) or .md/.pdf content files.',
+        );
+      }
+      if (imageFiles.length === 0) {
+        throw new Error('ZIP contains no image files (.jpg, .png, .webp, .gif)');
+      }
+      return { format: 'images', files: imageFiles };
     }
-    if (kind === 'news' || kind === 'documentation') {
+    if (effectiveKind === 'news' || effectiveKind === 'documentation') {
       const articles = await parseContentZip(file);
       if (articles.length === 0) {
         throw new Error(

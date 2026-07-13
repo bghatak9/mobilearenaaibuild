@@ -14,6 +14,7 @@ type SpectrumPanelProps = {
   className?: string;
   variant?: SpectrumPanelVariant;
   as?: "div" | "section" | "article" | "header" | "footer";
+  id?: string;
 };
 
 const variantClass: Record<SpectrumPanelVariant, string> = {
@@ -29,9 +30,10 @@ export function SpectrumPanel({
   className = "",
   variant = "default",
   as: Tag = "div",
+  id,
 }: SpectrumPanelProps) {
   return (
-    <Tag className={cn(variantClass[variant], "rounded-[24px]", className)}>
+    <Tag id={id} className={cn(variantClass[variant], "rounded-[24px]", className)}>
       {children}
     </Tag>
   );

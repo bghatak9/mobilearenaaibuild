@@ -1,4 +1,7 @@
+import type { CSSProperties } from "react";
+
 import type { PaidAdvertisement } from "@/lib/api";
+import { resolvePlacementMeta } from "@/lib/ad-catalog";
 
 /** Placements tried in order for the site-wide top banner. */
 export const SITE_TOP_BANNER_PLACEMENTS = [
@@ -136,6 +139,74 @@ export function reservedAdIds(slots: SiteAdSlots): Set<number> {
     if (ad) ids.add(ad.id);
   }
   return ids;
+}
+
+export type PageAdBundle = {
+  slots: SiteAdSlots;
+  reserved: Set<number>;
+  nativeCardAd: PaidAdvertisement | null;
+  affiliateAd: PaidAdvertisement | null;
+};
+
+/** Resolve all page-level ad slots once — shared rules for every public page. */
+export function resolvePageAdBundle(ads: PaidAdvertisement[]): PageAdBundle {
+  const slots = resolveSiteAdSlots(ads);
+  const reserved = reservedAdIds(slots);
+  return {
+    slots,
+    reserved,
+    nativeCardAd: slots.nativeCardAd,
+    affiliateAd: pickFirstAdForPlacements(ads, AFFILIATE_PLACEMENTS, reserved) ?? null,
+  };
+}
+
+export type BannerAdSlot = "header" | "sticky" | "inline";
+
+/** IAB width × height from ad record or placement catalog. */
+export function resolveBannerDimensions(ad: PaidAdvertisement | null | undefined): {
+  width: number;
+  height: number;
+} {
+  const meta = resolvePlacementMeta(ad?.placement ?? "");
+  return {
+    width: ad?.width ?? meta?.width ?? 728,
+    height: ad?.height ?? meta?.height ?? 90,
+  };
+}
+
+/** Max rendered height per banner slot (50px mobile bar, 90px leaderboard, etc.). */
+export function bannerSlotMaxHeight(
+  ad: PaidAdvertisement | null | undefined,
+  slot: BannerAdSlot,
+): number {
+  const { height } = resolveBannerDimensions(ad);
+  const isMobileBanner =
+    height <= 50 || ad?.placement === "display-mobile-320x50";
+
+  if (slot === "sticky") return 50;
+  if (slot === "header") return isMobileBanner ? 50 : 90;
+  if (isMobileBanner) return 50;
+  if (height <= 90) return 90;
+  if (height <= 250) return 250;
+  return Math.min(height, 280);
+}
+
+/** CSS variables for consistent banner sizing across slots. */
+export function bannerStyleVars(
+  ad: PaidAdvertisement | null | undefined,
+  slot: BannerAdSlot,
+): CSSProperties {
+  const { width, height } = resolveBannerDimensions(ad);
+  const maxH = bannerSlotMaxHeight(ad, slot);
+  const maxW =
+    slot === "header" ? Math.min(width, 970) : slot === "sticky" ? 320 : width;
+
+  return {
+    "--arena-banner-aspect": `${maxW} / ${height}`,
+    "--arena-banner-max-h": `${maxH}px`,
+    "--arena-banner-max-w": slot === "header" ? `${maxW}px` : "100%",
+    "--arena-top-banner-h": `${maxH}px`,
+  } as CSSProperties;
 }
 
 /** Map ad type + placement to the shared display variant rules. */

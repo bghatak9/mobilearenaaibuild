@@ -1,6 +1,7 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useEffect, useLayoutEffect, useState } from "react";
+import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 
 import AdUnit from "@/components/ads/AdUnit";
@@ -8,6 +9,7 @@ import { FloatingNav } from "@/design-system/navigation/FloatingNav";
 import { getActiveAdvertisements } from "@/lib/api";
 import { bannerSlotMaxHeight, bannerStyleVars, resolveSiteAdSlots, type SiteAdSlots } from "@/lib/ad-utils";
 import { hideMobileChrome, isAdFreeRoute } from "@/lib/mobile-routes";
+import { stripLocalePrefix } from "@/lib/locale-path";
 
 const EMPTY_SLOTS: SiteAdSlots = {
   topAd: null,
@@ -17,10 +19,27 @@ const EMPTY_SLOTS: SiteAdSlots = {
 
 /** Header + top ad persist across route changes so spacing never resets. */
 export function PublicSiteChrome() {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = stripLocalePrefix(rawPathname);
   const minimalChrome = hideMobileChrome(pathname);
   const showAds = !minimalChrome && !isAdFreeRoute(pathname);
   const [topAd, setTopAd] = useState(EMPTY_SLOTS.topAd);
+  const [portalReady, setPortalReady] = useState(false);
+
+  useEffect(() => {
+    setPortalReady(true);
+  }, []);
+
+  useLayoutEffect(() => {
+    const spacer = document.getElementById("arena-chrome-spacer");
+    if (spacer && document.body.firstChild !== spacer) {
+      document.body.insertBefore(spacer, document.body.firstChild);
+    }
+    const topAdNode = document.getElementById("arena-top-ad-bar");
+    if (topAdNode && spacer?.nextSibling !== topAdNode) {
+      document.body.insertBefore(topAdNode, spacer?.nextSibling ?? null);
+    }
+  }, [topAd, portalReady, showAds]);
 
   useEffect(() => {
     if (!showAds) {
@@ -45,9 +64,11 @@ export function PublicSiteChrome() {
     const html = document.documentElement;
     if (showAds && topAd) {
       html.setAttribute("data-has-top-ad", "true");
+      const bannerH = bannerSlotMaxHeight(topAd, "header");
+      html.style.setProperty("--arena-top-banner-h", `${bannerH}px`);
       html.style.setProperty(
-        "--arena-top-banner-h",
-        `${bannerSlotMaxHeight(topAd, "header")}px`,
+        "--arena-chrome-bottom",
+        `calc(7.5rem + ${bannerH}px)`,
       );
     } else {
       html.removeAttribute("data-has-top-ad");
@@ -57,12 +78,13 @@ export function PublicSiteChrome() {
 
   if (minimalChrome) return null;
 
-  return (
+  const chromeLayer = (
     <>
-      <Suspense fallback={null}>
-        <FloatingNav />
-      </Suspense>
-
+      <div
+        id="arena-chrome-spacer"
+        className="arena-chrome-spacer"
+        aria-hidden
+      />
       {showAds && topAd ? (
         <section
           id="arena-top-ad-bar"
@@ -75,6 +97,16 @@ export function PublicSiteChrome() {
           </div>
         </section>
       ) : null}
+    </>
+  );
+
+  return (
+    <>
+      {portalReady ? createPortal(chromeLayer, document.body) : chromeLayer}
+
+      <Suspense fallback={null}>
+        <FloatingNav />
+      </Suspense>
     </>
   );
 }

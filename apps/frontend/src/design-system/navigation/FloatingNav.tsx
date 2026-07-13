@@ -1,19 +1,25 @@
 "use client";
 
-import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { Mic, Search } from "lucide-react";
 
+import { SiteLogo } from "@/components/brand/SiteLogo";
 import { GlobalSearchPalette } from "@/components/search/GlobalSearchPalette";
 import { MobileCategoryNav } from "@/design-system/navigation/MobileCategoryNav";
 import { MobileCompactHeader } from "@/design-system/navigation/MobileCompactHeader";
 import { MobileMenuDrawer } from "@/design-system/navigation/MobileMenuDrawer";
 import { SiteNavToolbar } from "@/design-system/navigation/SiteNavToolbar";
+import { SiteSocialLinks } from "@/design-system/navigation/SiteSocialLinks";
 import { DesktopSiteNavItem } from "@/design-system/navigation/DesktopSiteNavItem";
-import { SITE_NAV_LINKS } from "@/design-system/navigation/site-nav-links";
+import {
+  SITE_NAV_LINKS,
+  SITE_NAV_MESSAGE_KEYS,
+} from "@/design-system/navigation/site-nav-links";
 import { useScrollHideHeader } from "@/design-system/navigation/use-scroll-hide-header";
+import { useSiteLanguage } from "@/lib/site-language";
+import { stripLocalePrefix } from "@/lib/locale-path";
 import { cn } from "@/design-system/utils/cn";
 
 const NAV_LINKS = SITE_NAV_LINKS;
@@ -33,10 +39,12 @@ function readRecent(): RecentDevice[] {
 }
 
 export function FloatingNav() {
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = stripLocalePrefix(rawPathname);
   const searchParams = useSearchParams();
   const search = searchParams.toString();
   const { headerHidden, setHeaderHidden, scrolled } = useScrollHideHeader();
+  const { t } = useSiteLanguage();
   const [query, setQuery] = useState("");
   const [paletteOpen, setPaletteOpen] = useState(false);
   const [voiceOnOpen, setVoiceOnOpen] = useState(false);
@@ -89,17 +97,16 @@ export function FloatingNav() {
     <header
       id="arena-site-header"
       className={cn(
-        "arena-shell-header fixed inset-x-0 top-0 z-[60] box-border w-full max-w-[100vw]",
-        "xl:mx-auto xl:max-w-[var(--arena-content-max)]",
+        "arena-shell-header arena-shell-header--fullbleed arena-intl-chrome notranslate fixed left-0 right-0 top-0 z-[60] box-border w-full max-w-none",
         "transition-[transform,top,box-shadow,background] duration-300 ease-out",
         scrolled && "arena-shell-header-scrolled",
-        scrolled ? "xl:top-2" : "xl:top-[var(--arena-content-gutter)]",
         headerHidden && "arena-site-header--hidden",
       )}
+      translate="no"
     >
       <div
         className={cn(
-          "arena-mobile-site-header xl:hidden",
+          "arena-mobile-site-header lg:hidden",
           scrolled && "arena-mobile-site-header-scrolled",
         )}
       >
@@ -110,62 +117,63 @@ export function FloatingNav() {
         <MobileCategoryNav />
       </div>
 
-      <div className="hidden w-full min-w-0 xl:block">
-        <div className="arena-gradient-ring arena-gradient-ring-compact arena-gradient-ring-nav w-full min-w-0">
-          <nav
-            className={cn(
-              "arena-floating-nav arena-gradient-ring-inner flex w-full min-w-0 flex-col gap-2.5 px-3 transition-all duration-300 ease-out lg:px-4 xl:px-5",
-              scrolled ? "py-2.5" : "py-3.5",
-            )}
-            aria-label="Main"
-          >
-            <div className="relative z-[2] flex w-full min-w-0 flex-nowrap items-center gap-2 xl:gap-3">
-              <Link href="/" className="arena-floating-nav-logo shrink-0">
-                <span className="arena-floating-nav-logo-mobile">Mobile</span>
-                <span className="arena-floating-nav-logo-arena">Arena</span>
-              </Link>
+      <div className="arena-desktop-site-header hidden w-full min-w-0 lg:block">
+        <nav
+          className={cn(
+            "arena-floating-nav arena-floating-nav--hub flex w-full min-w-0 flex-col gap-2.5 py-3",
+            scrolled && "py-2.5",
+          )}
+          aria-label="Main"
+        >
+          <div className="arena-floating-nav-top relative z-[2] flex w-full min-w-0 flex-nowrap items-center gap-2 xl:gap-3">
+            <SiteLogo className="shrink-0" />
 
-              <div className="arena-floating-nav-search-wrap min-w-0 flex-1 basis-[12rem]">
-                <div className="arena-floating-nav-search min-w-0">
-                  <button
-                    type="button"
-                    onClick={() => openSearch()}
-                    className="arena-floating-nav-search-btn"
-                  >
-                    <Search size={17} className="arena-floating-nav-search-icon" />
-                    <span className="flex-1 truncate">Search phones, brands, specs…</span>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => openSearch("", true)}
-                    className="arena-floating-nav-mic"
-                    aria-label="Voice search"
-                    title="Speak to search"
-                  >
-                    <Mic size={17} />
-                  </button>
-                </div>
-              </div>
-
-              <div className="arena-floating-nav-toolbar shrink-0">
-                <SiteNavToolbar layout="desktop" />
+            <div className="arena-floating-nav-search-wrap min-w-0 flex-1 basis-[12rem]">
+              <div className="arena-floating-nav-search min-w-0">
+                <button
+                  type="button"
+                  onClick={() => openSearch()}
+                  className="arena-floating-nav-search-btn"
+                >
+                  <Search size={17} className="arena-floating-nav-search-icon" />
+                  <span className="flex-1 truncate">{t("search.placeholder")}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => openSearch("", true)}
+                  className="arena-floating-nav-mic"
+                  aria-label={t("action.voiceSearch")}
+                  title={t("action.voiceSearch")}
+                >
+                  <Mic size={17} />
+                </button>
               </div>
             </div>
 
-            <div className="arena-floating-nav-links">
-              {NAV_LINKS.map((link) => (
+            <SiteSocialLinks className="shrink-0" />
+
+            <div className="arena-floating-nav-toolbar shrink-0">
+              <SiteNavToolbar layout="desktop" />
+            </div>
+          </div>
+
+          <div className="arena-floating-nav-links">
+            {NAV_LINKS.map((link) => {
+              const keys = SITE_NAV_MESSAGE_KEYS[link.icon];
+              return (
                 <DesktopSiteNavItem
                   key={link.href}
-                  label={link.label}
+                  label={t(keys.label)}
+                  shortLabel={t(keys.shortLabel)}
                   href={link.href}
                   icon={link.icon}
                   pathname={pathname}
                   search={search}
                 />
-              ))}
-            </div>
-          </nav>
-        </div>
+              );
+            })}
+          </div>
+        </nav>
       </div>
     </header>
   );

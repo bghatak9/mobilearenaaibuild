@@ -7,6 +7,7 @@ import {
   ParseIntPipe,
   Patch,
   Post,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
@@ -29,18 +30,29 @@ export class BrandController {
   }
 
   @Get('grouped')
-  findAllGrouped() {
-    return this.brandService.findAllGrouped();
+  findAllGrouped(@Query('locale') locale?: string) {
+    return this.brandService.findAllGrouped(locale);
   }
 
   @Get()
-  findAll() {
-    return this.brandService.findAll();
+  findAll(@Query('locale') locale?: string) {
+    return this.brandService.findAll(locale);
+  }
+
+  @Get('slug/:slug')
+  findBySlug(
+    @Param('slug') slug: string,
+    @Query('locale') locale?: string,
+  ) {
+    return this.brandService.findBySlug(slug, locale);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.brandService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('locale') locale?: string,
+  ) {
+    return this.brandService.findOne(id, locale);
   }
 
   @Patch(':id')

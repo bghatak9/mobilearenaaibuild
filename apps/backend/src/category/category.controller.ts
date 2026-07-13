@@ -7,6 +7,7 @@ import {
   Patch,
   Delete,
   ParseIntPipe,
+  Query,
   UseGuards,
 } from '@nestjs/common';
 import { UserRole } from '@prisma/client';
@@ -30,13 +31,17 @@ export class CategoryController {
   }
 
   @Get()
-  findAll() {
-    return this.categoryService.findAll();
+  findAll(@Query('locale') locale?: string, @Query('lang') lang?: string) {
+    return this.categoryService.findAll(locale || lang);
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.categoryService.findOne(id);
+  findOne(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('locale') locale?: string,
+    @Query('lang') lang?: string,
+  ) {
+    return this.categoryService.findOne(id, locale || lang);
   }
 
   @Patch(':id')

@@ -1,0 +1,25 @@
+{
+  "dashboard": {
+    "title": "Dashboard",
+    "myProfile": "My Profile",
+    "editProfile": "Edit Profile",
+    "changeAvatar": "Change Avatar",
+    "logout": "Log out",
+    "favorites": "Favorites",
+    "wishlist": "Wishlist",
+    "bookmarks": "Bookmarks",
+    "comments": "My Comments",
+    "comparisons": "Saved Comparisons",
+    "reviews": "My Reviews",
+    "polls": "Poll History",
+    "reputation": "Reputation & Badges",
+    "settings": "Account Settings",
+    "security": "Security",
+    "notifications": "Notifications",
+    "overview": "Overview",
+    "welcome": "Welcome back",
+    "emptyFavorites": "No favorites yet.",
+    "emptyWishlist": "Your wishlist is empty.",
+    "emptyBookmarks": "No bookmarks yet."
+  }
+}

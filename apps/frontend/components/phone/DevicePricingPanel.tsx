@@ -1,6 +1,7 @@
 "use client";
 
 import { countryName } from "@/lib/countries";
+import { formatDateShort } from "@/lib/format-datetime";
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 
 type PricePoint = {
@@ -51,10 +52,7 @@ export function DevicePricingPanel({
                     title={`$${point.price.toLocaleString()}`}
                   />
                   <span className="text-[9px] text-[var(--text-secondary)]">
-                    {new Date(point.recordedAt).toLocaleDateString(undefined, {
-                      month: "short",
-                      day: "numeric",
-                    })}
+                    {formatDateShort(point.recordedAt)}
                   </span>
                 </div>
               );

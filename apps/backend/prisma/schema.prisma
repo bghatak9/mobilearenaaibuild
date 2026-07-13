@@ -467,6 +467,11 @@ model Device {
   id            Int       @id @default(autoincrement())
   slug          String    @unique
   name          String
+  /// Localized marketing description (EN canonical). Brand/model `name` stays untranslated.
+  description   String?
+  seoTitle       String?
+  seoDescription String?
+  keywords       String?
   price         Float?
   announcedDate DateTime?
   releasedDate  DateTime?
@@ -506,6 +511,7 @@ model Device {
   affiliateOffers DeviceAffiliateOffer[]
   discussions     Discussion[]
   communityReviews CommunityReview[]
+  intelligence    DeviceIntelligence?
 
   deletedAt     DateTime?
   importBatchId Int?
@@ -571,6 +577,15 @@ model Camera {
   @@index([deviceId])
 }
 
+/** Extended gadget intelligence payload (benchmarks, AI, repairability, etc.). */
+model DeviceIntelligence {
+  id        Int      @id @default(autoincrement())
+  deviceId  Int      @unique
+  device    Device   @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  payload   Json     @default("{}")
+  updatedAt DateTime @updatedAt
+}
+
 model DeviceImage {
   id        Int     @id @default(autoincrement())
   url       String
@@ -591,15 +606,22 @@ model Review {
   score   Float
   pros    Json
   cons    Json
+  seoTitle       String?
+  seoDescription String?
+  keywords       String?
 
-  deviceId Int
-  device   Device @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  deviceId Int?
+  device   Device? @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+
+  evVehicleId Int?
+  evVehicle   EvVehicle? @relation(fields: [evVehicleId], references: [id], onDelete: Cascade)
 
   publishedAt DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   @@index([deviceId])
+  @@index([evVehicleId])
 }
 
 model News {
@@ -608,6 +630,10 @@ model News {
   slug        String     @unique
   content     String
   excerpt     String?
+  /// Optional marketing / SEO fields (English canonical; translations override per locale).
+  seoTitle       String?
+  seoDescription String?
+  keywords       String?
   thumbnail   String?
   featured    Boolean    @default(false)
   status      PostStatus @default(DRAFT)
@@ -848,6 +874,7 @@ model ImportBatch {
   devices         Device[]
   advertisements  PaidAdvertisement[]
   news            News[]
+  evVehicles      EvVehicle[]
 
   deletedAt DateTime?
   purgedAt  DateTime?
@@ -859,6 +886,32 @@ model ImportBatch {
   @@index([status])
   @@index([createdAt])
   @@index([deletedAt])
+}
+
+model EvVehicle {
+  id            Int      @id @default(autoincrement())
+  slug          String   @unique
+  name          String
+  category      String
+  brand         String?
+  modelYear     Int?
+  rangeKm       Int?
+  batteryKwh    Float?
+  price         Float?
+  currency      String?  @default("USD")
+  status        String?  @default("available")
+  description   String?  @db.Text
+  imageUrl      String?
+  announcedAt   DateTime?
+  releaseAt     DateTime?
+  importBatchId Int?
+  importBatch   ImportBatch? @relation(fields: [importBatchId], references: [id], onDelete: SetNull)
+  reviews       Review[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([category])
+  @@index([importBatchId])
 }
 
 model ImportBatchItem {
@@ -892,4 +945,84 @@ model ImportBatchItem {
   @@index([newsId])
   @@index([brandId])
   @@index([deletedAt])
+}
+
+/**
+ * Localized CMS fields for any content entity.
+ *
+ * Architecture note (unlimited locales without schema changes):
+ * One polymorphic ContentTranslation table replaces N per-entity tables
+ * (DeviceTranslation, BrandTranslation, …). New languages are new `locale`
+ * rows — no migration. Entity-specific typed repositories wrap this table.
+ *
+ * Canonical English stays on the parent row; this table holds per-locale overrides.
+ * Fallback: requested locale → en → parent fields.
+ * Numeric specs / SKUs / chipset model codes stay on parent tables — translate labels in UI messages.
+ */
+enum ContentEntityType {
+  NEWS
+  REVIEW
+  DEVICE
+  BRAND
+  CATEGORY
+  MANUFACTURER
+  CHIPSET
+  GPU
+  OPERATING_SYSTEM
+  SPECIFICATION_TYPE
+  DISCUSSION
+  POLL
+  EV_VEHICLE
+  BADGE
+  ADVERTISEMENT
+  GUIDE
+  FAQ
+  CMS_PAGE
+  COMPARISON
+  TAG
+}
+
+enum TranslationStatus {
+  DRAFT
+  MACHINE
+  HUMAN_REVIEWED
+  APPROVED
+  PUBLISHED
+}
+
+model ContentTranslation {
+  id             Int               @id @default(autoincrement())
+  entityType     ContentEntityType
+  entityId       Int
+  locale         String
+  /// Display title / device or brand name.
+  title          String?
+  shortName      String?
+  headline       String?
+  /// Optional per-locale SEO slug (canonical slug remains on parent).
+  slug           String?
+  summary        String?
+  content        String?           @db.Text
+  description    String?           @db.Text
+  seoTitle       String?
+  seoDescription String?
+  keywords       String?
+  /// Comma/space separated aliases & native spellings for search (سامسونج, Galaxy, …).
+  aliases        String?           @db.Text
+  /// Review pros/cons as JSON string arrays when localized.
+  pros           Json?
+  cons           Json?
+  status         TranslationStatus @default(DRAFT)
+  /// Machine vs human provenance for coverage dashboard.
+  source         String?
+  publishedAt    DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([entityType, entityId, locale])
+  @@unique([entityType, locale, slug])
+  @@index([entityType, entityId])
+  @@index([locale])
+  @@index([status])
 }

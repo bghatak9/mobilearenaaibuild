@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "新聞",
+    "loadError": "無法載入新聞。API 是否正在運行？",
+    "empty": "尚無新聞。",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

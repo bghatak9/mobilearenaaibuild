@@ -1,7 +1,8 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ContentEntityType, Prisma } from '@prisma/client';
 
 import { catalogDeviceWhere } from '../common/catalog-mode';
+import { ContentTranslationService } from '../content-translation/content-translation.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 const deviceInclude = {
@@ -13,18 +14,22 @@ const deviceInclude = {
   chipset: true,
   cameras: true,
   images: true,
+  intelligence: true,
 } satisfies Prisma.DeviceInclude;
 
 type ComparedDevice = Prisma.DeviceGetPayload<{ include: typeof deviceInclude }>;
 
 const MIN_DEVICES = 2;
-const MAX_DEVICES = 4;
+const MAX_DEVICES = 6;
 
 @Injectable()
 export class CompareService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly translations: ContentTranslationService,
+  ) {}
 
-  async compare(slug: string) {
+  async compare(slug: string, locale?: string) {
     const slugs = slug.split('-vs-').filter(Boolean);
 
     if (slugs.length < MIN_DEVICES || slugs.length > MAX_DEVICES) {
@@ -64,16 +69,29 @@ export class CompareService {
     const enriched = devices.map((d, i) => {
       const avg = ratingAgg[i]?._avg.score;
       const count = ratingAgg[i]?._count.score ?? 0;
+      const { intelligence, ...rest } = d;
       return {
-        ...d,
+        ...rest,
         rating: avg ?? d.rating,
         communityRatingCount: count,
+        intelligence:
+          intelligence?.payload &&
+          typeof intelligence.payload === 'object' &&
+          !Array.isArray(intelligence.payload)
+            ? (intelligence.payload as Record<string, unknown>)
+            : {},
       };
     });
 
+    const localized = await this.translations.localizeMany(
+      ContentEntityType.DEVICE,
+      enriched,
+      locale,
+    );
+
     return {
-      devices: enriched,
-      winners: this.computeWinners(enriched),
+      devices: localized,
+      winners: this.computeWinners(devices),
     };
   }
 

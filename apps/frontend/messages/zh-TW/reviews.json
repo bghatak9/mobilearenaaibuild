@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "評測",
+    "loadError": "無法載入評測。API 是否正在運行？",
+    "empty": "尚無評測。",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

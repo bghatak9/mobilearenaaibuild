@@ -20,6 +20,7 @@ export type ImportKind =
   | 'reviews'
   | 'documentation'
   | 'advertisements'
+  | 'ev'
   | 'article-images';
 
 const AREA_ACCESS: Record<ContentArea, UserRole[]> = {
@@ -61,6 +62,13 @@ export function canImport(role: UserRole | undefined | null, kind: ImportKind): 
       return role === UserRole.ADMIN || role === UserRole.EDITOR;
     case 'advertisements':
       return role === UserRole.ADMIN;
+    case 'ev':
+      return (
+        role === UserRole.ADMIN ||
+        role === UserRole.EDITOR ||
+        role === UserRole.AUTHOR ||
+        role === UserRole.MODERATOR
+      );
     case 'article-images':
       return (
         role === UserRole.ADMIN ||
@@ -84,6 +92,7 @@ export function getImportKindsForRole(role: UserRole): ImportKind[] {
     'reviews',
     'documentation',
     'advertisements',
+    'ev',
     'article-images',
   ];
   return kinds.filter((kind) => canImport(role, kind));

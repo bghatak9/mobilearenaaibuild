@@ -1,7 +1,8 @@
 declare global {
   interface Window {
+    googleTranslateElementInit?: () => void;
     google?: {
-      accounts: {
+      accounts?: {
         id: {
           initialize: (config: {
             client_id: string;
@@ -16,6 +17,14 @@ declare global {
               width?: number;
             },
           ) => void;
+        };
+      };
+      translate?: {
+        TranslateElement: (new (
+          options: Record<string, unknown>,
+          elementId: string,
+        ) => void) & {
+          InlineLayout?: { SIMPLE?: number; HORIZONTAL?: number };
         };
       };
     };

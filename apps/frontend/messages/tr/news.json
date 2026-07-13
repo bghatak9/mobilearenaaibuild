@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "Haberler",
+    "loadError": "Haberler yüklenemedi. API çalışıyor mu?",
+    "empty": "Henüz haber yok.",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

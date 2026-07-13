@@ -8,10 +8,14 @@ import {
   type SearchLanguageCode,
 } from "@/features/phone-finder/search-locale";
 
+import { useClientMounted } from "@/hooks/useClientMounted";
+
 export function useSearchLanguage() {
+  const mounted = useClientMounted();
   const [language, setLanguage] = useState<SearchLanguageCode>("auto");
 
   useEffect(() => {
+    if (!mounted) return;
     setLanguage(getStoredSearchLanguage());
 
     const onChange = (e: Event) => {
@@ -22,12 +26,16 @@ export function useSearchLanguage() {
 
     window.addEventListener("search-language-change", onChange);
     return () => window.removeEventListener("search-language-change", onChange);
-  }, []);
+  }, [mounted]);
 
   const updateLanguage = useCallback((code: SearchLanguageCode) => {
     setStoredSearchLanguage(code);
     setLanguage(code);
   }, []);
 
-  return { language, setLanguage: updateLanguage };
+  return {
+    language: mounted ? language : "auto",
+    setLanguage: updateLanguage,
+    ready: mounted,
+  };
 }

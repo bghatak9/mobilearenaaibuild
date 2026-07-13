@@ -1,4 +1,7 @@
-import Link from "next/link";
+"use client";
+
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 
 export function SignupAgreementField({
   checked,
@@ -7,6 +10,8 @@ export function SignupAgreementField({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const t = useTranslations("auth");
+
   return (
     <label className="flex min-w-0 cursor-pointer items-start gap-2 rounded-lg border border-[var(--border-subtle)] bg-[var(--surface-elevated)]/40 px-2.5 py-2 text-[0.6875rem] leading-relaxed text-[var(--text-secondary)] transition hover:border-[var(--border-accent)]">
       <input
@@ -17,26 +22,26 @@ export function SignupAgreementField({
         required
       />
       <span className="min-w-0 break-words">
-        I agree to the{" "}
+        {t("agreePrefix")}{" "}
         <Link
           href="/terms"
           className="font-medium text-[var(--electric-cyan)] hover:underline"
         >
-          Terms of Service
+          {t("termsOfService")}
         </Link>
         ,{" "}
         <Link
           href="/privacy"
           className="font-medium text-[var(--electric-cyan)] hover:underline"
         >
-          Privacy Policy
+          {t("privacyPolicy")}
         </Link>
-        , and{" "}
+        , {t("agreeAnd")}{" "}
         <Link
           href="/community-guidelines"
           className="font-medium text-[var(--electric-cyan)] hover:underline"
         >
-          Community Guidelines
+          {t("communityGuidelines")}
         </Link>
         .
       </span>

@@ -24,12 +24,14 @@ const STAFF_WITH_IMPORT = [
   "ADMIN",
   "EDITOR",
   "AUTHOR",
+  "MODERATOR",
 ] as const;
 
 function AdminImportContent() {
   const { user } = useAdminAuth();
   const [selected, setSelected] = useState<BulkImportKind | "">("");
   const [tab, setTab] = useState<"upload" | "history" | "audit">("upload");
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const allowedKinds = useMemo(
     () => (user ? getBulkImportKindsForRole(user.role) : []),
@@ -55,19 +57,18 @@ function AdminImportContent() {
       <div className="p-8">
         <h1 className="text-2xl font-bold text-zinc-900">Bulk Upload</h1>
         <p className="mt-1 text-sm text-gray-500">
-          Structured data (phones, brands, prices) via CSV/XLSX. Images via ZIP.
-          News, reviews, and documentation support PDF. Validation, duplicate
-          detection, progress tracking, error reports, and rollback on failure.
+          Structured data via CSV/XLSX. Images live inside Phones, News, and
+          Documentation. EV hub covers catalog, upcoming launches, EV news, and
+          EV reviews in one section.
         </p>
 
         <div className="mt-4 rounded-xl border border-blue-100 bg-blue-50 p-4 text-sm text-blue-900">
           <p className="font-semibold">Upload strategy</p>
           <ul className="mt-2 grid gap-1 sm:grid-cols-2">
-            <li>Phones, Brands, Prices → CSV/XLSX</li>
-            <li>Images → ZIP</li>
-            <li>News → PDF + Markdown ZIP + CSV</li>
-            <li>Reviews → PDF + CSV</li>
-            <li>Documentation → PDF + Markdown ZIP + CSV</li>
+            <li>Phones → CSV/XLSX + images</li>
+            <li>EV → catalog · upcoming · news · reviews</li>
+            <li>News &amp; Documentation → PDF/CSV + images</li>
+            <li>Phone reviews → separate Reviews tab</li>
           </ul>
         </div>
 
@@ -114,7 +115,10 @@ function AdminImportContent() {
 
         {tab === "history" && user && canViewHistory && (
           <div className="mt-6 space-y-4">
-            <ImportHistoryPanel role={user.role} />
+            <ImportHistoryPanel
+              role={user.role}
+              refreshKey={historyRefreshKey}
+            />
             <DeletePermissionsNote />
           </div>
         )}
@@ -173,13 +177,21 @@ function AdminImportContent() {
 
             {selected ? (
               <div className="mt-6">
-                <BulkUploadPanel kind={selected} role={user!.role} />
+                <BulkUploadPanel
+                  kind={selected}
+                  role={user!.role}
+                  onUploadSuccess={() => {
+                    setHistoryRefreshKey((key) => key + 1);
+                    if (canViewHistory) {
+                      setTab("history");
+                    }
+                  }}
+                />
               </div>
             ) : (
               <p className="mt-8 text-sm text-gray-500">
-                Select a category above to start — Phones, Brands, News,
-                Documentation, Users, Images, Prices, or Reviews (based on your
-                role).
+                Select a category above. For EV, use the tabs inside the panel
+                for catalog, upcoming launches, EV news, and EV reviews.
               </p>
             )}
 

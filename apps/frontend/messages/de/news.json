@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "News",
+    "loadError": "News konnten nicht geladen werden. Läuft die API?",
+    "empty": "Noch keine News.",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

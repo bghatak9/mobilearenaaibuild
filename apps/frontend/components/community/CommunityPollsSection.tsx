@@ -1,12 +1,27 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
+import {
+  BarChart3,
+  GitCompareArrows,
+  Loader2,
+  Smartphone,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 
-import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import type { CommunityPoll, PollType } from "@/lib/community-types";
-import { POLL_TYPE_LABELS } from "@/lib/community-types";
-import { getToken, voteOnPoll } from "@/lib/api";
+import { POLL_TYPE_META } from "@/lib/community-types";
+import { voteOnPoll } from "@/lib/api";
+import { cn } from "@/design-system/utils/cn";
+import { useSiteAuth } from "@/lib/site-auth";
+
+const POLL_TYPE_ICONS: Record<PollType, LucideIcon> = {
+  DEVICE: Smartphone,
+  WEEKLY: BarChart3,
+  COMPARISON: GitCompareArrows,
+};
 
 function PollCard({
   poll,
@@ -17,9 +32,12 @@ function PollCard({
 }) {
   const [voting, setVoting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { user, ready: authReady } = useSiteAuth();
+  const loggedIn = authReady && Boolean(user);
+  const leadingPct = Math.max(...poll.choices.map((c) => c.pct), 0);
 
   async function vote(choiceId: string) {
-    if (!getToken()) {
+    if (!loggedIn) {
       setError("Sign in to vote.");
       return;
     }
@@ -36,45 +54,77 @@ function PollCard({
   }
 
   return (
-    <SpectrumPanel className="p-5">
-      <h3 className="font-bold text-[var(--text-primary)]">{poll.question}</h3>
-      <p className="mt-1 text-xs text-[var(--text-secondary)]">
-        {poll.totalVotes.toLocaleString()} votes
-      </p>
-      <div className="mt-4 space-y-3">
-        {poll.choices.map((choice) => (
-          <div key={choice.id}>
-            <div className="mb-1 flex justify-between text-sm">
-              <span className="text-[var(--text-primary)]">○ {choice.label}</span>
-              <span className="text-[var(--text-secondary)]">{choice.pct}%</span>
-            </div>
+    <article
+      className="arena-community-poll"
+      data-poll-type={poll.pollType.toLowerCase()}
+    >
+      <header className="arena-community-poll__header">
+        <h3 className="arena-community-poll__question">{poll.question}</h3>
+        <p className="arena-community-poll__meta">
+          <Users size={13} aria-hidden />
+          <span>
+            {poll.totalVotes.toLocaleString("en-US")}{" "}
+            {poll.totalVotes === 1 ? "vote" : "votes"}
+          </span>
+        </p>
+      </header>
+
+      <div className="arena-community-poll__choices" role="list">
+        {poll.choices.map((choice) => {
+          const isLeading = poll.totalVotes > 0 && choice.pct === leadingPct;
+          const isVoting = voting === choice.id;
+
+          return (
             <button
+              key={choice.id}
               type="button"
               disabled={Boolean(voting)}
               onClick={() => void vote(choice.id)}
-              className="group w-full text-left"
+              className={cn(
+                "arena-community-poll__choice",
+                isLeading && poll.totalVotes > 0 && "arena-community-poll__choice--leading",
+                isVoting && "arena-community-poll__choice--voting",
+              )}
+              role="listitem"
             >
-              <div className="h-2 overflow-hidden rounded-full bg-white/5">
-                <div
-                  className="h-full rounded-full bg-gradient-to-r from-[var(--arena-blue)] to-[var(--electric-cyan)] transition-all"
-                  style={{ width: `${Math.max(choice.pct, 4)}%` }}
+              <span className="arena-community-poll__choice-top">
+                <span className="arena-community-poll__radio" aria-hidden />
+                <span className="arena-community-poll__label">{choice.label}</span>
+                <span className="arena-community-poll__pct">{choice.pct}%</span>
+              </span>
+              <span className="arena-community-poll__bar" aria-hidden>
+                <span
+                  className="arena-community-poll__bar-fill"
+                  style={{ width: `${Math.max(choice.pct, poll.totalVotes > 0 ? 2 : 0)}%` }}
                 />
-              </div>
+              </span>
+              {isVoting ? (
+                <Loader2
+                  size={14}
+                  className="arena-community-poll__spinner animate-spin"
+                  aria-label="Submitting vote"
+                />
+              ) : null}
             </button>
-          </div>
-        ))}
+          );
+        })}
       </div>
-      {error && (
-        <p className="mt-3 text-xs text-[var(--rose-alert)]">
+
+      {poll.totalVotes === 0 ? (
+        <p className="arena-community-poll__empty">Be the first to cast your vote.</p>
+      ) : null}
+
+      {error ? (
+        <p className="arena-community-poll__error">
           {error}{" "}
-          {!getToken() && (
+          {!loggedIn ? (
             <Link href="/login?next=/community" className="underline">
               Sign in
             </Link>
-          )}
+          ) : null}
         </p>
-      )}
-    </SpectrumPanel>
+      ) : null}
+    </article>
   );
 }
 
@@ -87,17 +137,43 @@ export function CommunityPollsSection({
 }) {
   const types: PollType[] = ["DEVICE", "WEEKLY", "COMPARISON"];
 
+  if (!polls.length) {
+    return (
+      <div className="arena-community-empty">
+        <p>No polls are live right now. Check back soon for new community votes.</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-8">
+    <div className="arena-community-polls">
       {types.map((type) => {
         const group = polls.filter((p) => p.pollType === type);
         if (!group.length) return null;
+
+        const meta = POLL_TYPE_META[type];
+        const Icon = POLL_TYPE_ICONS[type];
+
         return (
-          <section key={type}>
-            <h2 className="mb-4 text-lg font-bold text-[var(--text-primary)]">
-              {POLL_TYPE_LABELS[type]}
-            </h2>
-            <div className="grid gap-4 md:grid-cols-2">
+          <section
+            key={type}
+            className="arena-community-poll-group"
+            data-accent={meta.accent}
+          >
+            <header className="arena-community-poll-group__head">
+              <div className="arena-community-poll-group__icon" aria-hidden>
+                <Icon size={20} />
+              </div>
+              <div className="min-w-0">
+                <h2 className="arena-community-poll-group__title">{meta.label}</h2>
+                <p className="arena-community-poll-group__desc">{meta.description}</p>
+              </div>
+              <span className="arena-community-poll-group__count">
+                {group.length} live
+              </span>
+            </header>
+
+            <div className="arena-community-poll-grid">
               {group.map((poll) => (
                 <PollCard
                   key={poll.slug}

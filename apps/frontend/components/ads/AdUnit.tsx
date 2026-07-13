@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { Play, X } from "lucide-react";
 import { useState } from "react";
 
@@ -152,48 +152,61 @@ function BannerAd({
   );
 }
 
-export default function AdUnit({
+function AdPlaceholder({
   ad,
   variant,
-  slot = "inline",
-  className = "",
-  showPlaceholder = true,
-}: AdUnitProps) {
-  if (!ad) {
-    if (!showPlaceholder) return null;
-    const placeholderVariant = variant ?? "banner";
-    if (placeholderVariant === "card" || placeholderVariant === "affiliate") {
-      return (
-        <div
-          className={`flex h-[220px] flex-col items-start justify-center gap-3 rounded-md border border-gray-200 bg-white p-5 text-gray-400 dark:border-zinc-700 dark:bg-zinc-900 ${className}`}
-        >
-          <AdLabel />
-          <p className="text-sm">Ad space available</p>
-        </div>
-      );
-    }
-    if (placeholderVariant === "skyscraper") {
-      return (
-        <div
-          className={`flex min-h-[400px] flex-col items-center justify-center rounded-md border border-gray-200 bg-white p-4 text-gray-300 dark:border-zinc-700 dark:bg-zinc-900 ${className}`}
-        >
-          <AdLabel />
-          <p className="mt-2 text-xs">160×600</p>
-        </div>
-      );
-    }
+  slot,
+  className,
+}: {
+  ad: PaidAdvertisement | null | undefined;
+  variant?: AdUnitProps["variant"];
+  slot: BannerAdSlot;
+  className: string;
+}) {
+  const placeholderVariant = variant ?? "banner";
+  if (placeholderVariant === "card" || placeholderVariant === "affiliate") {
     return (
-      <div className={className} style={bannerPlaceholderStyle(ad, slot)}>
-        <AdLabel className={slot === "header" || slot === "sticky" ? "sr-only" : "mb-1 text-center"} />
-        <div
-          className={`arena-ad-banner arena-ad-banner--${slot} flex items-center justify-center rounded border border-gray-200 bg-white text-sm text-gray-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-600`}
-        >
-          Ad
-        </div>
+      <div
+        className={`flex h-[220px] flex-col items-start justify-center gap-3 rounded-md border border-gray-200 bg-white p-5 text-gray-400 dark:border-zinc-700 dark:bg-zinc-900 ${className}`}
+      >
+        <AdLabel />
+        <p className="text-sm">Ad space available</p>
       </div>
     );
   }
+  if (placeholderVariant === "skyscraper") {
+    return (
+      <div
+        className={`flex min-h-[400px] flex-col items-center justify-center rounded-md border border-gray-200 bg-white p-4 text-gray-300 dark:border-zinc-700 dark:bg-zinc-900 ${className}`}
+      >
+        <AdLabel />
+        <p className="mt-2 text-xs">160×600</p>
+      </div>
+    );
+  }
+  return (
+    <div className={className} style={bannerPlaceholderStyle(ad, slot)}>
+      <AdLabel className={slot === "header" || slot === "sticky" ? "sr-only" : "mb-1 text-center"} />
+      <div
+        className={`arena-ad-banner arena-ad-banner--${slot} flex items-center justify-center rounded border border-gray-200 bg-white text-sm text-gray-300 dark:border-zinc-700 dark:bg-zinc-900 dark:text-zinc-600`}
+      >
+        Ad
+      </div>
+    </div>
+  );
+}
 
+function AdUnitContent({
+  ad,
+  variant,
+  slot,
+  className,
+}: {
+  ad: PaidAdvertisement;
+  variant?: AdUnitProps["variant"];
+  slot: BannerAdSlot;
+  className: string;
+}) {
   const resolvedVariant = variant ?? adDisplayVariant(ad);
   const cta = adCta(ad);
   const { isSponsored } = useAdLinkProps(ad);
@@ -290,6 +303,25 @@ export default function AdUnit({
   }
 
   return <BannerAd ad={ad} slot={slot} className={className} isSponsored={isSponsored} />;
+}
+
+export default function AdUnit({
+  ad,
+  variant,
+  slot = "inline",
+  className = "",
+  showPlaceholder = true,
+}: AdUnitProps) {
+  if (!ad) {
+    if (!showPlaceholder) return null;
+    return (
+      <AdPlaceholder ad={ad} variant={variant} slot={slot} className={className} />
+    );
+  }
+
+  return (
+    <AdUnitContent ad={ad} variant={variant} slot={slot} className={className} />
+  );
 }
 
 type StickyAdBarProps = {

@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   CheckCircle2,
   AlertTriangle,
   Download,
   FileSpreadsheet,
+  ImageIcon,
   Loader2,
   Upload,
 } from "lucide-react";
@@ -19,27 +20,61 @@ import {
   type ImportValidationResult,
 } from "@/lib/api";
 import {
+  canUploadImages,
   canUploadPdf,
+  EV_UPLOAD_SUBKINDS,
+  evSubkindSupportsImages,
   getUploadMeta,
   IMPORT_KIND_HINTS,
   IMPORT_SAMPLE_FILES,
   IMPORT_STRATEGY,
   PDF_PHONES_POLICY,
+  supportsImageUpload,
   type BulkImportKind,
+  type EvUploadSubkind,
+  type UploadMode,
 } from "@/lib/content-permissions";
 import type { UserRole } from "@/lib/roles";
+
+const IMAGE_BULK_ACCEPT = ".zip";
+const IMAGE_SINGLE_ACCEPT = ".jpg,.jpeg,.png,.webp,.gif";
+
+function slugLabelForKind(kind: BulkImportKind): string {
+  switch (kind) {
+    case "news":
+    case "documentation":
+      return "Article / doc slug";
+    case "ev":
+      return "Vehicle slug";
+    default:
+      return "Device slug";
+  }
+}
 
 export function BulkUploadPanel({
   kind,
   role,
+  onUploadSuccess,
 }: {
   kind: BulkImportKind;
   role: UserRole;
+  onUploadSuccess?: () => void;
 }) {
   const meta = getUploadMeta(kind);
   const strategy = IMPORT_STRATEGY[kind];
-  const pdfAllowed = canUploadPdf(role, kind);
+  const isEv = kind === "ev";
+  const [evSubkind, setEvSubkind] = useState<EvUploadSubkind>("vehicles");
+  const evImageOk = isEv && evSubkindSupportsImages(evSubkind);
+  const pdfAllowed = isEv
+    ? canUploadPdf(role, kind, { subkind: evSubkind })
+    : canUploadPdf(role, kind);
+  const imageAllowed = canUploadImages(role, kind);
+  const hasImageUpload =
+    supportsImageUpload(kind) && (!isEv || evImageOk);
   const isPhoneSpecKind = kind === "phones" || kind === "upcoming-devices";
+
+  const [uploadMode, setUploadMode] = useState<UploadMode>("data");
+  const [entitySlug, setEntitySlug] = useState("");
   const [file, setFile] = useState<File | null>(null);
   const [validation, setValidation] = useState<ImportValidationResult | null>(
     null,
@@ -48,6 +83,52 @@ export function BulkUploadPanel({
   const [validating, setValidating] = useState(false);
   const [importing, setImporting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const uploadNotifiedRef = useRef(false);
+
+  const accept = useMemo(() => {
+    if (isEv) {
+      if (uploadMode === "images-bulk") return IMAGE_BULK_ACCEPT;
+      if (uploadMode === "images-single") return IMAGE_SINGLE_ACCEPT;
+      if (evSubkind === "news") return ".csv,.xlsx,.xls,.pdf,.zip";
+      if (evSubkind === "reviews") return ".csv,.xlsx,.xls,.pdf";
+      return ".csv,.xlsx,.xls";
+    }
+    if (!hasImageUpload || uploadMode === "data") {
+      if (isPhoneSpecKind) return ".csv,.xlsx,.xls";
+      return meta.accept;
+    }
+    if (uploadMode === "images-bulk") return IMAGE_BULK_ACCEPT;
+    return IMAGE_SINGLE_ACCEPT;
+  }, [
+    isEv,
+    evSubkind,
+    hasImageUpload,
+    uploadMode,
+    isPhoneSpecKind,
+    meta.accept,
+  ]);
+
+  const uploadOptions = useMemo(() => {
+    const opts: {
+      slug?: string;
+      subkind?: EvUploadSubkind;
+    } = {};
+    if (isEv) opts.subkind = evSubkind;
+    if (uploadMode === "images-single" && entitySlug.trim()) {
+      opts.slug = entitySlug.trim();
+    }
+    return Object.keys(opts).length > 0 ? opts : undefined;
+  }, [isEv, evSubkind, uploadMode, entitySlug]);
+
+  useEffect(() => {
+    setFile(null);
+    setValidation(null);
+    setJob(null);
+    setError(null);
+    setEntitySlug("");
+    setUploadMode("data");
+    setEvSubkind("vehicles");
+  }, [kind]);
 
   const pollJob = useCallback(async (jobId: string) => {
     const snapshot = await getImportJob(jobId);
@@ -70,14 +151,29 @@ export function BulkUploadPanel({
     return () => clearInterval(timer);
   }, [job?.id, job?.status, pollJob]);
 
+  useEffect(() => {
+    uploadNotifiedRef.current = false;
+  }, [file, kind, uploadMode, evSubkind]);
+
+  useEffect(() => {
+    if (!job || job.rolledBack || job.status !== "completed") return;
+    if (uploadNotifiedRef.current) return;
+    uploadNotifiedRef.current = true;
+    onUploadSuccess?.();
+  }, [job, onUploadSuccess]);
+
   async function handleValidate() {
     if (!file) return;
+    if (uploadMode === "images-single" && !entitySlug.trim()) {
+      setError(`Enter ${slugLabelForKind(kind).toLowerCase()} for single image upload.`);
+      return;
+    }
     setValidating(true);
     setError(null);
     setValidation(null);
     setJob(null);
     try {
-      const result = await validateImportFile(kind, file);
+      const result = await validateImportFile(kind, file, uploadOptions);
       setValidation(result);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Validation failed");
@@ -88,12 +184,17 @@ export function BulkUploadPanel({
 
   async function handleImport() {
     if (!file) return;
+    if (uploadMode === "images-single" && !entitySlug.trim()) {
+      setError(`Enter ${slugLabelForKind(kind).toLowerCase()} for single image upload.`);
+      return;
+    }
     setImporting(true);
     setError(null);
     try {
       const result = await runImportFile(kind, file, {
         atomic: true,
-        background: true,
+        background: uploadMode === "data",
+        ...uploadOptions,
       });
       if (result.jobId) {
         setJob(await getImportJob(result.jobId));
@@ -161,18 +262,28 @@ export function BulkUploadPanel({
     : "";
   const isSpreadsheet = ["csv", "xlsx", "xls"].includes(fileExt);
   const isPdf = fileExt === "pdf";
+  const isImageUpload =
+    uploadMode === "images-bulk" || uploadMode === "images-single";
 
   return (
     <section className="rounded-xl border border-gray-200 bg-white p-5 shadow-sm">
       <div className="flex items-start gap-3">
-        <FileSpreadsheet className="mt-0.5 text-red-600" size={20} />
+        {isImageUpload ? (
+          <ImageIcon className="mt-0.5 text-red-600" size={20} />
+        ) : (
+          <FileSpreadsheet className="mt-0.5 text-red-600" size={20} />
+        )}
         <div>
           <h2 className="font-semibold text-zinc-900">{meta.label}</h2>
           <p className="text-sm text-gray-500">
             {meta.fileTypes} — {meta.example}
           </p>
-          <p className="mt-1 text-xs text-gray-400">{IMPORT_KIND_HINTS[kind]}</p>
-          {strategy.pdf && !pdfAllowed && (
+          <p className="mt-1 text-xs text-gray-400">
+            {isEv
+              ? EV_UPLOAD_SUBKINDS.find((s) => s.id === evSubkind)?.hint
+              : IMPORT_KIND_HINTS[kind]}
+          </p>
+          {strategy.pdf && !pdfAllowed && uploadMode === "data" && (
             <p className="mt-2 text-xs text-amber-700">
               PDF uploads for {meta.label.toLowerCase()} require{" "}
               {kind === "advertisements"
@@ -181,7 +292,13 @@ export function BulkUploadPanel({
               . Use CSV/XLSX instead.
             </p>
           )}
-          {(IMPORT_SAMPLE_FILES[kind]?.length ?? 0) > 0 && (
+          {hasImageUpload && !imageAllowed && (
+            <p className="mt-2 text-xs text-amber-700">
+              Your role cannot upload images for {meta.label.toLowerCase()}.
+              Structured data upload may still be available.
+            </p>
+          )}
+          {(IMPORT_SAMPLE_FILES[kind]?.length ?? 0) > 0 && uploadMode === "data" && (
             <p className="mt-2 text-xs text-gray-500">
               {(IMPORT_SAMPLE_FILES[kind] ?? []).map((sample, index) => (
                 <span key={sample.href}>
@@ -195,28 +312,42 @@ export function BulkUploadPanel({
                   </a>
                 </span>
               ))}
-              {kind === "images" && (
-                <span>
-                  {" "}
-                  — upload phones first so device slug folders match
-                </span>
-              )}
               {kind === "prices" || kind === "reviews" ? (
                 <span> — upload phones first so device names exist</span>
               ) : null}
             </p>
           )}
-          {isPhoneSpecKind && !file && (
+          {hasImageUpload && isImageUpload && (
+            <p className="mt-2 text-xs text-gray-500">
+              Upload records first so slugs exist. ZIP: one folder per slug.
+              Single image: enter slug below.
+              {(IMPORT_SAMPLE_FILES[kind] ?? []).some((s) =>
+                s.href.includes("images-sample"),
+              ) && (
+                <>
+                  {" "}
+                  <a
+                    href="/samples/images-sample.zip"
+                    download
+                    className="font-medium text-red-600 hover:underline"
+                  >
+                    Sample image ZIP
+                  </a>
+                </>
+              )}
+            </p>
+          )}
+          {isPhoneSpecKind && uploadMode === "data" && !file && (
             <p className="mt-2 text-xs text-gray-500">
               Upload CSV or XLSX only — PDF is not supported for phone specs.
             </p>
           )}
-          {isPhoneSpecKind && file && isPdf && (
+          {isPhoneSpecKind && uploadMode === "data" && file && isPdf && (
             <p className="mt-2 rounded-lg bg-rose-50 px-3 py-2 text-xs text-rose-700">
               {PDF_PHONES_POLICY.note} Choose a .csv or .xlsx file instead.
             </p>
           )}
-          {isPhoneSpecKind && file && isSpreadsheet && (
+          {isPhoneSpecKind && uploadMode === "data" && file && isSpreadsheet && (
             <p className="mt-2 text-xs text-emerald-700">
               Format OK — {fileExt.toUpperCase()} is supported for{" "}
               {kind === "upcoming-devices" ? "upcoming device" : "phone"}{" "}
@@ -226,9 +357,83 @@ export function BulkUploadPanel({
         </div>
       </div>
 
+      {isEv && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {EV_UPLOAD_SUBKINDS.map((section) => (
+            <button
+              key={section.id}
+              type="button"
+              onClick={() => {
+                setEvSubkind(section.id);
+                setFile(null);
+                setValidation(null);
+                setJob(null);
+                setError(null);
+                setUploadMode("data");
+              }}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                evSubkind === section.id
+                  ? "bg-emerald-600 text-white"
+                  : "border border-gray-300 bg-white text-gray-700 hover:border-emerald-300"
+              }`}
+            >
+              {section.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {hasImageUpload && imageAllowed && (
+        <div className="mt-4 flex flex-wrap gap-2">
+          {(
+            [
+              ["data", "Structured data"],
+              ["images-bulk", "Bulk images (ZIP)"],
+              ["images-single", "Single image"],
+            ] as const
+          ).map(([mode, label]) => (
+            <button
+              key={mode}
+              type="button"
+              onClick={() => {
+                setUploadMode(mode);
+                setFile(null);
+                setValidation(null);
+                setJob(null);
+                setError(null);
+              }}
+              className={`rounded-lg px-3 py-1.5 text-sm font-medium transition ${
+                uploadMode === mode
+                  ? "bg-red-600 text-white"
+                  : "border border-gray-300 bg-white text-gray-700 hover:border-red-300"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      {uploadMode === "images-single" && hasImageUpload && imageAllowed && (
+        <label className="mt-4 block">
+          <span className="text-sm font-medium text-gray-700">
+            {slugLabelForKind(kind)}
+          </span>
+          <input
+            type="text"
+            value={entitySlug}
+            onChange={(e) => setEntitySlug(e.target.value)}
+            placeholder={
+              kind === "ev" ? "tesla-model-3" : "volt-phone"
+            }
+            className="mt-1 block w-full max-w-md rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          />
+        </label>
+      )}
+
       <input
         type="file"
-        accept={meta.accept}
+        accept={accept}
         onChange={(e) => {
           setFile(e.target.files?.[0] ?? null);
           setValidation(null);
@@ -241,7 +446,12 @@ export function BulkUploadPanel({
       <div className="mt-4 flex flex-wrap gap-2">
         <button
           type="button"
-          disabled={!file || validating}
+          disabled={
+            !file ||
+            validating ||
+            (isImageUpload && !imageAllowed) ||
+            (uploadMode === "images-single" && !entitySlug.trim())
+          }
           onClick={() => void handleValidate()}
           className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-red-300 disabled:opacity-60"
         >
@@ -249,7 +459,13 @@ export function BulkUploadPanel({
         </button>
         <button
           type="button"
-          disabled={!file || !validation?.canImport || importing || isRunning}
+          disabled={
+            !file ||
+            !validation?.canImport ||
+            importing ||
+            isRunning ||
+            (isImageUpload && !imageAllowed)
+          }
           onClick={() => void handleImport()}
           className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white hover:bg-red-500 disabled:opacity-60"
         >
@@ -309,6 +525,7 @@ export function BulkUploadPanel({
             </ul>
           )}
           {kind === "phones" &&
+            uploadMode === "data" &&
             validation.validCount === 0 &&
             validation.totalRows > 0 && (
               <p className="mt-3 rounded border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900">
@@ -369,6 +586,13 @@ export function BulkUploadPanel({
                   All rows were skipped because those device names already exist.
                   Use unique names (e.g. add a date suffix) or delete them under{" "}
                   <strong>Upload history</strong> first, then upload again.
+                </p>
+              )}
+              {isImageUpload && job.skipped > 0 && job.inserted === 0 && (
+                <p className="mt-2 flex items-start gap-1 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+                  <AlertTriangle size={14} className="mt-0.5 shrink-0" />
+                  Images were skipped — upload the matching records first so
+                  slugs exist, then retry.
                 </p>
               )}
               {kind === "advertisements" && job.inserted === 0 && job.skipped > 0 && (

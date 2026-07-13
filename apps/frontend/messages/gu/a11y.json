@@ -1,0 +1,9 @@
+{
+  "a11y": {
+    "skipToContent": "Skip to content",
+    "languageChanged": "Language changed to {language}",
+    "mainContent": "Main content",
+    "dismissToast": "Dismiss notification",
+    "closeDialog": "Close dialog"
+  }
+}

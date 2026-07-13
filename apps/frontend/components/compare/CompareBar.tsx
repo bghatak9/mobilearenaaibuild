@@ -1,14 +1,16 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { usePathname } from "next/navigation";
 import { X, Scale } from "lucide-react";
 import { MAX_COMPARE, useCompare } from "@/lib/compare-context";
 import { hideMobileChrome } from "@/lib/mobile-routes";
+import { useSiteLanguage } from "@/lib/site-language";
 
 export default function CompareBar() {
   const pathname = usePathname();
   const { items, remove, clear, compareHref } = useCompare();
+  const { t } = useSiteLanguage();
 
   if (hideMobileChrome(pathname)) return null;
   if (items.length === 0) return null;
@@ -18,7 +20,7 @@ export default function CompareBar() {
       id="arena-compare-bar"
       className="arena-mobile-bottom-offset fixed inset-x-0 z-[45] border-t border-white/10 bg-[var(--surface-card)]/95 backdrop-blur-xl lg:bottom-0"
     >
-      <div className="mx-auto flex max-w-7xl items-center gap-2 px-3 py-2 md:flex-wrap md:px-5 md:py-3">
+      <div className="flex w-full items-center gap-2 px-[var(--arena-content-gutter)] py-2 md:flex-wrap md:py-3">
         <span className="flex shrink-0 items-center gap-1.5 text-xs font-semibold text-white md:text-sm">
           <Scale size={15} />
           <span className="whitespace-nowrap">
@@ -39,7 +41,7 @@ export default function CompareBar() {
                 type="button"
                 onClick={() => remove(item.slug)}
                 className="text-zinc-400 hover:text-white"
-                aria-label={`Remove ${item.name}`}
+                aria-label={`${t("common.clear")} ${item.name}`}
               >
                 <X size={13} />
               </button>
@@ -53,7 +55,7 @@ export default function CompareBar() {
             onClick={clear}
             className="text-xs text-zinc-400 hover:text-white md:text-sm"
           >
-            Clear
+            {t("compare.clear")}
           </button>
 
           {compareHref ? (
@@ -61,11 +63,11 @@ export default function CompareBar() {
               href={compareHref}
               className="rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-indigo-500 md:px-4 md:py-2 md:text-sm"
             >
-              Compare
+              {t("card.compare")}
             </Link>
           ) : (
             <span className="rounded-lg bg-zinc-800 px-3 py-1.5 text-xs font-medium text-zinc-500 md:px-4 md:py-2 md:text-sm">
-              +1
+              {t("compare.barNeedOne")}
             </span>
           )}
         </div>

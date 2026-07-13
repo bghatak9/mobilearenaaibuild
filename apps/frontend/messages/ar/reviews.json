@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "المراجعات",
+    "loadError": "تعذر تحميل المراجعات. هل واجهة البرمجة تعمل؟",
+    "empty": "لا مراجعات بعد.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

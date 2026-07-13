@@ -1,9 +1,8 @@
+/* eslint-disable @typescript-eslint/no-require-imports */
 const path = require("path");
+const createNextIntlPlugin = require("next-intl/plugin");
 
-const backendUrl =
-  process.env.BACKEND_URL ||
-  process.env.INTERNAL_API_URL ||
-  "http://localhost:4000";
+const withNextIntl = createNextIntlPlugin("./i18n/request.ts");
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -12,18 +11,13 @@ const nextConfig = {
   allowedDevOrigins: ["192.168.7.117", "192.168.0.0/16", "10.0.0.0/8"],
   // Emit a self-contained server bundle for slim Docker images.
   output: "standalone",
-  // Monorepo: resolve deps from this app, not the repo root lockfile.
-  turbopack: {
-    root: path.join(__dirname),
+  experimental: {
+    proxyClientMaxBodySize: "50mb",
   },
-  async rewrites() {
-    return [
-      {
-        source: "/api/:path*",
-        destination: `${backendUrl}/:path*`,
-      },
-    ];
+  // Monorepo: Next is hoisted at the repo root.
+  turbopack: {
+    root: path.join(__dirname, "../.."),
   },
 };
 
-module.exports = nextConfig;
+module.exports = withNextIntl(nextConfig);

@@ -1,6 +1,6 @@
 "use client";
 
-import Script from "next/script";
+import { useEffect } from "react";
 import { useReportWebVitals } from "next/web-vitals";
 
 const ANALYTICS_SRC = process.env.NEXT_PUBLIC_ANALYTICS_SRC;
@@ -36,13 +36,21 @@ export default function Analytics() {
     }
   });
 
-  if (!ANALYTICS_SRC || !ANALYTICS_DOMAIN) return null;
+  useEffect(() => {
+    if (!ANALYTICS_SRC || !ANALYTICS_DOMAIN) return;
+    if (document.querySelector(`script[data-ma-analytics="1"]`)) return;
 
-  return (
-    <Script
-      src={ANALYTICS_SRC}
-      data-domain={ANALYTICS_DOMAIN}
-      strategy="afterInteractive"
-    />
-  );
+    const script = document.createElement("script");
+    script.src = ANALYTICS_SRC;
+    script.defer = true;
+    script.dataset.domain = ANALYTICS_DOMAIN;
+    script.dataset.maAnalytics = "1";
+    document.body.appendChild(script);
+
+    return () => {
+      script.remove();
+    };
+  }, []);
+
+  return null;
 }

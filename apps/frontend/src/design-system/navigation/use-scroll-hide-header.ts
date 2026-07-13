@@ -14,13 +14,10 @@ const HEADER_INTERACTION_MS = 1200;
 const TOP_CHROME_SELECTOR = "#arena-site-header, #arena-top-ad-bar";
 const HEADER_HOVER_SELECTOR = "#arena-site-header, #arena-top-ad-bar";
 
+/** Document scroll only — visualViewport.pageTop misreports on Android Chrome. */
 function readScrollY(): number {
   const el = document.scrollingElement ?? document.documentElement;
-  const viewportY =
-    typeof window !== "undefined" && window.visualViewport
-      ? window.visualViewport.pageTop
-      : 0;
-  return Math.max(0, el.scrollTop || window.scrollY || viewportY || 0);
+  return Math.max(0, el.scrollTop || window.scrollY || 0);
 }
 
 function chromeActive(): boolean {
@@ -213,6 +210,9 @@ export function useScrollHideHeader() {
     hoverObserver.observe(document.body, { childList: true, subtree: true });
 
     onScroll();
+    if (readScrollY() <= REVEAL_AT_Y) {
+      sync(false);
+    }
     window.addEventListener("scroll", onScroll, { passive: true });
     document.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("wheel", onWheel, { passive: true });
@@ -220,8 +220,11 @@ export function useScrollHideHeader() {
     document.addEventListener("touchmove", onTouchMove, { passive: true });
     document.addEventListener("touchend", onTouchEnd, { passive: true });
     document.addEventListener("touchcancel", onTouchEnd, { passive: true });
-    window.visualViewport?.addEventListener("scroll", onScroll);
-    window.visualViewport?.addEventListener("resize", onScroll);
+    const onViewportResize = () => {
+      window.dispatchEvent(new CustomEvent("arena:header-chrome-change"));
+      onScroll();
+    };
+    window.visualViewport?.addEventListener("resize", onViewportResize);
     window.addEventListener("arena:navigate", onNavigate);
     document.addEventListener("pointerdown", onHeaderInteraction, {
       passive: true,
@@ -247,8 +250,7 @@ export function useScrollHideHeader() {
       document.removeEventListener("touchmove", onTouchMove);
       document.removeEventListener("touchend", onTouchEnd);
       document.removeEventListener("touchcancel", onTouchEnd);
-      window.visualViewport?.removeEventListener("scroll", onScroll);
-      window.visualViewport?.removeEventListener("resize", onScroll);
+      window.visualViewport?.removeEventListener("resize", onViewportResize);
       window.removeEventListener("arena:navigate", onNavigate);
       document.removeEventListener("pointerdown", onHeaderInteraction, true);
       document.removeEventListener("click", onHeaderInteraction, true);

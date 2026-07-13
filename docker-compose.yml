@@ -21,6 +21,19 @@ services:
     ports:
       - "6379:6379"
 
+  meilisearch:
+    image: getmeili/meilisearch:v1.11
+    container_name: mobilearena_meili
+    restart: unless-stopped
+    environment:
+      MEILI_ENV: development
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-mobilearena_meili_dev_key}
+      MEILI_NO_ANALYTICS: "true"
+    ports:
+      - "7700:7700"
+    volumes:
+      - meili_data:/meili_data
+
   backend:
     build:
       context: ./apps/backend
@@ -29,10 +42,13 @@ services:
     depends_on:
       - postgres
       - redis
+      - meilisearch
     environment:
       DATABASE_URL: postgresql://mobilearena:mobilearena123@postgres:5432/mobilearena_db?schema=public
       JWT_SECRET: change-me-in-production
       REDIS_URL: redis://redis:6379
+      MEILI_HOST: http://meilisearch:7700
+      MEILI_MASTER_KEY: ${MEILI_MASTER_KEY:-mobilearena_meili_dev_key}
       SOCIAL_AUTH_DEV_MODE: ${SOCIAL_AUTH_DEV_MODE:-true}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       FACEBOOK_APP_ID: ${FACEBOOK_APP_ID:-}
@@ -57,3 +73,4 @@ services:
 
 volumes:
   postgres_data:
+  meili_data:

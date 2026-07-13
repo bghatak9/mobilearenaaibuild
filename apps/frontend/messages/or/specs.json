@@ -1,0 +1,61 @@
+{
+  "specs": {
+    "yes": "Yes",
+    "no": "No",
+    "categories": {
+      "overview": "Overview",
+      "software": "Software",
+      "performance": "Performance",
+      "display": "Display",
+      "camera": "Camera",
+      "battery": "Battery",
+      "connectivity": "Connectivity",
+      "durability": "Durability",
+      "design": "Design",
+      "lifecycle": "Lifecycle"
+    },
+    "labels": {
+      "price": "Launch price",
+      "rating": "Community rating",
+      "brand": "Brand",
+      "os": "Operating system",
+      "ram": "RAM",
+      "storage": "Storage",
+      "chipset": "Processor",
+      "gpu": "GPU",
+      "fabrication": "Fabrication",
+      "benchmark": "Benchmark score",
+      "displaySize": "Screen size",
+      "displayType": "Panel type",
+      "displayResolution": "Resolution",
+      "refreshRate": "Refresh rate",
+      "brightness": "Peak brightness",
+      "displayProtection": "Glass protection",
+      "mainCamera": "Main camera",
+      "cameraCount": "Camera modules",
+      "aperture": "Primary aperture",
+      "opticalZoom": "Optical zoom",
+      "ois": "OIS / stabilization",
+      "batteryCapacity": "Battery capacity",
+      "wiredCharging": "Wired charging",
+      "wirelessCharging": "Wireless charging",
+      "reverseCharging": "Reverse charging",
+      "fiveG": "5G support",
+      "nfc": "NFC",
+      "infrared": "Infrared",
+      "fingerprint": "Biometrics",
+      "waterproof": "Water resistance",
+      "weight": "Weight",
+      "dimensions": "Dimensions",
+      "announced": "Announced",
+      "released": "Released"
+    },
+    "ui": {
+      "specification": "Specification",
+      "pin": "Pin row",
+      "unpin": "Unpin row",
+      "collapseIdentical": "Hide identical specs",
+      "showIdentical": "Show identical specs"
+    }
+  }
+}

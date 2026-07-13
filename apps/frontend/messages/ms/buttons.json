@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Log masuk",
+    "myProfile": "Profil saya",
+    "notifications": "Pemberitahuan",
+    "favorites": "Kegemaran",
+    "search": "Cari",
+    "openMenu": "Buka menu",
+    "language": "Bahasa",
+    "theme": "Tukar tema",
+    "voiceSearch": "Carian suara",
+    "closeMenu": "Tutup menu",
+    "menu": "Menu"
+  },
+  "languagePicker": {
+    "search": "Cari bahasa…",
+    "close": "Tutup",
+    "favorites": "Kegemaran",
+    "recent": "Baru digunakan",
+    "popular": "Popular",
+    "all": "Semua bahasa ({count})",
+    "matches": "{count} padanan",
+    "empty": "Tiada bahasa dijumpai",
+    "addFavorite": "Tambah kegemaran",
+    "removeFavorite": "Buang kegemaran",
+    "changed": "Language changed to {language}"
+  }
+}

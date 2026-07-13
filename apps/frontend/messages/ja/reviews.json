@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "レビュー",
+    "loadError": "レビューを読み込めません。APIは稼働していますか？",
+    "empty": "まだレビューがありません。",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

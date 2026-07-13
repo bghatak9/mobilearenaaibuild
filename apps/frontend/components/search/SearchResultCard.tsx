@@ -10,6 +10,8 @@ import type { PriceCurrency } from "@/features/phone-finder/types";
 import type { Device } from "@/lib/api";
 import { computeArenaScore } from "@/lib/arena-score";
 import { cn } from "@/design-system/utils/cn";
+import { BrandName } from "@/components/brands/BrandName";
+import { DeviceName } from "@/components/brands/DeviceName";
 
 function chipsetLabel(device: Device): string {
   const cpu = device.chipset?.cpu?.trim();
@@ -76,10 +78,14 @@ export function SearchResultCard({
         </span>
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-semibold text-[var(--text-primary)]">
-            {device.name}
+            <DeviceName name={device.name} brand={device.brand?.name} />
           </span>
           <span className="block truncate text-xs text-[var(--text-secondary)]">
-            {device.brand?.name ?? "Unknown brand"}
+            {device.brand?.name ? (
+              <BrandName name={device.brand.name} />
+            ) : (
+              "Unknown brand"
+            )}
           </span>
           <span className="mt-1 block truncate text-xs text-[var(--text-secondary)]">
             {chipsetLabel(device)}

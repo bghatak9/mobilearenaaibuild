@@ -1,5 +1,7 @@
 import type { Device } from "@/lib/api";
 
+import searchSynonyms from "@/config/i18n/search-synonyms.json";
+
 import {
   hasDisplayType,
   hasOis,
@@ -15,6 +17,21 @@ import {
 import { getStoredSearchLanguage, stopwordsForLanguage } from "./search-locale";
 import type { SearchLanguageCode } from "./search-locale";
 import type { PhoneFinderFilters, PriceCurrency } from "./types";
+
+const SYNONYMS = searchSynonyms as Record<string, string[]>;
+
+/** Expand a query token with multilingual synonyms (camera ↔ caméra ↔ ক্যামেরা). */
+function expandTokenSynonyms(token: string): string[] {
+  const t = token.toLowerCase();
+  const out = new Set<string>([t]);
+  for (const variants of Object.values(SYNONYMS)) {
+    const hit = variants.some((v) => v.toLowerCase() === t || v.toLowerCase().includes(t) || t.includes(v.toLowerCase()));
+    if (hit) {
+      for (const v of variants) out.add(v.toLowerCase());
+    }
+  }
+  return [...out];
+}
 
 export type SearchSuggestionKind =
   | "device"
@@ -39,6 +56,10 @@ export function buildDeviceHaystack(device: Device): string {
   const parts = [
     device.name,
     device.slug?.replace(/-/g, " "),
+    device.description,
+    device.seoTitle,
+    device.seoDescription,
+    device.keywords,
     device.brand?.name,
     device.manufacturer?.name,
     device.category?.name,
@@ -65,17 +86,23 @@ export function buildDeviceHaystack(device: Device): string {
     ...(device.cameras?.map((c) => `${c.megapixel}mp ${c.type}`) ?? []),
   ];
 
-  return parts
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+  // Index synonym expansions so English specs match localized queries.
+  const base = parts.filter(Boolean).join(" ").toLowerCase();
+  const extras: string[] = [];
+  for (const [canonical, variants] of Object.entries(SYNONYMS)) {
+    if (base.includes(canonical) || variants.some((v) => base.includes(v.toLowerCase()))) {
+      extras.push(...variants.map((v) => v.toLowerCase()));
+    }
+  }
+
+  return `${base} ${extras.join(" ")}`.trim();
 }
 
 function tokenizeQuery(text: string): string[] {
   return text
     .toLowerCase()
-    .split(/[\s,]+/)
-    .map((t) => t.replace(/[^\w.+<>:₹$]/g, ""))
+    .split(/[\s,]+/u)
+    .map((t) => t.replace(/[^\p{L}\p{N}.+<>:₹$]/gu, ""))
     .filter((t) => t.length > 0);
 }
 
@@ -84,7 +111,9 @@ function getMatchStopwords(lang?: SearchLanguageCode): Set<string> {
 }
 
 function tokenMatchesHaystack(hay: string, token: string): boolean {
-  if (hay.includes(token)) return true;
+  for (const variant of expandTokenSynonyms(token)) {
+    if (hay.includes(variant)) return true;
+  }
   if (token.endsWith("gb") && hay.includes(token.replace("gb", ""))) return true;
   if (/^\d+$/.test(token) && hay.includes(token)) return true;
   if (token.includes("snapdragon") && hay.includes("snapdragon")) return true;

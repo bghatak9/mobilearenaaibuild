@@ -22,7 +22,8 @@ export type AdminNavItemDef = {
     | "layout-dashboard"
     | "upload"
     | "megaphone"
-    | "revenue";
+    | "revenue"
+    | "languages";
 };
 
 /** Full nav catalogue; visibility is driven per-role below. */
@@ -80,6 +81,11 @@ export const ADMIN_NAV_CATALOG: AdminNavItemDef[] = [
     icon: "message-square",
   },
   {
+    label: "Translations",
+    href: "/admin/translations",
+    icon: "languages",
+  },
+  {
     label: "Dashboard",
     href: "/admin",
     icon: "layout-dashboard",
@@ -97,6 +103,7 @@ export const ROLE_NAV_HREFS: Record<UserRole, string[]> = {
     "/admin/roles",
     "/admin/metrics",
     "/admin/admins/new",
+    "/admin/translations",
   ],
   ADMIN: [
     "/admin/import",
@@ -104,10 +111,22 @@ export const ROLE_NAV_HREFS: Record<UserRole, string[]> = {
     "/admin/news",
     "/admin/reviews",
     "/admin/comments",
+    "/admin/translations",
   ],
-  EDITOR: ["/admin/import", "/admin/articles", "/admin/news", "/admin/reviews"],
-  AUTHOR: ["/admin/import", "/admin/articles", "/admin/reviews"],
-  MODERATOR: ["/admin/comments"],
+  EDITOR: [
+    "/admin/import",
+    "/admin/articles",
+    "/admin/news",
+    "/admin/reviews",
+    "/admin/translations",
+  ],
+  AUTHOR: [
+    "/admin/import",
+    "/admin/articles",
+    "/admin/reviews",
+    "/admin/translations",
+  ],
+  MODERATOR: ["/admin/import", "/admin/comments"],
   USER: [],
 };
 

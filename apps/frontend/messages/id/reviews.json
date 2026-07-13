@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "Ulasan",
+    "loadError": "Gagal memuat ulasan. Apakah API berjalan?",
+    "empty": "Belum ada ulasan.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

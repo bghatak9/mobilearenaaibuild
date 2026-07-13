@@ -1,12 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Search, X } from "lucide-react";
+import { useLocale, useTranslations } from "next-intl";
 
-import { DeviceQuickViewModal } from "@/components/search/DeviceQuickViewModal";
 import { SearchLanguageSelect } from "@/components/search/SearchLanguageSelect";
 import { SearchResultCard } from "@/components/search/SearchResultCard";
 
@@ -18,6 +18,7 @@ import {
   labelForSearchItem,
   loadGlobalSearchDevices,
   refreshGlobalSearchDevices,
+  resetGlobalSearchDeviceCache,
   type GlobalSearchItem,
 } from "@/features/phone-finder/global-search";
 import { highlightParts } from "@/features/phone-finder/search-engine";
@@ -39,16 +40,19 @@ import {
   addWishlistItem,
   clearSearchHistory,
   getDevices,
+  getNews,
   getSearchHistory,
   getWishlist,
   removeSearchHistory,
   removeWishlistItem,
   type Device,
+  type NewsArticle,
 } from "@/lib/api";
 import { useCompare } from "@/lib/compare-context";
 import { usePreparedVoiceSearch } from "@/lib/use-prepared-voice-search";
 import { useSearchLanguage } from "@/lib/use-search-language";
 import { useSiteAuth } from "@/lib/site-auth";
+import { displayBrandName } from "@/lib/brand-visuals";
 import { resolveVisitorGeo } from "@/lib/visitor-geo";
 import { cn } from "@/design-system/utils/cn";
 
@@ -69,17 +73,19 @@ function readRecent(): RecentDevice[] {
 function sectionTitleForItem(item: GlobalSearchItem, hasQuery: boolean): string | null {
   switch (item.kind) {
     case "history":
-      return "Recent searches";
+      return "recentSearches";
     case "trending":
-      return "Trending today";
+      return "trendingToday";
     case "recent":
-      return "Recently viewed";
+      return "recentlyViewed";
     case "action":
-      return "Quick links";
+      return "quickLinks";
     case "suggestion":
-      return hasQuery ? "Suggestions" : null;
+      return hasQuery ? "suggestions" : null;
     case "device":
-      return hasQuery ? "Matching phones" : null;
+      return hasQuery ? "devices" : null;
+    case "news":
+      return hasQuery ? "newsArticles" : null;
     default:
       return null;
   }
@@ -105,6 +111,8 @@ function searchQueryForItem(item: GlobalSearchItem, query: string): string | nul
       return item.suggestion.query;
     case "device":
       return query.trim() || item.device.name;
+    case "news":
+      return query.trim() || item.article.title;
     default:
       return null;
   }
@@ -144,6 +152,8 @@ export function GlobalSearchPalette({
   onVoiceStarted?: () => void;
 }) {
   const router = useRouter();
+  const locale = useLocale();
+  const tSearch = useTranslations("search");
   const compare = useCompare();
   const { user } = useSiteAuth();
   const { language: searchLanguage } = useSearchLanguage();
@@ -153,6 +163,7 @@ export function GlobalSearchPalette({
   const [mounted, setMounted] = useState(false);
   const [query, setQuery] = useState(initialQuery);
   const [devices, setDevices] = useState<Device[]>([]);
+  const [newsHits, setNewsHits] = useState<NewsArticle[]>([]);
   const [loading, setLoading] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
@@ -160,12 +171,16 @@ export function GlobalSearchPalette({
   const [currency, setCurrency] = useState<PriceCurrency>("USD");
   const [isMobile, setIsMobile] = useState(false);
   const [wishlistBusy, setWishlistBusy] = useState<number | null>(null);
-  const [quickViewDevice, setQuickViewDevice] = useState<Device | null>(null);
   const [filterPatch, setFilterPatch] = useState<Partial<PhoneFinderFilters> | undefined>();
 
   useEffect(() => {
     setMounted(true);
   }, []);
+
+  const fetchDevices = useCallback(
+    () => getDevices(undefined, locale),
+    [locale],
+  );
 
   const loadHistory = useCallback(async () => {
     const local = getLocalSearchHistory();
@@ -186,10 +201,11 @@ export function GlobalSearchPalette({
     setQuery(initialQuery);
     setActiveIndex(0);
     setLoading(true);
-    void loadGlobalSearchDevices(getDevices)
+    resetGlobalSearchDeviceCache();
+    void loadGlobalSearchDevices(fetchDevices, locale)
       .then((cached) => {
         setDevices(cached);
-        return refreshGlobalSearchDevices(getDevices);
+        return refreshGlobalSearchDevices(fetchDevices, locale);
       })
       .then(setDevices)
       .catch(() => setDevices([]))
@@ -206,7 +222,30 @@ export function GlobalSearchPalette({
       setWishlistIds(new Set());
     }
     requestAnimationFrame(() => inputRef.current?.focus());
-  }, [open, initialQuery, loadHistory, loggedIn]);
+  }, [open, initialQuery, loadHistory, loggedIn, fetchDevices, locale]);
+
+  useEffect(() => {
+    if (!open) return;
+    const q = query.trim();
+    if (q.length < 2) {
+      setNewsHits([]);
+      return;
+    }
+    let active = true;
+    const timer = window.setTimeout(() => {
+      void getNews({ locale, search: q })
+        .then((articles) => {
+          if (active) setNewsHits(articles.slice(0, 6));
+        })
+        .catch(() => {
+          if (active) setNewsHits([]);
+        });
+    }, 220);
+    return () => {
+      active = false;
+      window.clearTimeout(timer);
+    };
+  }, [open, query, locale]);
 
   useEffect(() => {
     if (!open) return;
@@ -237,8 +276,9 @@ export function GlobalSearchPalette({
         currency,
         isMobile,
         filterPatch,
+        news: newsHits,
       }),
-    [query, devices, history, recentDevices, currency, isMobile, filterPatch, searchLanguage],
+    [query, devices, history, recentDevices, currency, isMobile, filterPatch, searchLanguage, newsHits],
   );
 
   const hasQuery = Boolean(query.trim());
@@ -348,7 +388,6 @@ export function GlobalSearchPalette({
     if (!open) {
       voice.stop();
       voice.clearStatus();
-      setQuickViewDevice(null);
       setFilterPatch(undefined);
     }
   }, [open, voice]);
@@ -454,7 +493,7 @@ export function GlobalSearchPalette({
                 void submitQuery();
               }
             }}
-            placeholder="Search phones, brands, specs…"
+            placeholder={tSearch("placeholder")}
             className="min-h-[44px] min-w-0 flex-1 bg-transparent text-base text-[var(--text-primary)] outline-none placeholder:text-[var(--text-secondary)]"
             autoComplete="off"
           />
@@ -485,32 +524,53 @@ export function GlobalSearchPalette({
 
         <div className="flex-1 overflow-y-auto overscroll-contain px-2 py-2 sm:px-3">
           {loading ? (
-            <p className="px-3 py-6 text-sm text-[var(--text-secondary)]">Loading catalog…</p>
+            <p className="px-3 py-6 text-sm text-[var(--text-secondary)]">{tSearch("loadingCatalog")}</p>
           ) : items.length === 0 ? (
             <p className="px-3 py-6 text-sm text-[var(--text-secondary)]">
-              No matches — press Enter to search Phone Finder
+              {tSearch("noMatches")}
             </p>
           ) : (
             <ul className="space-y-1">
               {items.map((item, index) => {
-                const label = labelForSearchItem(item);
+                const rawLabel = labelForSearchItem(item);
+                const brandLabel =
+                  item.kind === "suggestion" && item.suggestion.kind === "brand"
+                    ? displayBrandName(rawLabel)
+                    : item.kind === "device" && item.device.brand?.name
+                      ? displayBrandName(item.device.brand.name)
+                      : item.kind === "suggestion" &&
+                          item.suggestion.kind === "device" &&
+                          item.suggestion.sublabel
+                        ? displayBrandName(item.suggestion.sublabel)
+                        : null;
+                const label =
+                  item.kind === "suggestion" && item.suggestion.kind === "brand"
+                    ? (brandLabel ?? rawLabel)
+                    : rawLabel;
                 const sublabel =
                   item.kind === "device"
-                    ? item.device.brand?.name
-                    : item.kind === "suggestion"
-                      ? item.suggestion.sublabel
+                    ? brandLabel
+                    : item.kind === "news"
+                      ? tSearch("news")
+                      : item.kind === "suggestion"
+                      ? item.suggestion.kind === "device"
+                        ? (brandLabel ?? item.suggestion.sublabel)
+                        : item.suggestion.sublabel
                       : item.kind === "history"
-                        ? "Recent search"
+                        ? tSearch("recentSearch")
                         : item.kind === "trending"
-                          ? "Trending today"
+                          ? tSearch("trendingToday")
                           : item.kind === "recent"
-                            ? "Recently viewed"
+                            ? tSearch("recentlyViewed")
                             : undefined;
-                const sectionHeader = shouldShowSectionHeader(
+                const sectionHeaderKey = shouldShowSectionHeader(
                   item,
                   index > 0 ? items[index - 1] : null,
                   hasQuery,
                 );
+                const sectionHeader = sectionHeaderKey
+                  ? tSearch(sectionHeaderKey as "recentSearches")
+                  : null;
 
                 return (
                   <li
@@ -546,7 +606,7 @@ export function GlobalSearchPalette({
                             name: item.device.name,
                           })
                         }
-                        onQuickView={() => setQuickViewDevice(item.device)}
+                        onQuickView={() => void navigateToItem(item)}
                       />
                     ) : (
                     <div
@@ -559,7 +619,7 @@ export function GlobalSearchPalette({
                     >
                       <button
                         type="button"
-                        className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-left"
+                        className="flex min-h-[44px] min-w-0 flex-1 items-center gap-3 px-3 py-2.5 text-start"
                         onMouseDown={(e) => e.preventDefault()}
                         onMouseEnter={() => setActiveIndex(index)}
                         onClick={() => void navigateToItem(item)}
@@ -586,7 +646,7 @@ export function GlobalSearchPalette({
                             e.stopPropagation();
                             void removeHistoryItem(item.id.replace(/^h-/, ""));
                           }}
-                          className="mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-white/10 hover:text-[var(--rose-alert)]"
+                          className="me-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[var(--text-secondary)] hover:bg-white/10 hover:text-[var(--rose-alert)]"
                           aria-label="Remove from history"
                         >
                           <X size={14} />
@@ -646,35 +706,5 @@ export function GlobalSearchPalette({
     </div>
   );
 
-  return createPortal(
-    <>
-      {palette}
-      <DeviceQuickViewModal
-        device={quickViewDevice}
-        currency={currency}
-        open={quickViewDevice != null}
-        onClose={() => setQuickViewDevice(null)}
-        inWishlist={quickViewDevice ? wishlistIds.has(quickViewDevice.id) : false}
-        wishlistBusy={quickViewDevice ? wishlistBusy === quickViewDevice.id : false}
-        inCompare={quickViewDevice ? compare.has(quickViewDevice.slug) : false}
-        compareDisabled={
-          quickViewDevice
-            ? compare.isFull && !compare.has(quickViewDevice.slug)
-            : false
-        }
-        onWishlist={() => {
-          if (quickViewDevice) void toggleWishlist(quickViewDevice);
-        }}
-        onCompare={() => {
-          if (!quickViewDevice) return;
-          compare.toggle({
-            id: quickViewDevice.id,
-            slug: quickViewDevice.slug,
-            name: quickViewDevice.name,
-          });
-        }}
-      />
-    </>,
-    document.body,
-  );
+  return createPortal(palette, document.body);
 }

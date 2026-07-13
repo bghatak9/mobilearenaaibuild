@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "เข้าสู่ระบบ",
+    "myProfile": "โปรไฟล์ของฉัน",
+    "notifications": "การแจ้งเตือน",
+    "favorites": "รายการโปรด",
+    "search": "ค้นหา",
+    "openMenu": "เปิดเมนู",
+    "language": "ภาษา",
+    "theme": "สลับธีม",
+    "voiceSearch": "ค้นหาด้วยเสียง",
+    "closeMenu": "ปิดเมนู",
+    "menu": "เมนู"
+  },
+  "languagePicker": {
+    "search": "ค้นหาภาษา…",
+    "close": "ปิด",
+    "favorites": "รายการโปรด",
+    "recent": "ใช้ล่าสุด",
+    "popular": "ยอดนิยม",
+    "all": "ทุกภาษา ({count})",
+    "matches": "{count} รายการ",
+    "empty": "ไม่พบภาษา",
+    "addFavorite": "เพิ่มรายการโปรด",
+    "removeFavorite": "ลบรายการโปรด",
+    "changed": "Language changed to {language}"
+  }
+}

@@ -7,6 +7,7 @@ import {
 import { randomBytes } from 'crypto';
 
 import { PrismaService } from '../prisma/prisma.service';
+import { mailCopy } from '../i18n/mail-copy';
 
 const TOKEN_TTL_MS = 24 * 60 * 60 * 1000;
 
@@ -29,29 +30,30 @@ export class EmailVerificationService {
     return token;
   }
 
-  async verify(email: string, token: string) {
+  async verify(email: string, token: string, locale?: string) {
+    const copy = mailCopy(locale);
     const normalized = email.trim().toLowerCase();
     const user = await this.prisma.user.findUnique({
       where: { email: normalized },
     });
     if (!user) {
-      throw new UnauthorizedException('Invalid verification link');
+      throw new UnauthorizedException(copy.invalidVerification);
     }
     if (user.isVerified) {
-      return { message: 'Email already verified.' };
+      return { message: copy.emailVerified };
     }
 
     const record = await this.prisma.emailVerificationToken.findUnique({
       where: { userId: user.id },
     });
     if (!record || record.token !== token.trim()) {
-      throw new UnauthorizedException('Invalid verification link');
+      throw new UnauthorizedException(copy.invalidVerification);
     }
     if (record.expiresAt < new Date()) {
       await this.prisma.emailVerificationToken.delete({
         where: { userId: user.id },
       });
-      throw new UnauthorizedException('Verification link expired');
+      throw new UnauthorizedException(copy.invalidVerification);
     }
 
     await this.prisma.$transaction([
@@ -64,7 +66,7 @@ export class EmailVerificationService {
       }),
     ]);
 
-    return { message: 'Email verified successfully.' };
+    return { message: copy.emailVerified };
   }
 
   async resend(email: string) {

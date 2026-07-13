@@ -43,6 +43,7 @@ export type RecordNewsBatchInput = {
   inserted: number;
   skipped: number;
   newsIds: number[];
+  batchKind?: BulkImportKind;
 };
 
 export type RecordBrandBatchInput = {
@@ -54,6 +55,17 @@ export type RecordBrandBatchInput = {
   updated: number;
   skipped: number;
   brands: { id: number; slug: string; name: string }[];
+};
+
+export type RecordReviewBatchInput = {
+  fileName: string;
+  jobId?: string;
+  actor: ImportActor;
+  totalRows: number;
+  inserted: number;
+  skipped: number;
+  reviews: { id: number; slug: string; title: string }[];
+  batchKind?: BulkImportKind;
 };
 
 @Injectable()
@@ -122,7 +134,7 @@ export class ImportLifecycleService {
 
     const batch = await this.prisma.importBatch.create({
       data: {
-        kind: 'news',
+        kind: input.batchKind ?? 'news',
         fileName: input.fileName,
         jobId: input.jobId ?? null,
         totalRows: input.totalRows,
@@ -181,6 +193,43 @@ export class ImportLifecycleService {
             entitySlug: brand.slug,
             entityName: brand.name,
             brandId: brand.id,
+          })),
+        },
+      },
+      include: {
+        importedBy: { select: { id: true, email: true, role: true } },
+        _count: { select: { items: true } },
+      },
+    });
+
+    await this.audit.log({
+      userId: input.actor.userId,
+      action: 'import.batch.created',
+      entity: 'ImportBatch',
+      entityId: String(batch.id),
+    });
+
+    return batch;
+  }
+
+  async recordReviewBatch(input: RecordReviewBatchInput) {
+    if (input.reviews.length === 0) return null;
+
+    const batch = await this.prisma.importBatch.create({
+      data: {
+        kind: input.batchKind ?? 'reviews',
+        fileName: input.fileName,
+        jobId: input.jobId ?? null,
+        totalRows: input.totalRows,
+        inserted: input.inserted,
+        skipped: input.skipped,
+        importedById: input.actor.userId,
+        items: {
+          create: input.reviews.map((review) => ({
+            entityType: 'review',
+            entityId: review.id,
+            entitySlug: review.slug,
+            entityName: review.title,
           })),
         },
       },
@@ -304,6 +353,15 @@ export class ImportLifecycleService {
                 id: true,
                 name: true,
                 slug: true,
+                deletedAt: true,
+              },
+            },
+            news: {
+              select: {
+                id: true,
+                title: true,
+                slug: true,
+                status: true,
                 deletedAt: true,
               },
             },

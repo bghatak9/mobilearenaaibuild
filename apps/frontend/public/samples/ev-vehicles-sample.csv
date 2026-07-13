@@ -1,0 +1,6 @@
+name,category,brand,model_year,range_km,battery_kwh,price,currency,status,description
+Tesla Model 3,cars,Tesla,2024,576,75,42990,USD,available,Compact electric sedan
+Ford F-150 Lightning,trucks,Ford,2024,515,131,54995,USD,available,Electric pickup truck
+Rivian R1S,suvs,Rivian,2024,640,135,78000,USD,available,Three-row electric SUV
+Mercedes eSprinter,vans,Mercedes-Benz,2024,350,113,74990,USD,available,Commercial electric van
+Zero SR/F,bikes,Zero,2024,220,18,22995,USD,available,Electric motorcycle

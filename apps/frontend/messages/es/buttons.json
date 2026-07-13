@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Iniciar sesión",
+    "myProfile": "Mi perfil",
+    "notifications": "Notificaciones",
+    "favorites": "Favoritos",
+    "search": "Buscar",
+    "openMenu": "Abrir menú",
+    "language": "Idioma",
+    "theme": "Cambiar tema",
+    "voiceSearch": "Búsqueda por voz",
+    "closeMenu": "Cerrar menú",
+    "menu": "Menú"
+  },
+  "languagePicker": {
+    "search": "Buscar idioma…",
+    "close": "Cerrar",
+    "favorites": "Favoritos",
+    "recent": "Usados recientemente",
+    "popular": "Populares",
+    "all": "Todos los idiomas ({count})",
+    "matches": "{count} coincidencias",
+    "empty": "No se encontraron idiomas",
+    "addFavorite": "Añadir favorito",
+    "removeFavorite": "Quitar favorito",
+    "changed": "Language changed to {language}"
+  }
+}

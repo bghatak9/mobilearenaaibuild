@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import type { ComponentPropsWithoutRef } from "react";
 
 import type { BrandSummary } from "@/lib/api";
-import { displayBrandName, getBrandVisual } from "@/lib/brand-visuals";
+import { getBrandVisual } from "@/lib/brand-visuals";
+import { localizeBrandName } from "@/features/i18n";
 import { cn } from "@/design-system/utils/cn";
+import { useSiteLanguage } from "@/lib/site-language";
 
 type BrandChipSize = "sm" | "md" | "lg";
 
@@ -107,7 +109,8 @@ export function BrandChip({
 }: BrandChipProps) {
   const visual = getBrandVisual(brand);
   const styles = sizeStyles[size];
-  const label = displayBrandName(brand.name);
+  const { t, resolved } = useSiteLanguage();
+  const label = localizeBrandName(brand.name, resolved);
   const isFilter = variant === "filter";
 
   const chipClass = cn(
@@ -127,7 +130,7 @@ export function BrandChip({
       <span className="min-w-0 flex-1 text-left leading-tight">
         <span
           className={cn(
-            "block font-bold tracking-tight",
+            "arena-brand-name notranslate block font-bold tracking-tight",
             isFilter ? "text-xs" : styles.text,
             isFilter
               ? active
@@ -135,6 +138,7 @@ export function BrandChip({
                 : "text-[var(--text-primary)]"
               : undefined,
           )}
+          translate="no"
           style={!isFilter && !active ? { color: visual.accent } : undefined}
         >
           {label}
@@ -146,7 +150,7 @@ export function BrandChip({
               active ? "text-[var(--electric-cyan)]/80" : "text-[var(--text-secondary)]",
             )}
           >
-            Explore
+            {t("home.explore")}
           </span>
         )}
       </span>

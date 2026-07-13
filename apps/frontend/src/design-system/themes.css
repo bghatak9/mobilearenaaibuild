@@ -1,10 +1,9 @@
 /**
  * Titan Spectrum Design System v1.0
- * Dark luxury only — no light / Aurora Glass mode
  */
 
 :root,
-html {
+html.dark {
   /* ── Backgrounds ── */
   --bg-primary: #070b14;
   --bg-secondary: #0f172a;
@@ -115,11 +114,37 @@ html {
   --ma-brand-hover: #60a5fa;
 
   /* ── Layout shell (header + content align) ── */
-  --arena-content-max: 1120px;
-  --arena-content-gutter: clamp(0.75rem, 2.5vw, 1.5rem);
+  --arena-content-max: none;
+  --arena-content-gutter: clamp(1.25rem, 5vw, 3rem);
   --arena-desktop-header-h: 9.5rem;
 
   color-scheme: dark;
+}
+
+html:not(.dark) {
+  --bg-primary: #f4f6fa;
+  --bg-secondary: #e8ecf4;
+  --bg-tertiary: #dde3ee;
+  --surface-1: #ffffff;
+  --surface-2: #f1f5f9;
+  --surface-3: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #475569;
+  --text-muted: #64748b;
+  --border-soft: rgb(15 23 42 / 0.1);
+  --border-strong: rgb(15 23 42 / 0.16);
+  --border-subtle: var(--border-soft);
+  --border-muted: rgb(15 23 42 / 0.06);
+  --titan-shadow-ambient: 0 4px 24px rgb(15 23 42 / 0.08);
+  --titan-shadow-ambient-hover: 0 8px 32px rgb(15 23 42 / 0.12);
+  --card-shadow: var(--titan-shadow-ambient);
+  --card-shadow-hover: var(--titan-shadow-ambient-hover);
+  --background: var(--bg-primary);
+  --foreground: var(--text-primary);
+  --card: var(--surface-1);
+  --muted: var(--text-secondary);
+  --border: var(--border-soft);
+  color-scheme: light;
 }
 
 /* Gadget category accents */
@@ -160,10 +185,45 @@ html {
 }
 
 /* Nav route accents */
-[data-titan-accent="blue"] { --titan-accent: var(--blue); --accent: var(--blue); }
-[data-titan-accent="purple"] { --titan-accent: var(--purple); --accent: var(--purple); }
-[data-titan-accent="cyan"] { --titan-accent: var(--cyan); --accent: var(--cyan); }
-[data-titan-accent="green"] { --titan-accent: var(--green); --accent: var(--green); }
-[data-titan-accent="orange"] { --titan-accent: var(--orange); --accent: var(--orange); }
-[data-titan-accent="pink"] { --titan-accent: var(--pink); --accent: var(--pink); }
-[data-titan-accent="red"] { --titan-accent: var(--red); --accent: var(--red); }
+[data-titan-accent="blue"] {
+  --titan-accent: var(--blue);
+  --accent: var(--blue);
+  --titan-accent-soft: color-mix(in srgb, var(--blue) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--blue) 36%, transparent);
+}
+[data-titan-accent="purple"] {
+  --titan-accent: var(--purple);
+  --accent: var(--purple);
+  --titan-accent-soft: color-mix(in srgb, var(--purple) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--purple) 36%, transparent);
+}
+[data-titan-accent="cyan"] {
+  --titan-accent: var(--cyan);
+  --accent: var(--cyan);
+  --titan-accent-soft: color-mix(in srgb, var(--cyan) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--cyan) 36%, transparent);
+}
+[data-titan-accent="green"] {
+  --titan-accent: var(--green);
+  --accent: var(--green);
+  --titan-accent-soft: color-mix(in srgb, var(--green) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--green) 36%, transparent);
+}
+[data-titan-accent="orange"] {
+  --titan-accent: var(--orange);
+  --accent: var(--orange);
+  --titan-accent-soft: color-mix(in srgb, var(--orange) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--orange) 36%, transparent);
+}
+[data-titan-accent="pink"] {
+  --titan-accent: var(--pink);
+  --accent: var(--pink);
+  --titan-accent-soft: color-mix(in srgb, var(--pink) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--pink) 36%, transparent);
+}
+[data-titan-accent="red"] {
+  --titan-accent: var(--red);
+  --accent: var(--red);
+  --titan-accent-soft: color-mix(in srgb, var(--red) 14%, transparent);
+  --titan-accent-border: color-mix(in srgb, var(--red) 36%, transparent);
+}

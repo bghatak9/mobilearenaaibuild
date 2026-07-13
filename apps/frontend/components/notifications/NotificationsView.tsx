@@ -1,5 +1,6 @@
 "use client";
 
+import { Link } from "@/i18n/navigation";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useState } from "react";
 import {
@@ -16,14 +17,25 @@ import type { LucideIcon } from "lucide-react";
 
 import { SpectrumPanel } from "@/design-system/panels/SpectrumPanel";
 import { Skeleton } from "@/design-system/feedback/Skeleton";
+import { SwipePagedList } from "@/components/ui/SwipePagedList";
 import {
   clearAllNotifications,
   deleteNotification,
   getProfileNotifications,
+  getPublicNotifications,
   markAllNotificationsRead,
   markNotificationRead,
-  type ProfileNotification,
 } from "@/lib/api";
+import {
+  dismissPublicNotification,
+  markAllPublicNotificationsRead,
+  markPublicNotificationRead,
+  mergeInboxNotifications,
+  publicNotificationsToInbox,
+  type InboxNotification,
+} from "@/lib/notification-inbox";
+import { formatDateTime, formatRelativeDate } from "@/lib/format-datetime";
+import { useSiteAuth } from "@/lib/site-auth";
 
 type NotificationView = "all" | "replies";
 
@@ -32,7 +44,7 @@ function normalizeNotificationLink(link: string): string {
   return link.startsWith("/") ? link : `/${link}`;
 }
 
-function notificationDestination(n: ProfileNotification): string | null {
+function notificationDestination(n: InboxNotification): string | null {
   if (!n.link) return null;
   const href = normalizeNotificationLink(n.link);
   if (
@@ -46,6 +58,16 @@ function notificationDestination(n: ProfileNotification): string | null {
 
 function isExternalLink(link: string): boolean {
   return /^https?:\/\//i.test(link);
+}
+
+function publicIdFromInbox(item: InboxNotification): string | null {
+  if (item.source !== "public") return null;
+  return item.id.replace(/^public:/, "");
+}
+
+function userIdFromInbox(item: InboxNotification): number | null {
+  if (item.source !== "user" || item.userId == null) return null;
+  return item.userId;
 }
 
 type NotificationMeta = {
@@ -63,7 +85,8 @@ function notificationMeta(type: string): NotificationMeta {
         icon: MessageCircle,
         label: "Reply",
         iconClass: "bg-[var(--electric-cyan)]/15 text-[var(--electric-cyan)]",
-        chipClass: "border-[var(--electric-cyan)]/25 bg-[var(--electric-cyan)]/10 text-[var(--electric-cyan)]",
+        chipClass:
+          "border-[var(--electric-cyan)]/25 bg-[var(--electric-cyan)]/10 text-[var(--electric-cyan)]",
       };
     case "price_alert":
     case "alert":
@@ -71,40 +94,34 @@ function notificationMeta(type: string): NotificationMeta {
         icon: Tag,
         label: "Alert",
         iconClass: "bg-[var(--premium-gold)]/15 text-[var(--premium-gold)]",
-        chipClass: "border-[var(--premium-gold)]/25 bg-[var(--premium-gold)]/10 text-[var(--premium-gold)]",
+        chipClass:
+          "border-[var(--premium-gold)]/25 bg-[var(--premium-gold)]/10 text-[var(--premium-gold)]",
+      };
+    case "news":
+    case "featured":
+      return {
+        icon: Bell,
+        label: "News",
+        iconClass: "bg-[var(--orange)]/15 text-[var(--orange)]",
+        chipClass: "border-[var(--orange)]/25 bg-[var(--orange)]/10 text-[var(--orange)]",
       };
     case "system":
       return {
         icon: Sparkles,
         label: "Welcome",
         iconClass: "bg-[var(--aurora-purple)]/15 text-[var(--aurora-purple)]",
-        chipClass: "border-[var(--aurora-purple)]/25 bg-[var(--aurora-purple)]/10 text-[var(--aurora-purple)]",
+        chipClass:
+          "border-[var(--aurora-purple)]/25 bg-[var(--aurora-purple)]/10 text-[var(--aurora-purple)]",
       };
     default:
       return {
         icon: Bell,
         label: "Update",
         iconClass: "bg-[var(--arena-blue)]/15 text-[var(--arena-blue)]",
-        chipClass: "border-[var(--arena-blue)]/25 bg-[var(--arena-blue)]/10 text-[var(--arena-blue)]",
+        chipClass:
+          "border-[var(--arena-blue)]/25 bg-[var(--arena-blue)]/10 text-[var(--arena-blue)]",
       };
   }
-}
-
-function formatWhen(iso: string): string {
-  const date = new Date(iso);
-  const diffMs = Date.now() - date.getTime();
-  const mins = Math.floor(diffMs / 60_000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString(undefined, {
-    month: "short",
-    day: "numeric",
-    year: date.getFullYear() !== new Date().getFullYear() ? "numeric" : undefined,
-  });
 }
 
 type NotificationsViewProps = {
@@ -113,27 +130,51 @@ type NotificationsViewProps = {
 
 export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}) {
   const router = useRouter();
+  const { user } = useSiteAuth();
   const [view, setView] = useState<NotificationView>("all");
-  const [items, setItems] = useState<ProfileNotification[]>([]);
+  const [items, setItems] = useState<InboxNotification[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string | null>(null);
-  const [busyId, setBusyId] = useState<number | "all" | null>(null);
+  const [busyId, setBusyId] = useState<string | "all" | null>(null);
 
   const loadNotifications = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const data = await getProfileNotifications(
-        view === "replies" ? { scope: "replies" } : undefined,
-      );
-      setItems(data);
+      const publicRaw = await getPublicNotifications();
+      const publicItems = publicNotificationsToInbox(publicRaw);
+
+      if (user) {
+        const userRaw = await getProfileNotifications(
+          view === "replies" ? { scope: "replies" } : undefined,
+        );
+        const userItems: InboxNotification[] = userRaw.map((n) => ({
+          id: `user:${n.id}`,
+          source: "user",
+          userId: n.id,
+          type: n.type,
+          title: n.title,
+          body: n.body,
+          read: n.read,
+          link: n.link,
+          createdAt: n.createdAt,
+        }));
+
+        const merged =
+          view === "replies"
+            ? userItems
+            : mergeInboxNotifications(publicItems, userItems);
+        setItems(merged);
+      } else {
+        setItems(view === "replies" ? [] : publicItems);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load notifications");
     } finally {
       setLoading(false);
     }
-  }, [view]);
+  }, [user, view]);
 
   useEffect(() => {
     void loadNotifications();
@@ -143,12 +184,29 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
     onInboxChange?.();
   }
 
-  async function markRead(n: ProfileNotification) {
+  function updateItem(id: string, patch: Partial<InboxNotification>) {
+    setItems((prev) => prev.map((x) => (x.id === id ? { ...x, ...patch } : x)));
+  }
+
+  async function markRead(n: InboxNotification) {
     if (n.read) return;
     setActionError(null);
+
+    if (n.source === "public") {
+      const publicId = publicIdFromInbox(n);
+      if (!publicId) return;
+      markPublicNotificationRead(publicId);
+      updateItem(n.id, { read: true });
+      notifyInboxChange();
+      return;
+    }
+
+    const userId = userIdFromInbox(n);
+    if (!userId) return;
+
     try {
-      const updated = await markNotificationRead(n.id);
-      setItems((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+      const updated = await markNotificationRead(userId);
+      updateItem(n.id, { read: updated.read });
       notifyInboxChange();
     } catch (err) {
       setActionError(
@@ -161,7 +219,16 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
     setBusyId("all");
     setActionError(null);
     try {
-      await markAllNotificationsRead(view === "replies" ? "replies" : "all");
+      const publicIds = items
+        .filter((item) => item.source === "public")
+        .map((item) => publicIdFromInbox(item))
+        .filter((id): id is string => Boolean(id));
+      markAllPublicNotificationsRead(publicIds);
+
+      if (user) {
+        await markAllNotificationsRead(view === "replies" ? "replies" : "all");
+      }
+
       setItems((prev) => prev.map((x) => ({ ...x, read: true })));
       notifyInboxChange();
     } catch (err) {
@@ -173,12 +240,22 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
     }
   }
 
-  async function deleteOne(id: number) {
-    setBusyId(id);
+  async function deleteOne(item: InboxNotification) {
+    setBusyId(item.id);
     setActionError(null);
     try {
-      await deleteNotification(id);
-      setItems((prev) => prev.filter((x) => x.id !== id));
+      if (item.source === "public") {
+        const publicId = publicIdFromInbox(item);
+        if (publicId) dismissPublicNotification(publicId);
+        setItems((prev) => prev.filter((x) => x.id !== item.id));
+        notifyInboxChange();
+        return;
+      }
+
+      const userId = userIdFromInbox(item);
+      if (!userId) return;
+      await deleteNotification(userId);
+      setItems((prev) => prev.filter((x) => x.id !== item.id));
       notifyInboxChange();
     } catch (err) {
       setActionError(
@@ -195,7 +272,16 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
     setBusyId("all");
     setActionError(null);
     try {
-      await clearAllNotifications();
+      const publicIds = items
+        .filter((item) => item.source === "public")
+        .map((item) => publicIdFromInbox(item))
+        .filter((id): id is string => Boolean(id));
+      for (const id of publicIds) dismissPublicNotification(id);
+
+      if (user) {
+        await clearAllNotifications();
+      }
+
       setItems([]);
       notifyInboxChange();
     } catch (err) {
@@ -207,22 +293,11 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
     }
   }
 
-  async function openNotification(n: ProfileNotification) {
+  async function openNotification(n: InboxNotification) {
     const href = notificationDestination(n);
     if (!href) return;
     setActionError(null);
-
-    if (!n.read) {
-      try {
-        const updated = await markNotificationRead(n.id);
-        setItems((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
-        notifyInboxChange();
-      } catch (err) {
-        setActionError(
-          err instanceof Error ? err.message : "Failed to mark notification as read",
-        );
-      }
-    }
+    await markRead(n);
 
     if (isExternalLink(href)) {
       window.location.assign(href);
@@ -243,9 +318,7 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
 
   if (error) {
     return (
-      <SpectrumPanel className="p-8 text-center text-red-400">
-        {error}
-      </SpectrumPanel>
+      <SpectrumPanel className="p-8 text-center text-red-400">{error}</SpectrumPanel>
     );
   }
 
@@ -264,7 +337,9 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
               Notifications
             </h1>
             <p className="mt-2 max-w-xl text-sm text-[var(--text-secondary)]">
-              Stay updated when someone replies or when alerts trigger.
+              {user
+                ? "Site updates, replies, and personal alerts in one place."
+                : "Site updates and news for everyone. Sign in for reply and price alerts."}
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
@@ -279,6 +354,17 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
           </div>
         </div>
       </header>
+
+      {!user && (
+        <SpectrumPanel className="mb-4 flex flex-wrap items-center justify-between gap-3 p-4">
+          <p className="text-sm text-[var(--text-secondary)]">
+            Sign in to get reply, compare, and price-alert notifications.
+          </p>
+          <Link href="/login?next=%2Fnotifications" className="arena-btn-primary text-xs">
+            Sign in
+          </Link>
+        </SpectrumPanel>
+      )}
 
       <div className="mb-4 flex flex-wrap gap-2">
         {(
@@ -342,18 +428,25 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
             All caught up
           </h2>
           <p className="mt-2 max-w-sm text-sm text-[var(--text-secondary)]">
-            {view === "replies"
-              ? "No reply or alert notifications yet."
-              : "No notifications yet. Replies, price alerts, and updates will show up here."}
+            {!user && view === "replies"
+              ? "Reply and price alerts are available after you sign in."
+              : view === "replies"
+                ? "No reply or alert notifications yet."
+                : "No notifications yet. Site updates and news will appear here."}
           </p>
         </SpectrumPanel>
       ) : (
-        <ul className="space-y-3">
-          {items.map((n) => {
+        <SwipePagedList
+          items={items}
+          getKey={(n) => n.id}
+          as="ul"
+          wrapperClassName="space-y-3"
+          listClassName="space-y-3"
+          renderItem={(n) => {
             const meta = notificationMeta(n.type);
             const Icon = meta.icon;
             return (
-              <li key={n.id}>
+              <li>
                 <SpectrumPanel
                   className={`group relative overflow-hidden p-4 transition duration-200 sm:p-5 ${
                     !n.read
@@ -377,6 +470,11 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
                         >
                           {meta.label}
                         </span>
+                        {n.source === "public" && (
+                          <span className="rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--text-muted)]">
+                            Everyone
+                          </span>
+                        )}
                         {!n.read && (
                           <span className="rounded-full bg-[var(--electric-cyan)] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[var(--dark-space)]">
                             New
@@ -385,9 +483,9 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
                         <time
                           className="text-xs text-[var(--text-secondary)]"
                           dateTime={n.createdAt}
-                          title={new Date(n.createdAt).toLocaleString()}
+                          title={formatDateTime(n.createdAt)}
                         >
-                          {formatWhen(n.createdAt)}
+                          {formatRelativeDate(n.createdAt)}
                         </time>
                       </div>
                       <p className="mt-2 font-semibold text-[var(--text-primary)]">
@@ -420,7 +518,7 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
                         <button
                           type="button"
                           disabled={busyId === n.id}
-                          onClick={() => void deleteOne(n.id)}
+                          onClick={() => void deleteOne(n)}
                           className="arena-btn-ghost inline-flex items-center gap-1 text-xs text-[var(--rose-alert)] opacity-70 transition hover:opacity-100 disabled:opacity-40"
                           aria-label={`Delete ${n.title}`}
                         >
@@ -433,8 +531,8 @@ export function NotificationsView({ onInboxChange }: NotificationsViewProps = {}
                 </SpectrumPanel>
               </li>
             );
-          })}
-        </ul>
+          }}
+        />
       )}
     </>
   );

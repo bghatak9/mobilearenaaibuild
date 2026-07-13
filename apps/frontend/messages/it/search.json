@@ -1,0 +1,20 @@
+{
+  "search": {
+    "placeholder": "Cerca telefoni, marche, specifiche…",
+    "recentSearches": "Recent searches",
+    "trendingToday": "Trending today",
+    "recentlyViewed": "Recently viewed",
+    "quickLinks": "Quick links",
+    "suggestions": "Suggestions",
+    "devices": "Devices",
+    "newsArticles": "News & articles",
+    "loadingCatalog": "Loading catalog…",
+    "noMatches": "No matches — press Enter to search Phone Finder",
+    "recentSearch": "Recent search",
+    "unknownBrand": "Unknown brand",
+    "listening": "Listening… speak now",
+    "voiceUnavailable": "Voice search isn’t available in this browser.",
+    "clearHistory": "Clear history",
+    "news": "News"
+  }
+}

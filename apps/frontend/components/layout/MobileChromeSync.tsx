@@ -20,11 +20,93 @@ const DESKTOP_CONTENT_GAP_PX = 0;
 const HIDDEN_HEADER_OFFSET_PX = 8;
 const HEADER_SELECTOR = "#arena-site-header";
 const NAV_ANCHOR_SELECTOR =
-  "#arena-site-header .arena-gradient-ring-nav, #arena-site-header .arena-mobile-site-header";
+  "#arena-site-header .arena-desktop-site-header, #arena-site-header .arena-mobile-site-header, #arena-site-header .arena-mobile-category-nav";
 const HEADER_TRANSITION_MS = 320;
 const NAV_PIN_MS = 1200;
 const DESKTOP_HEADER_MIN_PX = 152;
-const COMPACT_HEADER_MIN_PX = 96;
+/** Logo row + category nav + safe-area — never go below this when a top ad is present. */
+const COMPACT_HEADER_MIN_PX = 152;
+
+/** Layout height — immune to scroll position and transform glitches on Android Chrome. */
+function measureChromeBlockHeight(node: HTMLElement): number {
+  return Math.max(0, Math.ceil(node.offsetHeight));
+}
+
+function measureExpandedHeaderHeight(
+  header: HTMLElement | null,
+  desktopNav: boolean,
+): number {
+  if (!header) return 0;
+
+  if (desktopNav) {
+    const nav =
+      header.querySelector<HTMLElement>(".arena-desktop-site-header") ??
+      header.querySelector<HTMLElement>(".arena-floating-nav");
+    if (nav) return measureChromeBlockHeight(nav);
+  } else {
+    const mobileShell = header.querySelector<HTMLElement>(".arena-mobile-site-header");
+    if (mobileShell) return measureChromeBlockHeight(mobileShell);
+  }
+
+  return measureChromeBlockHeight(header);
+}
+
+function isTopChromeVisible(): boolean {
+  const html = document.documentElement;
+  return (
+    !html.hasAttribute("data-site-header-hidden") ||
+    html.hasAttribute("data-header-pinned") ||
+    html.hasAttribute("data-header-interacting") ||
+    html.hasAttribute("data-header-hovered")
+  );
+}
+
+function measureLiveChromeBottom(
+  header: HTMLElement | null,
+  topAd: HTMLElement | null,
+  topAdH: number,
+  desktopNav: boolean,
+): number {
+  if (!header || !topAd || topAdH <= 0 || !isTopChromeVisible()) return 0;
+
+  const adBottom = Math.ceil(topAd.getBoundingClientRect().bottom);
+  let headerBottom = 0;
+
+  if (desktopNav) {
+    const nav =
+      header.querySelector<HTMLElement>(".arena-desktop-site-header") ??
+      header.querySelector<HTMLElement>(".arena-floating-nav");
+    headerBottom = nav ? Math.ceil(nav.getBoundingClientRect().bottom) : 0;
+  } else {
+    const shell = header.querySelector<HTMLElement>(".arena-mobile-site-header");
+    headerBottom = shell ? Math.ceil(shell.getBoundingClientRect().bottom) : 0;
+  }
+
+  const fromHeader = headerBottom > 48 ? headerBottom + topAdH : 0;
+  const fromAd = adBottom > 48 ? adBottom : 0;
+
+  return Math.max(fromHeader, fromAd);
+}
+
+/** Keep spacer before page content — required for Android Chrome document flow. */
+function ensureChromeDomOrder() {
+  const spacer = document.getElementById("arena-chrome-spacer");
+  if (!spacer || document.body.firstChild === spacer) return;
+  document.body.insertBefore(spacer, document.body.firstChild);
+
+  const topAd = document.getElementById("arena-top-ad-bar");
+  if (topAd && topAd.previousSibling !== spacer) {
+    document.body.insertBefore(topAd, spacer.nextSibling);
+  }
+}
+
+function syncChromeSpacer() {
+  // Content offset uses .arena-mobile-main-pad padding — spacer stays collapsed.
+  const spacer = document.getElementById("arena-chrome-spacer");
+  if (spacer) {
+    spacer.style.removeProperty("height");
+  }
+}
 
 function isHeaderTarget(target: EventTarget | null): boolean {
   if (!(target instanceof Node)) return false;
@@ -42,13 +124,121 @@ export function MobileChromeSync() {
     let frame = 0;
     let transitionTimer = 0;
 
+    const updateExpandedHeaderCache = (
+      header: HTMLElement | null,
+      desktopNav: boolean,
+    ) => {
+      if (!header) return;
+
+      const measured = measureExpandedHeaderHeight(header, desktopNav);
+      if (measured > 48) {
+        expandedHeaderBottomRef.current = Math.max(
+          expandedHeaderBottomRef.current,
+          measured,
+        );
+      }
+    };
+
+    const applyFixedTopAdSpacing = (
+      header: HTMLElement | null,
+      topAd: HTMLElement | null,
+      topAdH: number,
+      desktopNav: boolean,
+    ) => {
+      updateExpandedHeaderCache(header, desktopNav);
+
+      const floor = desktopNav ? DESKTOP_HEADER_MIN_PX : COMPACT_HEADER_MIN_PX;
+      const cached = expandedHeaderBottomRef.current;
+      let headerBottom = Math.max(cached > 48 ? cached : 0, floor);
+      const calculatedChrome = headerBottom + topAdH;
+      const liveChrome = measureLiveChromeBottom(header, topAd, topAdH, desktopNav);
+      let chromeBottom =
+        liveChrome > 0 ? Math.max(calculatedChrome, liveChrome) : calculatedChrome;
+
+      if (liveChrome > calculatedChrome && topAdH > 0) {
+        const liveHeaderBottom = liveChrome - topAdH;
+        if (liveHeaderBottom > headerBottom) {
+          expandedHeaderBottomRef.current = Math.max(
+            expandedHeaderBottomRef.current,
+            liveHeaderBottom,
+          );
+          headerBottom = liveHeaderBottom;
+        }
+      }
+
+      chromeBottom = Math.max(chromeBottom, headerBottom + topAdH);
+
+      html.style.setProperty("--arena-header-offset", `${headerBottom}px`);
+      html.style.setProperty("--arena-top-ad-top", `${headerBottom}px`);
+      html.style.setProperty("--arena-mobile-header-h", `${headerBottom}px`);
+      html.style.setProperty("--arena-chrome-bottom", `${chromeBottom}px`);
+      html.style.setProperty("--arena-content-top-pad", `${chromeBottom}px`);
+      syncChromeSpacer();
+      applyChromeReady(true);
+      if (desktopNav) {
+        html.style.setProperty("--arena-desktop-header-h", `${headerBottom}px`);
+      } else {
+        html.style.setProperty("--arena-desktop-header-h", "9.5rem");
+      }
+    };
+
+    const applyExpandedCompactChrome = (
+      header: HTMLElement | null,
+      topAd: HTMLElement | null,
+    ) => {
+      const topAdH = readTopAdHeight(topAd);
+
+      if (topAdH > 0) {
+        html.style.setProperty("--arena-top-ad-h", `${topAdH}px`);
+        html.style.setProperty("--arena-top-banner-h", `${topAdH}px`);
+        html.setAttribute("data-has-top-ad", "true");
+      }
+
+      applyFixedTopAdSpacing(header, topAd, topAdH, false);
+    };
+
     const pinHeaderChrome = (durationMs = NAV_PIN_MS) => {
       headerInteractionUntilRef.current = Date.now() + durationMs;
-      html.setAttribute("data-header-pinned", "true");
       html.removeAttribute("data-site-header-hidden");
+      applyChromeReady(false);
+
+      const compactHeader = window.matchMedia(COMPACT_HEADER_MEDIA_QUERY).matches;
+      const desktopNav = window.matchMedia(DESKTOP_NAV_MEDIA_QUERY).matches;
+      const header = document.getElementById("arena-site-header");
+      const topAd = document.getElementById("arena-top-ad-bar");
+      const scrollY = readScrollY();
+
+      if (scrollY > 56) {
+        html.setAttribute("data-ad-suppressed-on-pin", "true");
+      } else {
+        html.removeAttribute("data-ad-suppressed-on-pin");
+      }
+
+      const pinSpacing = () => {
+        if (!topAd) return;
+        const topAdH = readTopAdHeight(topAd);
+        if (topAdH <= 0) return;
+        applyFixedTopAdSpacing(header, topAd, topAdH, desktopNav);
+      };
+
+      // Apply spacing BEFORE revealing the ad via data-header-pinned.
+      pinSpacing();
+      html.setAttribute("data-header-pinned", "true");
+      html.setAttribute("data-header-interacting", "true");
+
+      requestAnimationFrame(() => {
+        pinSpacing();
+        requestAnimationFrame(() => {
+          pinSpacing();
+          applyChromeReady(true);
+        });
+      });
+
       window.clearTimeout(transitionTimer);
       transitionTimer = window.setTimeout(() => {
         html.removeAttribute("data-header-pinned");
+        html.removeAttribute("data-header-interacting");
+        html.removeAttribute("data-ad-suppressed-on-pin");
         schedule();
       }, durationMs);
       schedule();
@@ -72,8 +262,11 @@ export function MobileChromeSync() {
       if (!header) return expandedHeaderBottomRef.current;
       const measured = Math.max(0, Math.ceil(header.getBoundingClientRect().bottom));
       if (measured > 48) {
-        expandedHeaderBottomRef.current = measured;
-        return measured;
+        expandedHeaderBottomRef.current = Math.max(
+          expandedHeaderBottomRef.current,
+          measured,
+        );
+        return expandedHeaderBottomRef.current;
       }
       return expandedHeaderBottomRef.current;
     };
@@ -83,6 +276,31 @@ export function MobileChromeSync() {
       const raw = getComputedStyle(topAd).getPropertyValue("--arena-top-banner-h").trim();
       const parsed = Number.parseFloat(raw);
       return Number.isFinite(parsed) && parsed > 0 ? parsed : 0;
+    };
+
+    const readTopAdHeight = (topAd: HTMLElement | null): number => {
+      const fromAd = readBannerDesignHeight(topAd);
+      const fromHtml = Number.parseFloat(
+        getComputedStyle(html).getPropertyValue("--arena-top-banner-h").trim(),
+      );
+      const fromHtmlValid = Number.isFinite(fromHtml) && fromHtml > 0 ? fromHtml : 0;
+      const measured = topAd
+        ? Math.max(0, Math.ceil(topAd.getBoundingClientRect().height))
+        : 0;
+      return Math.max(fromAd, fromHtmlValid, measured);
+    };
+
+    const readScrollY = (): number => {
+      const el = document.scrollingElement ?? document.documentElement;
+      return Math.max(0, el.scrollTop || window.scrollY || 0);
+    };
+
+    const applyChromeReady = (ready: boolean) => {
+      if (ready) {
+        html.setAttribute("data-chrome-ready", "true");
+      } else {
+        html.removeAttribute("data-chrome-ready");
+      }
     };
 
     const measureHeaderBottomSafe = (
@@ -98,14 +316,21 @@ export function MobileChromeSync() {
       }
 
       if (forceMeasure || !headerHidden) {
-        const live = measureHeaderBottomLive(header);
-        if (live > 48) return Math.max(live, floor);
+        const live = measureExpandedHeaderHeight(header, desktopNav);
+        if (live > 48) {
+          expandedHeaderBottomRef.current = Math.max(
+            expandedHeaderBottomRef.current,
+            live,
+          );
+          return Math.max(live, floor);
+        }
       }
 
       return Math.max(expandedHeaderBottomRef.current, floor);
     };
 
     const measure = () => {
+      ensureChromeDomOrder();
       const compactHeader = window.matchMedia(COMPACT_HEADER_MEDIA_QUERY).matches;
       const desktopNav = window.matchMedia(DESKTOP_NAV_MEDIA_QUERY).matches;
       const headerPinned = html.hasAttribute("data-header-pinned");
@@ -123,11 +348,7 @@ export function MobileChromeSync() {
       const compare = document.getElementById("arena-compare-bar");
       const stickyAd = document.getElementById("arena-sticky-ad-bar");
 
-      const topAdHMeasured = topAd
-        ? Math.max(0, Math.ceil(topAd.getBoundingClientRect().height))
-        : 0;
-      const topAdHDesign = readBannerDesignHeight(topAd);
-      const topAdH = topAdHDesign > 0 ? topAdHDesign : topAdHMeasured;
+      const topAdH = readTopAdHeight(topAd);
       const topAdBottomMeasured =
         topAd && topAdH > 0
           ? Math.max(0, Math.ceil(topAd.getBoundingClientRect().bottom))
@@ -159,7 +380,14 @@ export function MobileChromeSync() {
           topAdBottomMeasured > 0 ? topAdBottomMeasured + CHROME_GAP_PX : topAdH;
         html.style.setProperty("--arena-chrome-bottom", `${topAdBottomMeasured || topAdH}px`);
         html.style.setProperty("--arena-content-top-pad", `${contentTopPad}px`);
+        syncChromeSpacer();
         html.style.setProperty("--arena-desktop-header-h", "9.5rem");
+        return;
+      }
+
+      // Top ad present: keep full content padding always; hide chrome with transforms only.
+      if (topAdH > 0) {
+        applyFixedTopAdSpacing(header, topAd, topAdH, desktopNav);
         return;
       }
 
@@ -214,6 +442,7 @@ export function MobileChromeSync() {
           : chromeBottom + (desktopNav && headerVisible ? DESKTOP_CONTENT_GAP_PX : 0) + CHROME_GAP_PX;
 
       html.style.setProperty("--arena-content-top-pad", `${contentTopPad}px`);
+      syncChromeSpacer();
       if (desktopNav) {
         html.style.setProperty("--arena-desktop-header-h", `${headerOffset}px`);
       } else {
@@ -237,9 +466,11 @@ export function MobileChromeSync() {
     };
 
     const onNavigate = () => {
-      expandedHeaderBottomRef.current = 0;
       html.removeAttribute("data-site-header-hidden");
       pinHeaderChrome(NAV_PIN_MS);
+      requestAnimationFrame(() => {
+        requestAnimationFrame(schedule);
+      });
       scheduleAfterHeaderTransition();
     };
 
@@ -284,6 +515,9 @@ export function MobileChromeSync() {
     desktopMq.addEventListener("change", onBreakpointChange);
     window.addEventListener("resize", schedule);
     window.addEventListener("orientationchange", onBreakpointChange);
+    const onVisualViewportChange = () => schedule();
+    window.visualViewport?.addEventListener("resize", onVisualViewportChange);
+    window.visualViewport?.addEventListener("scroll", onVisualViewportChange);
 
     const htmlAttrObserver = new MutationObserver(() => {
       schedule();
@@ -325,6 +559,8 @@ export function MobileChromeSync() {
       desktopMq.removeEventListener("change", onBreakpointChange);
       window.removeEventListener("resize", schedule);
       window.removeEventListener("orientationchange", onBreakpointChange);
+      window.visualViewport?.removeEventListener("resize", onVisualViewportChange);
+      window.visualViewport?.removeEventListener("scroll", onVisualViewportChange);
       document.removeEventListener("pointerdown", onHeaderInteraction, true);
       document.removeEventListener("touchstart", onHeaderInteraction, true);
       document.removeEventListener("click", onHeaderInteraction, true);
@@ -333,6 +569,8 @@ export function MobileChromeSync() {
       window.removeEventListener("arena:header-chrome-change", onChromeChange);
       window.removeEventListener("arena:header-interaction", onHeaderInteractionEvent);
       html.removeAttribute("data-header-pinned");
+      html.removeAttribute("data-chrome-ready");
+      html.removeAttribute("data-ad-suppressed-on-pin");
       html.style.removeProperty("--arena-mobile-compare-h");
       html.style.removeProperty("--arena-mobile-header-h");
       html.style.removeProperty("--arena-mobile-sticky-ad-h");

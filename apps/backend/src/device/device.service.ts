@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Prisma } from '@prisma/client';
+import { ContentEntityType, Prisma } from '@prisma/client';
 
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
@@ -14,6 +14,7 @@ import {
   upcomingLaunchTimestamp,
 } from '../common/device-upcoming';
 import { slugify } from '../common/slug';
+import { ContentTranslationService } from '../content-translation/content-translation.service';
 import { CreateDeviceDto } from './dto/create-device.dto';
 import { UpdateDeviceDto } from './dto/update-device.dto';
 
@@ -22,6 +23,23 @@ const CACHE_TTL = 120;
 
 function catalogCacheScope() {
   return isImportedOnlyCatalog() ? 'imported' : 'all';
+}
+
+type IntelligenceRelation = { payload: Prisma.JsonValue } | null;
+
+function flattenDeviceIntelligence<
+  T extends { intelligence?: IntelligenceRelation },
+>(device: T) {
+  const { intelligence, ...rest } = device;
+  return {
+    ...rest,
+    intelligence:
+      intelligence?.payload &&
+      typeof intelligence.payload === 'object' &&
+      !Array.isArray(intelligence.payload)
+        ? (intelligence.payload as Record<string, unknown>)
+        : {},
+  };
 }
 
 const affiliateOfferInclude = {
@@ -41,6 +59,7 @@ const listInclude = {
   countryAvailability: true,
   affiliateOffers: affiliateOfferInclude,
   priceHistory: { orderBy: { recordedAt: 'desc' }, take: 8 },
+  intelligence: true,
 } satisfies Prisma.DeviceInclude;
 
 const detailInclude = {
@@ -56,6 +75,7 @@ const detailInclude = {
   priceHistory: { orderBy: { recordedAt: 'asc' }, take: 24 },
   countryAvailability: { orderBy: { countryCode: 'asc' } },
   affiliateOffers: affiliateOfferInclude,
+  intelligence: true,
 } satisfies Prisma.DeviceInclude;
 
 @Injectable()
@@ -63,13 +83,30 @@ export class DeviceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    private readonly translations: ContentTranslationService,
   ) {}
 
-  async findAll(search?: string) {
+  async findAll(search?: string, locale?: string) {
     const cleanSearch = search?.trim();
-    const cacheKey = `${CACHE_PREFIX}list:${catalogCacheScope()}:${cleanSearch || 'all'}`;
+    const loc = locale ?? 'en';
+    const cacheKey = `${CACHE_PREFIX}list:${catalogCacheScope()}:${loc}:${cleanSearch || 'all'}`;
 
     return this.cache.wrap(cacheKey, CACHE_TTL, async () => {
+      const [translationIds, brandTranslationIds] = cleanSearch
+        ? await Promise.all([
+            this.translations.searchEntityIds(
+              ContentEntityType.DEVICE,
+              cleanSearch,
+              loc,
+            ),
+            this.translations.searchEntityIds(
+              ContentEntityType.BRAND,
+              cleanSearch,
+              loc,
+            ),
+          ])
+        : [[], []];
+
       const where = catalogDeviceWhere(
         cleanSearch
           ? {
@@ -90,6 +127,12 @@ export class DeviceService {
                     },
                   },
                 },
+                ...(translationIds.length
+                  ? [{ id: { in: translationIds } }]
+                  : []),
+                ...(brandTranslationIds.length
+                  ? [{ brandId: { in: brandTranslationIds } }]
+                  : []),
               ],
             }
           : undefined,
@@ -126,14 +169,23 @@ export class DeviceService {
           ? await this.prisma.device.findMany({ where, include: listInclude })
           : rows;
 
-      return withOffers.map((d) =>
-        skipSyntheticDeviceData(d) ? d : this.enrichDeviceSpecs(d),
+      const enriched = withOffers.map((d) =>
+        skipSyntheticDeviceData(d)
+          ? flattenDeviceIntelligence(d)
+          : this.enrichDeviceSpecs(d),
       );
+      const localized = await this.translations.localizeMany(
+        ContentEntityType.DEVICE,
+        enriched,
+        loc,
+      );
+      return this.withLocalizedRelations(localized, loc);
     });
   }
 
-  async findBulkUpcoming() {
-    const cacheKey = `${CACHE_PREFIX}upcoming:${catalogCacheScope()}`;
+  async findBulkUpcoming(locale?: string) {
+    const loc = locale ?? 'en';
+    const cacheKey = `${CACHE_PREFIX}upcoming:${catalogCacheScope()}:${loc}`;
 
     return this.cache.wrap(cacheKey, CACHE_TTL, async () => {
       const rows = await this.prisma.device.findMany({
@@ -142,9 +194,7 @@ export class DeviceService {
       });
 
       const upcoming = rows
-        .filter((d) =>
-          isUpcomingByDates(d.announcedDate, d.releasedDate),
-        )
+        .filter((d) => isUpcomingByDates(d.announcedDate, d.releasedDate))
         .sort(
           (a, b) =>
             (upcomingLaunchTimestamp(a.announcedDate, a.releasedDate) ??
@@ -153,10 +203,78 @@ export class DeviceService {
               Number.MAX_SAFE_INTEGER),
         );
 
-      return upcoming.map((d) =>
-        skipSyntheticDeviceData(d) ? d : this.enrichDeviceSpecs(d),
+      const enriched = upcoming.map((d) =>
+        skipSyntheticDeviceData(d)
+          ? flattenDeviceIntelligence(d)
+          : this.enrichDeviceSpecs(d),
       );
+      const localized = await this.translations.localizeMany(
+        ContentEntityType.DEVICE,
+        enriched,
+        loc,
+      );
+      return this.withLocalizedRelations(localized, loc);
     });
+  }
+
+  /** Localize nested brand + category so cards don't mix EN brand with localized device name. */
+  private async withLocalizedRelations<
+    T extends {
+      brand?: {
+        id: number;
+        name: string;
+        slug: string;
+        logo?: string | null;
+      } | null;
+      category?: { id: number; name: string; slug: string } | null;
+    },
+  >(devices: T[], locale: string): Promise<T[]> {
+    if (devices.length === 0) return devices;
+
+    const brandRows = Array.from(
+      new Map(
+        devices
+          .map((d) => d.brand)
+          .filter(Boolean)
+          .map((b) => [b!.id, b!] as const),
+      ).values(),
+    );
+    const categoryRows = Array.from(
+      new Map(
+        devices
+          .map((d) => d.category)
+          .filter(Boolean)
+          .map((c) => [c!.id, c!] as const),
+      ).values(),
+    );
+
+    const [brands, categories] = await Promise.all([
+      brandRows.length
+        ? this.translations.localizeMany(
+            ContentEntityType.BRAND,
+            brandRows,
+            locale,
+          )
+        : Promise.resolve([]),
+      categoryRows.length
+        ? this.translations.localizeMany(
+            ContentEntityType.CATEGORY,
+            categoryRows,
+            locale,
+          )
+        : Promise.resolve([]),
+    ]);
+
+    const brandById = new Map(brands.map((b) => [b.id, b]));
+    const categoryById = new Map(categories.map((c) => [c.id, c]));
+
+    return devices.map((d) => ({
+      ...d,
+      brand: d.brand ? (brandById.get(d.brand.id) ?? d.brand) : d.brand,
+      category: d.category
+        ? (categoryById.get(d.category.id) ?? d.category)
+        : d.category,
+    }));
   }
 
   private estimateRamGb(price: number | null): number {
@@ -176,39 +294,76 @@ export class DeviceService {
   }
 
   private enrichDeviceSpecs<
-    T extends { price: number | null; ramGb: number | null; storageGb: number | null },
-  >(device: T): T {
-    return {
+    T extends {
+      price: number | null;
+      ramGb: number | null;
+      storageGb: number | null;
+      intelligence?: IntelligenceRelation;
+    },
+  >(device: T) {
+    return flattenDeviceIntelligence({
       ...device,
       ramGb: device.ramGb ?? this.estimateRamGb(device.price),
       storageGb: device.storageGb ?? this.estimateStorageGb(device.price),
-    };
-  }
-
-  async findOne(id: number) {
-    return this.cache.wrap(`${CACHE_PREFIX}id:${catalogCacheScope()}:${id}`, CACHE_TTL, async () => {
-      const device = await this.prisma.device.findFirst({
-        where: catalogDeviceWhere({ id }),
-        include: detailInclude,
-      });
-      if (!device) {
-        throw new NotFoundException(`Device with ID ${id} not found.`);
-      }
-      return skipSyntheticDeviceData(device)
-        ? device
-        : this.enrichDeviceSpecs(device);
     });
   }
 
-  async findBySlug(slug: string) {
+  async findOne(id: number, locale?: string) {
+    const loc = locale ?? 'en';
     return this.cache.wrap(
-      `${CACHE_PREFIX}slug:${catalogCacheScope()}:${slug}`,
+      `${CACHE_PREFIX}id:${catalogCacheScope()}:${loc}:${id}`,
       CACHE_TTL,
       async () => {
         const device = await this.prisma.device.findFirst({
+          where: catalogDeviceWhere({ id }),
+          include: detailInclude,
+        });
+        if (!device) {
+          throw new NotFoundException(`Device with ID ${id} not found.`);
+        }
+        const enriched = skipSyntheticDeviceData(device)
+          ? flattenDeviceIntelligence(device)
+          : this.enrichDeviceSpecs(device);
+        const localized = await this.translations.localizeOne(
+          ContentEntityType.DEVICE,
+          enriched,
+          loc,
+        );
+        const [withRelations] = await this.withLocalizedRelations(
+          [localized],
+          loc,
+        );
+        return withRelations;
+      },
+    );
+  }
+
+  async findBySlug(slug: string, locale?: string) {
+    const loc = locale ?? 'en';
+    return this.cache.wrap(
+      `${CACHE_PREFIX}slug:${catalogCacheScope()}:${loc}:${slug}`,
+      CACHE_TTL,
+      async () => {
+        let device = await this.prisma.device.findFirst({
           where: catalogDeviceWhere({ slug }),
           include: detailInclude,
         });
+
+        if (!device) {
+          const translatedId =
+            await this.translations.resolveEntityIdByLocalizedSlug(
+              ContentEntityType.DEVICE,
+              slug,
+              loc,
+            );
+          if (translatedId) {
+            device = await this.prisma.device.findFirst({
+              where: catalogDeviceWhere({ id: translatedId }),
+              include: detailInclude,
+            });
+          }
+        }
+
         if (!device) {
           throw new NotFoundException(`Device "${slug}" not found.`);
         }
@@ -222,12 +377,27 @@ export class DeviceService {
           );
         }
         const fresh = await this.prisma.device.findFirstOrThrow({
-          where: catalogDeviceWhere({ slug }),
+          where: catalogDeviceWhere({ id: device.id }),
           include: detailInclude,
         });
-        return skipSyntheticDeviceData(fresh)
-          ? fresh
+        const enriched = skipSyntheticDeviceData(fresh)
+          ? flattenDeviceIntelligence(fresh)
           : this.enrichDeviceSpecs(fresh);
+        const localized = await this.translations.localizeOne(
+          ContentEntityType.DEVICE,
+          enriched,
+          loc,
+        );
+        const [withRelations] = await this.withLocalizedRelations(
+          [localized],
+          loc,
+        );
+        const localeSlugs = await this.translations.localeSlugMap(
+          ContentEntityType.DEVICE,
+          fresh.id,
+          fresh.slug,
+        );
+        return { ...withRelations, localeSlugs };
       },
     );
   }
@@ -254,11 +424,41 @@ export class DeviceService {
     if (availCount === 0) {
       await this.prisma.deviceCountryAvailability.createMany({
         data: [
-          { deviceId, countryCode: 'US', available: true, price, currency: 'USD' },
-          { deviceId, countryCode: 'GB', available: true, price: price != null ? Math.round(price * 0.92) : null, currency: 'GBP' },
-          { deviceId, countryCode: 'DE', available: true, price: price != null ? Math.round(price * 0.95) : null, currency: 'EUR' },
-          { deviceId, countryCode: 'IN', available: true, price: price != null ? Math.round(price * 83) : null, currency: 'INR' },
-          { deviceId, countryCode: 'JP', available: price != null, price: price != null ? Math.round(price * 148) : null, currency: 'JPY' },
+          {
+            deviceId,
+            countryCode: 'US',
+            available: true,
+            price,
+            currency: 'USD',
+          },
+          {
+            deviceId,
+            countryCode: 'GB',
+            available: true,
+            price: price != null ? Math.round(price * 0.92) : null,
+            currency: 'GBP',
+          },
+          {
+            deviceId,
+            countryCode: 'DE',
+            available: true,
+            price: price != null ? Math.round(price * 0.95) : null,
+            currency: 'EUR',
+          },
+          {
+            deviceId,
+            countryCode: 'IN',
+            available: true,
+            price: price != null ? Math.round(price * 83) : null,
+            currency: 'INR',
+          },
+          {
+            deviceId,
+            countryCode: 'JP',
+            available: price != null,
+            price: price != null ? Math.round(price * 148) : null,
+            currency: 'JPY',
+          },
         ],
       });
     }

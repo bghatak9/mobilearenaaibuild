@@ -24,13 +24,22 @@ export class ReviewController {
   constructor(private readonly reviewService: ReviewService) {}
 
   @Get()
-  findAll(@Query('deviceId') deviceId?: string) {
-    return this.reviewService.findAll(deviceId ? +deviceId : undefined);
+  findAll(
+    @Query('deviceId') deviceId?: string,
+    @Query('locale') locale?: string,
+  ) {
+    return this.reviewService.findAll(
+      deviceId ? +deviceId : undefined,
+      locale,
+    );
   }
 
   @Get(':slug')
-  findBySlug(@Param('slug') slug: string) {
-    return this.reviewService.findBySlug(slug);
+  findBySlug(
+    @Param('slug') slug: string,
+    @Query('locale') locale?: string,
+  ) {
+    return this.reviewService.findBySlug(slug, locale);
   }
 
   @Post()

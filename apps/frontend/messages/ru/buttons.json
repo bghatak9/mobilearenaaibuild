@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Войти",
+    "myProfile": "Мой профиль",
+    "notifications": "Уведомления",
+    "favorites": "Избранное",
+    "search": "Поиск",
+    "openMenu": "Открыть меню",
+    "language": "Язык",
+    "theme": "Сменить тему",
+    "voiceSearch": "Голосовой поиск",
+    "closeMenu": "Закрыть меню",
+    "menu": "Меню"
+  },
+  "languagePicker": {
+    "search": "Поиск языка…",
+    "close": "Закрыть",
+    "favorites": "Избранное",
+    "recent": "Недавние",
+    "popular": "Популярные",
+    "all": "Все языки ({count})",
+    "matches": "{count} совпадений",
+    "empty": "Языки не найдены",
+    "addFavorite": "Добавить в избранное",
+    "removeFavorite": "Удалить из избранного",
+    "changed": "Language changed to {language}"
+  }
+}

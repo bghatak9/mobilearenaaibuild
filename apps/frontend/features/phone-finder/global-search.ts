@@ -1,4 +1,4 @@
-import type { Device } from "@/lib/api";
+import type { Device, NewsArticle } from "@/lib/api";
 
 import { collectBrands } from "./device-utils";
 import { applyPhoneFinderFilters, filtersToSearchParams } from "./filters";
@@ -15,6 +15,7 @@ export type GlobalRecentDevice = { name: string; slug: string };
 
 export type GlobalSearchItem =
   | { kind: "device"; id: string; device: Device }
+  | { kind: "news"; id: string; article: NewsArticle }
   | { kind: "suggestion"; id: string; suggestion: SearchSuggestion }
   | { kind: "history"; id: string; query: string }
   | { kind: "trending"; id: string; query: string }
@@ -46,9 +47,18 @@ export function buildGlobalSearchItems(input: {
   currency: PriceCurrency;
   isMobile: boolean;
   filterPatch?: Partial<PhoneFinderFilters>;
+  news?: NewsArticle[];
 }): GlobalSearchItem[] {
-  const { query, devices, history, recentDevices, currency, isMobile, filterPatch } =
-    input;
+  const {
+    query,
+    devices,
+    history,
+    recentDevices,
+    currency,
+    isMobile,
+    filterPatch,
+    news = [],
+  } = input;
   const limit = isMobile ? 5 : 8;
   const q = query.trim();
   const items: GlobalSearchItem[] = [];
@@ -69,7 +79,8 @@ export function buildGlobalSearchItems(input: {
       { kind: "action", id: "nav-upcoming", label: "Upcoming Devices", href: "/phones?upcoming=1", icon: "📅" },
       { kind: "action", id: "nav-news", label: "Latest news", href: "/news", icon: "📰" },
       { kind: "action", id: "nav-community", label: "Community", href: "/community", icon: "👥" },
-      { kind: "action", id: "nav-contact", label: "Contact", href: "/contact", icon: "✉️" },
+      { kind: "action", id: "nav-ev", label: "EV", href: "/ev", icon: "🚗" },
+      { kind: "action", id: "nav-contact", label: "Contact Us", href: "/contact", icon: "✉️" },
     );
     return items.slice(0, limit + 4);
   }
@@ -98,6 +109,10 @@ export function buildGlobalSearchItems(input: {
     items.push({ kind: "device", id: `d-${device.id}`, device });
   }
 
+  for (const article of news.slice(0, isMobile ? 2 : 3)) {
+    items.push({ kind: "news", id: `n-${article.id}`, article });
+  }
+
   return items.slice(0, limit + (isMobile ? 3 : 5));
 }
 
@@ -108,6 +123,8 @@ export function hrefForSearchItem(
   switch (item.kind) {
     case "device":
       return `/phones/${item.device.slug}`;
+    case "news":
+      return `/news/${item.article.slug}`;
     case "suggestion":
       return buildPhoneFinderHref(item.suggestion.query, item.suggestion.patch, currency);
     case "history":
@@ -124,6 +141,8 @@ export function labelForSearchItem(item: GlobalSearchItem): string {
   switch (item.kind) {
     case "device":
       return item.device.name;
+    case "news":
+      return item.article.title;
     case "suggestion":
       return item.suggestion.label;
     case "history":
@@ -140,6 +159,8 @@ export function iconForSearchItem(item: GlobalSearchItem): string {
   switch (item.kind) {
     case "device":
       return "📱";
+    case "news":
+      return "📰";
     case "suggestion":
       return item.suggestion.icon;
     case "history":
@@ -154,21 +175,28 @@ export function iconForSearchItem(item: GlobalSearchItem): string {
 }
 
 let cachedDevices: Device[] | null = null;
+let cacheLocale: string | null = null;
 let cachePromise: Promise<Device[]> | null = null;
 
 export function resetGlobalSearchDeviceCache() {
   cachedDevices = null;
+  cacheLocale = null;
   cachePromise = null;
 }
 
 export async function loadGlobalSearchDevices(
   fetcher: () => Promise<Device[]>,
+  locale?: string,
 ): Promise<Device[]> {
+  if (locale && cacheLocale && locale !== cacheLocale) {
+    resetGlobalSearchDeviceCache();
+  }
   if (cachedDevices) return cachedDevices;
   if (!cachePromise) {
     cachePromise = fetcher()
       .then((devices) => {
         cachedDevices = devices;
+        cacheLocale = locale ?? null;
         return devices;
       })
       .catch((err) => {
@@ -179,11 +207,12 @@ export async function loadGlobalSearchDevices(
   return cachePromise;
 }
 
-/** Re-fetch catalog in the background after the cached list is shown. */
 export async function refreshGlobalSearchDevices(
   fetcher: () => Promise<Device[]>,
+  locale?: string,
 ): Promise<Device[]> {
-  const devices = await fetcher();
-  cachedDevices = devices;
-  return devices;
+  cachePromise = null;
+  cachedDevices = null;
+  cacheLocale = locale ?? null;
+  return loadGlobalSearchDevices(fetcher, locale);
 }

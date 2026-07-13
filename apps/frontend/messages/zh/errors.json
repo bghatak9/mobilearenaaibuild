@@ -1,0 +1,16 @@
+{
+  "errors": {
+    "notFoundTitle": "Page not found",
+    "notFoundBody": "This page doesn’t exist or may have moved. Try searching or head back home.",
+    "notFoundCta": "Back to home",
+    "serverTitle": "Something went wrong",
+    "serverBody": "We hit an unexpected error. Please try again in a moment.",
+    "serverRetry": "Try again",
+    "phoneNotFound": "Phone not found",
+    "articleNotFound": "Article not found",
+    "reviewNotFound": "Review not found",
+    "generic": "Something went wrong.",
+    "loadFailed": "Could not load this content. Is the API running?",
+    "offline": "You’re offline. Check your connection and try again."
+  }
+}

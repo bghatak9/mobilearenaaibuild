@@ -44,6 +44,7 @@ export default function AdminAdvertisementsPage() {
   const [tab, setTab] = useState<
     "upload" | "campaigns" | "schedule" | "catalog" | "history" | "audit"
   >("campaigns");
+  const [historyRefreshKey, setHistoryRefreshKey] = useState(0);
 
   const canManageLifecycle = user
     ? IMPORT_HISTORY_ROLES.includes(user.role)
@@ -131,7 +132,16 @@ export default function AdminAdvertisementsPage() {
             </ul>
 
             <div className="mt-6">
-              <BulkUploadPanel kind="advertisements" role={user.role} />
+              <BulkUploadPanel
+                kind="advertisements"
+                role={user.role}
+                onUploadSuccess={() => {
+                  setHistoryRefreshKey((key) => key + 1);
+                  if (canManageLifecycle) {
+                    setTab("history");
+                  }
+                }}
+              />
             </div>
           </>
         )}
@@ -144,7 +154,11 @@ export default function AdminAdvertisementsPage() {
 
         {tab === "history" && user && canManageLifecycle && (
           <div className="mt-6 space-y-4">
-            <ImportHistoryPanel role={user.role} importKind="advertisements" />
+            <ImportHistoryPanel
+              role={user.role}
+              importKind="advertisements"
+              refreshKey={historyRefreshKey}
+            />
             <DeletePermissionsNote importKind="advertisements" />
           </div>
         )}

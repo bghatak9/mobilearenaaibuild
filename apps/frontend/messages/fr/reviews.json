@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "Avis",
+    "loadError": "Impossible de charger les avis. L’API tourne-t-elle ?",
+    "empty": "Pas encore d’avis.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

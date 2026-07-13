@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import { TrendingUp } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import {
   getDailyTrendingSearches,
@@ -16,6 +17,7 @@ export function TrendingSearches({
   onPick: (params: URLSearchParams, label: string) => void;
   priceCurrency?: PhoneFinderFilters["priceCurrency"];
 }) {
+  const t = useTranslations("finder");
   const daily = useMemo(
     () => getDailyTrendingSearches(priceCurrency),
     [priceCurrency],
@@ -26,11 +28,11 @@ export function TrendingSearches({
       label: q,
       params: new URLSearchParams({ q }),
     })),
-    ...TRENDING_FINDER_SEARCHES.map((t) => ({
-      label: t.label,
+    ...TRENDING_FINDER_SEARCHES.map((entry) => ({
+      label: t(entry.labelKey as Parameters<typeof t>[0]),
       params: new URLSearchParams({
-        ...("q" in t && t.q ? { q: t.q } : {}),
-        ...("params" in t && t.params ? t.params : {}),
+        ...("q" in entry && entry.q ? { q: entry.q } : {}),
+        ...("params" in entry && entry.params ? entry.params : {}),
       }),
     })),
   ].slice(0, 8);
@@ -39,7 +41,7 @@ export function TrendingSearches({
     <div className="mb-6">
       <p className="mb-2 flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[var(--text-secondary)]">
         <TrendingUp size={14} className="text-[var(--electric-cyan)]" />
-        🔥 Trending today
+        🔥 {t("presets.trending.title")}
       </p>
       <div className="flex flex-wrap gap-2">
         {items.map((item) => (

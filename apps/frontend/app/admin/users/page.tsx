@@ -41,13 +41,11 @@ function UserRows({
   onDelete: (id: number) => void;
   groupByRole?: boolean;
 }) {
-  let lastRole: UserRole | null = null;
-
   return (
     <>
-      {users.map((u) => {
-        const showRoleHeader = groupByRole && u.role !== lastRole;
-        if (groupByRole) lastRole = u.role;
+      {users.map((u, index) => {
+        const showRoleHeader =
+          groupByRole && (index === 0 || users[index - 1]?.role !== u.role);
 
         return (
           <Fragment key={u.id}>

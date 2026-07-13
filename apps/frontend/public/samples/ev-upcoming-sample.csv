@@ -1,0 +1,4 @@
+name,category,brand,model_year,range_km,battery_kwh,price,currency,status,announced_at,release_at,description
+Rivian R2,suvs,Rivian,2027,450,120,45900,USD,upcoming,2025-03-01,2027-06-01,Compact electric SUV — not yet on sale
+VW ID.2,cars,Volkswagen,2027,330,62,25000,EUR,upcoming,2025-01-15,2027-03-01,Affordable city EV announced for Europe
+Ford electric van,vans,Ford,2026,280,91,52000,USD,upcoming,2024-11-01,2026-09-01,Commercial fleet van — upcoming launch

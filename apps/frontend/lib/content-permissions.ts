@@ -11,7 +11,8 @@ export type BulkImportKind =
   | "prices"
   | "reviews"
   | "documentation"
-  | "advertisements";
+  | "advertisements"
+  | "ev";
 
 /** @deprecated use BulkImportKind */
 export type ImportKind = BulkImportKind | "article-images";
@@ -38,24 +39,118 @@ export const IMPORT_STRATEGY: Record<
   BulkImportKind,
   { formats: string[]; pdf: boolean }
 > = {
-  phones: { formats: ["CSV", "XLSX"], pdf: false },
-  "upcoming-devices": { formats: ["CSV", "XLSX"], pdf: false },
+  phones: { formats: ["CSV", "XLSX", "ZIP images", "single image"], pdf: false },
+  "upcoming-devices": {
+    formats: ["CSV", "XLSX", "ZIP images", "single image"],
+    pdf: false,
+  },
   brands: { formats: ["CSV", "XLSX"], pdf: false },
   prices: { formats: ["CSV", "XLSX"], pdf: false },
   images: { formats: ["ZIP"], pdf: false },
-  news: { formats: ["PDF", "Markdown ZIP", "CSV", "XLSX"], pdf: true },
+  news: {
+    formats: ["PDF", "Markdown ZIP", "CSV", "XLSX", "ZIP images", "single image"],
+    pdf: true,
+  },
   reviews: { formats: ["PDF", "CSV", "XLSX"], pdf: true },
-  documentation: { formats: ["PDF", "Markdown ZIP", "CSV"], pdf: true },
+  documentation: {
+    formats: ["PDF", "Markdown ZIP", "CSV", "ZIP images", "single image"],
+    pdf: true,
+  },
   users: { formats: ["CSV", "XLSX"], pdf: false },
   advertisements: { formats: ["CSV", "XLSX", "JSON", "PDF"], pdf: true },
+  ev: {
+    formats: [
+      "CSV",
+      "XLSX",
+      "ZIP images",
+      "single image",
+      "PDF news/reviews",
+    ],
+    pdf: true,
+  },
 };
+
+export type EvUploadSubkind = "vehicles" | "upcoming" | "news" | "reviews";
+
+export const EV_UPLOAD_SUBKINDS: {
+  id: EvUploadSubkind;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    id: "vehicles",
+    label: "EV catalog",
+    hint: "Cars, SUVs, trucks, vans, bikes — CSV/XLSX + images",
+  },
+  {
+    id: "upcoming",
+    label: "Upcoming EVs",
+    hint: "Future launches with model_year or announced_at / release_at",
+  },
+  {
+    id: "news",
+    label: "EV news",
+    hint: "Industry news — CSV, PDF, or Markdown ZIP",
+  },
+  {
+    id: "reviews",
+    label: "EV reviews",
+    hint: "Vehicle reviews — CSV or PDF (vehicle column = EV slug)",
+  },
+];
+
+export function evSubkindSupportsImages(subkind: EvUploadSubkind): boolean {
+  return subkind === "vehicles" || subkind === "upcoming";
+}
+
+/** Image uploads are embedded inside these sections (no standalone Images tab). */
+export const IMAGE_EMBEDDED_KINDS: BulkImportKind[] = [
+  "phones",
+  "upcoming-devices",
+  "news",
+  "documentation",
+  "ev",
+];
+
+export type UploadMode = "data" | "images-bulk" | "images-single";
+
+export function supportsImageUpload(kind: BulkImportKind): boolean {
+  return IMAGE_EMBEDDED_KINDS.includes(kind);
+}
+
+export function canUploadImages(
+  role: UserRole | null | undefined,
+  kind: BulkImportKind,
+): boolean {
+  if (!role || !supportsImageUpload(kind)) return false;
+  if (role === "SUPER_ADMIN") return true;
+  switch (kind) {
+    case "phones":
+    case "upcoming-devices":
+      return role === "ADMIN";
+    case "news":
+    case "documentation":
+      return role === "ADMIN" || role === "EDITOR" || role === "AUTHOR";
+    case "ev":
+      return canManageEv(role);
+    default:
+      return false;
+  }
+}
 
 /** PDF upload permissions — news/reviews/docs only. */
 export function canUploadPdf(
   role: UserRole | null | undefined,
   kind: BulkImportKind,
+  options?: { subkind?: EvUploadSubkind },
 ): boolean {
   if (!role) return false;
+  if (kind === "ev") {
+    const sk = options?.subkind ?? "vehicles";
+    if (sk === "news") return canUploadPdf(role, "news");
+    if (sk === "reviews") return canUploadPdf(role, "reviews");
+    return false;
+  }
   const pdfKinds: BulkImportKind[] = [
     "news",
     "reviews",
@@ -103,16 +198,16 @@ export const BULK_UPLOAD_CATALOG: {
   {
     kind: "phones",
     label: "Phones",
-    fileTypes: "CSV, XLSX",
-    example: "Volt, Nimbus, Prism specifications",
-    accept: ".csv,.xlsx,.xls",
+    fileTypes: "CSV, XLSX · images: ZIP or single file",
+    example: "Volt, Nimbus, Prism specifications + device photos",
+    accept: ".csv,.xlsx,.xls,.zip,.jpg,.jpeg,.png,.webp,.gif",
   },
   {
     kind: "upcoming-devices",
     label: "Upcoming Devices",
-    fileTypes: "CSV, XLSX",
-    example: "Future launches with announced_date or released_date",
-    accept: ".csv,.xlsx,.xls",
+    fileTypes: "CSV, XLSX · images: ZIP or single file",
+    example: "Future launches + teaser images (folder per slug)",
+    accept: ".csv,.xlsx,.xls,.zip,.jpg,.jpeg,.png,.webp,.gif",
   },
   {
     kind: "brands",
@@ -124,16 +219,16 @@ export const BULK_UPLOAD_CATALOG: {
   {
     kind: "news",
     label: "News Articles",
-    fileTypes: "PDF, Markdown ZIP, CSV, XLSX",
-    example: "Title, content, author",
-    accept: ".csv,.xlsx,.xls,.pdf,.zip",
+    fileTypes: "PDF, Markdown ZIP, CSV, XLSX · images: ZIP or single file",
+    example: "Title, content, author + article thumbnails",
+    accept: ".csv,.xlsx,.xls,.pdf,.zip,.jpg,.jpeg,.png,.webp,.gif",
   },
   {
     kind: "documentation",
     label: "Documentation",
-    fileTypes: "PDF, Markdown ZIP, CSV",
-    example: "Guides, help articles, internal docs",
-    accept: ".csv,.xlsx,.xls,.pdf,.zip",
+    fileTypes: "PDF, Markdown ZIP, CSV · images: ZIP or single file",
+    example: "Guides, help articles + doc thumbnails",
+    accept: ".csv,.xlsx,.xls,.pdf,.zip,.jpg,.jpeg,.png,.webp,.gif",
   },
   {
     kind: "users",
@@ -143,25 +238,20 @@ export const BULK_UPLOAD_CATALOG: {
     accept: ".csv,.xlsx,.xls",
   },
   {
-    kind: "images",
-    label: "Images",
-    fileTypes: "ZIP",
-    example: "Phone photos and logos (folder per device slug)",
-    accept: ".zip",
-  },
-  {
-    kind: "prices",
-    label: "Prices",
-    fileTypes: "CSV, XLSX",
-    example: "Model, country, price",
-    accept: ".csv,.xlsx,.xls",
-  },
-  {
     kind: "reviews",
     label: "Reviews",
     fileTypes: "PDF, CSV, XLSX",
     example: "Rating, pros, cons — or PDF with device: metadata",
     accept: ".csv,.xlsx,.xls,.pdf",
+  },
+  {
+    kind: "ev",
+    label: "EV (Electric Vehicles)",
+    fileTypes:
+      "Catalog · Upcoming · News · Reviews — CSV/XLSX/PDF + images",
+    example:
+      "Tesla Model 3, EV industry news, hands-on reviews, future launches",
+    accept: ".csv,.xlsx,.xls,.pdf,.zip,.jpg,.jpeg,.png,.webp,.gif",
   },
 ];
 
@@ -191,6 +281,19 @@ export function canImportPaidAds(role: UserRole | null | undefined): boolean {
 
 /** Revenue Analytics dashboard — SUPER_ADMIN only. */
 export const REVENUE_ANALYTICS_ROLES = ["SUPER_ADMIN"] as const;
+
+/** EV section — all staff roles (not public USER). */
+export const STAFF_EV_ROLES = [
+  "SUPER_ADMIN",
+  "ADMIN",
+  "EDITOR",
+  "AUTHOR",
+  "MODERATOR",
+] as const satisfies readonly UserRole[];
+
+export function canManageEv(role: UserRole | null | undefined): boolean {
+  return role != null && (STAFF_EV_ROLES as readonly UserRole[]).includes(role);
+}
 
 export function canViewRevenueAnalytics(
   role: UserRole | null | undefined,
@@ -228,23 +331,27 @@ export const IMPORT_KIND_LABELS: Record<BulkImportKind, string> = {
   reviews: "Reviews",
   documentation: "Documentation",
   advertisements: "Paid Advertisements",
+  ev: "EV (Electric Vehicles)",
 };
 
 export const IMPORT_KIND_HINTS: Record<BulkImportKind, string> = {
   users: "Columns: email, name, role, password (optional, hashed on upload), status",
   phones:
-    "Required columns: name, brand, category (aliases: device/device_name, brand_name, device_category/type). Optional: manufacturer, price, os, weight, dimensions, announced_date, released_date. Category defaults to Smartphone when name + brand are set.",
+    "CSV/XLSX specs · ZIP: one folder per device slug · single image: set slug below",
   "upcoming-devices":
-    "Same as phones plus required announced_date and/or released_date (must be a future launch)",
+    "CSV/XLSX launches · ZIP/single images attach to upcoming device slugs",
   brands: "Columns: name (or brand_name), logo (optional URL)",
   prices: "Columns: model, country, price",
   images: "ZIP: images grouped by device slug folder",
-  news: "CSV/XLSX columns, PDF, or ZIP of .md/.pdf files with # Title",
-  documentation: "CSV columns, PDF, or ZIP of .md/.pdf documentation files",
+  news:
+    "CSV/XLSX/PDF articles · ZIP images: folder per article slug · single image sets thumbnail",
+  documentation:
+    "CSV/PDF/Markdown docs · ZIP images: folder per doc slug · single image sets thumbnail",
   reviews:
     "CSV: title, device, score, pros (| separated), cons — PDF: add device: and score: lines",
   advertisements:
     "CSV/XLSX/JSON: title, link (required), placement, ad_type, format, width, height, sponsored, priority, image_url, advertiser, budget, active, start_date, end_date — PDF: title:, link:, placement: metadata lines",
+  ev: "EV hub — pick catalog, upcoming, news, or reviews tab below",
 };
 
 export type ImportSampleFile = { href: string; label: string };
@@ -258,22 +365,34 @@ export const IMPORT_SAMPLE_FILES: Partial<
       href: "/samples/phones-full-import-sample.xlsx",
       label: "Full specs XLSX",
     },
+    { href: "/samples/images-sample.zip", label: "Sample image ZIP" },
   ],
   "upcoming-devices": [
     { href: "/samples/upcoming-devices-sample.csv", label: "Sample CSV" },
+    { href: "/samples/images-sample.zip", label: "Sample image ZIP" },
   ],
   brands: [{ href: "/samples/brands-sample.csv", label: "Sample CSV" }],
-  news: [{ href: "/samples/news-sample.csv", label: "Sample CSV" }],
+  news: [
+    { href: "/samples/news-sample.csv", label: "Sample CSV" },
+    { href: "/samples/images-sample.zip", label: "Sample image ZIP" },
+  ],
   documentation: [
     { href: "/samples/documentation-sample.csv", label: "Sample CSV" },
+    { href: "/samples/images-sample.zip", label: "Sample image ZIP" },
   ],
   users: [{ href: "/samples/users-sample.csv", label: "Sample CSV" }],
   prices: [{ href: "/samples/prices-sample.csv", label: "Sample CSV" }],
   reviews: [{ href: "/samples/reviews-sample.csv", label: "Sample CSV" }],
-  images: [{ href: "/samples/images-sample.zip", label: "Sample ZIP" }],
   advertisements: [
     { href: "/samples/advertisements-sample.csv", label: "Sample CSV" },
     { href: "/samples/advertisements-sample.json", label: "Sample JSON" },
+  ],
+  ev: [
+    { href: "/samples/ev-vehicles-sample.csv", label: "EV catalog CSV" },
+    { href: "/samples/ev-upcoming-sample.csv", label: "Upcoming EVs CSV" },
+    { href: "/samples/ev-news-sample.csv", label: "EV news CSV" },
+    { href: "/samples/ev-reviews-sample.csv", label: "EV reviews CSV" },
+    { href: "/samples/images-sample.zip", label: "Sample image ZIP" },
   ],
 };
 
@@ -305,6 +424,8 @@ export function canImportBulk(
       return role === "SUPER_ADMIN" || role === "ADMIN" || role === "EDITOR";
     case "advertisements":
       return canImportPaidAds(role);
+    case "ev":
+      return canManageEv(role);
     default:
       return false;
   }
@@ -346,6 +467,7 @@ export const ROLE_RESPONSIBILITIES: Partial<Record<UserRole, string[]>> = {
     "PDF news and documentation uploads",
     "Paid advertisement upload, delete, restore (SUPER_ADMIN only), and purge",
     "Revenue Analytics (ad revenue, affiliate earnings, campaign performance)",
+    "EV bulk upload — all electric vehicles (cars, SUVs, trucks, vans, bikes)",
   ],
   ADMIN: [
     "Bulk phone specification uploads (CSV/XLSX only)",
@@ -355,15 +477,21 @@ export const ROLE_RESPONSIBILITIES: Partial<Record<UserRole, string[]>> = {
     "News and documentation uploads (PDF allowed)",
     "Paid advertisement uploads (CSV/XLSX/PDF)",
     "Image ZIP uploads",
+    "EV bulk upload — electric vehicle catalog",
   ],
   EDITOR: [
     "Bulk article/news/documentation uploads (PDF allowed)",
     "Uploading images related to their content",
+    "EV bulk upload — publish EV vehicle data",
   ],
-  AUTHOR: ["Upload images for their own articles only"],
+  AUTHOR: [
+    "Upload images for their own articles only",
+    "EV bulk upload — draft EV vehicle entries",
+  ],
   MODERATOR: [
     "Comment moderation on news and reviews",
     "Password sign-in with bcrypt hash storage (not viewable by admins)",
+    "EV bulk upload — electric vehicle catalog",
   ],
 };
 

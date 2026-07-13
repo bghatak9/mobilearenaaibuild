@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import {
   ArrowUpCircle,
   GitCompare,
@@ -209,7 +209,7 @@ export function AiHubPanel({
   }
 
   return (
-    <SpectrumPanel className="mb-6 overflow-hidden p-0">
+    <SpectrumPanel className="mb-6 min-w-0 overflow-hidden p-0">
       <div className="border-b border-white/10 bg-gradient-to-r from-[var(--arena-blue)]/20 to-[var(--aurora-purple)]/20 px-5 py-4">
         <p className="flex items-center gap-2 text-sm font-bold text-[var(--text-primary)]">
           <Sparkles size={18} className="text-[var(--aurora-purple)]" />

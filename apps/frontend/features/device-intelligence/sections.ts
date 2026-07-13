@@ -1,0 +1,456 @@
+import type {
+  IntelligenceFieldDef,
+  IntelligenceSectionDef,
+  IntelligenceTier,
+} from "./types";
+import {
+  cameraByType,
+  countryVariants,
+  createContext,
+  currentMarketPrice,
+  estimateAntutu,
+  estimateGeekbenchMulti,
+  estimateGeekbenchSingle,
+  ext,
+  formatDate,
+  formatInr,
+  mainCameraMp,
+  parseChargingWatts,
+  yesNo,
+} from "./format";
+
+function F(
+  id: string,
+  label: string,
+  tier: IntelligenceTier,
+  resolve: IntelligenceFieldDef["resolve"],
+  opts?: Pick<IntelligenceFieldDef, "score" | "higherIsBetter">,
+): IntelligenceFieldDef {
+  return { id, label, tier, resolve, ...opts };
+}
+
+const ctx = (c: Parameters<IntelligenceFieldDef["resolve"]>[0]) => c;
+
+export const INTELLIGENCE_SECTIONS: IntelligenceSectionDef[] = [
+  {
+    id: "general",
+    title: "General",
+    fields: [
+      F("general.brand", "Brand", "core", (c) => c.device.brand?.name),
+      F("general.series", "Series", "standard", (c) => ext(c.payload, "general.series")),
+      F("general.model", "Model Number", "standard", (c) => ext(c.payload, "general.modelNumber") ?? c.device.slug),
+      F("general.category", "Device Category", "core", (c) => c.device.category?.name),
+      F("general.codename", "Codename", "extended", (c) => ext(c.payload, "general.codename")),
+      F("general.launch", "Launch Date", "core", (c) => formatDate(c.device.announcedDate)),
+      F("general.release", "Release Status", "core", (c) =>
+        ext(c.payload, "general.releaseStatus") ??
+        (c.device.releasedDate ? "Released" : "Announced"),
+      ),
+      F("general.availability", "Market Availability", "standard", (c) =>
+        countryVariants(c.device) ?? ext(c.payload, "general.marketAvailability"),
+      ),
+      F("general.os", "Operating System", "core", (c) => c.device.os),
+      F("general.ui", "UI Version", "standard", (c) => ext(c.payload, "software.uiVersion")),
+      F("general.updates", "Guaranteed Updates", "standard", (c) => ext(c.payload, "software.guaranteedOsUpdates")),
+      F("general.security", "Security Support Period", "extended", (c) => ext(c.payload, "software.securityPatches")),
+      F("general.launch-price", "Price at Launch", "core", (c) => formatInr(c.device.price), {
+        score: (c) => c.device.price ?? null,
+        higherIsBetter: false,
+      }),
+      F("general.current-price", "Current Market Price", "core", (c) => formatInr(currentMarketPrice(c.device))),
+      F("general.variants", "Country Variants", "extended", (c) => countryVariants(c.device)),
+    ],
+  },
+  {
+    id: "design",
+    title: "Design & Build",
+    fields: [
+      F("design.dimensions", "Dimensions", "core", (c) => c.device.dimensions),
+      F("design.weight", "Weight", "core", (c) =>
+        c.device.weight != null ? `${c.device.weight} g` : null,
+      ),
+      F("design.thickness", "Thickness", "standard", (c) => ext(c.payload, "design.thickness")),
+      F("design.camera-bump", "Camera Bump Thickness", "extended", (c) => ext(c.payload, "design.cameraBump")),
+      F("design.stb", "Screen-to-Body Ratio", "standard", (c) => ext(c.payload, "design.screenToBody")),
+      F("design.frame", "Frame Material", "standard", (c) => ext(c.payload, "design.frameMaterial")),
+      F("design.back", "Back Material", "standard", (c) => ext(c.payload, "design.backMaterial")),
+      F("design.front", "Front Protection", "core", (c) =>
+        c.device.display?.protection ?? ext(c.payload, "design.frontProtection"),
+      ),
+      F("design.colors", "Color Variants", "standard", (c) => ext(c.payload, "design.colorVariants")),
+      F("design.ip", "IP Rating", "standard", (c) =>
+        ext(c.payload, "design.ipRating") ?? yesNo(c.device.waterproof),
+      ),
+      F("design.mil", "MIL-STD Certification", "extended", (c) => ext(c.payload, "design.milStd")),
+      F("design.repair", "Repairability Score", "extended", (c) => ext(c.payload, "repairability.score")),
+      F("design.battery-swap", "Battery Replacement Rating", "extended", (c) => ext(c.payload, "repairability.batteryEase")),
+      F("design.sustainability", "Sustainability Index", "engineering", (c) => ext(c.payload, "repairability.sustainabilityIndex")),
+      F("design.recycled", "Recycled Materials", "engineering", (c) => ext(c.payload, "repairability.recycledMaterials")),
+    ],
+  },
+  {
+    id: "display",
+    title: "Display Engineering",
+    fields: [
+      F("display.panel", "Panel Technology", "core", (c) => c.device.display?.type),
+      F("display.generation", "Generation", "extended", (c) => ext(c.payload, "display.generation")),
+      F("display.size", "Size", "core", (c) =>
+        c.device.display ? `${c.device.display.size}"` : null,
+      ),
+      F("display.resolution", "Resolution", "core", (c) => c.device.display?.resolution),
+      F("display.ppi", "Pixel Density", "standard", (c) => ext(c.payload, "display.pixelDensity")),
+      F("display.aspect", "Aspect Ratio", "standard", (c) => ext(c.payload, "display.aspectRatio")),
+      F("display.refresh", "Refresh Rate", "core", (c) =>
+        c.device.display ? `${c.device.display.refreshRate} Hz` : null,
+        { score: (c) => c.device.display?.refreshRate ?? null, higherIsBetter: true },
+      ),
+      F("display.touch", "Touch Sampling Rate", "extended", (c) => ext(c.payload, "display.touchSampling")),
+      F("display.peak", "Peak Brightness", "core", (c) =>
+        c.device.display ? `${c.device.display.brightness} nits` : null,
+        { score: (c) => c.device.display?.brightness ?? null, higherIsBetter: true },
+      ),
+      F("display.hbm", "HBM Brightness", "standard", (c) => ext(c.payload, "display.hbmBrightness")),
+      F("display.pwm", "PWM Frequency", "extended", (c) => ext(c.payload, "display.pwmFrequency")),
+      F("display.depth", "Color Depth", "engineering", (c) => ext(c.payload, "display.colorDepth")),
+      F("display.ntsc", "NTSC Coverage", "engineering", (c) => ext(c.payload, "display.ntsc")),
+      F("display.p3", "DCI-P3 Coverage", "extended", (c) => ext(c.payload, "display.dciP3")),
+      F("display.hdr", "HDR Standards", "standard", (c) => ext(c.payload, "display.hdrStandards")),
+      F("display.dolby", "Dolby Vision", "standard", (c) => ext(c.payload, "display.dolbyVision")),
+      F("display.adaptive", "Adaptive Refresh", "extended", (c) => ext(c.payload, "display.adaptiveRefresh")),
+      F("display.ltpo", "LTPO Generation", "engineering", (c) => ext(c.payload, "display.ltpo")),
+      F("display.aod", "Always-On Display", "standard", (c) => ext(c.payload, "display.alwaysOn")),
+      F("display.glass", "Protection Glass", "core", (c) => c.device.display?.protection),
+      F("display.wet", "Wet Touch Support", "extended", (c) => ext(c.payload, "display.wetTouch")),
+      F("display.glove", "Glove Mode", "engineering", (c) => ext(c.payload, "display.gloveMode")),
+      F("display.eye", "Eye Comfort Features", "standard", (c) => ext(c.payload, "display.eyeComfort")),
+      F("display.blue", "Blue Light Certification", "extended", (c) => ext(c.payload, "display.blueLightCert")),
+    ],
+  },
+  {
+    id: "performance",
+    title: "Performance Architecture",
+    fields: [
+      F("perf.chipset", "Chipset", "core", (c) => c.device.chipset?.cpu),
+      F("perf.model", "Model Number", "standard", (c) => ext(c.payload, "performance.modelNumber")),
+      F("perf.foundry", "Foundry Process", "core", (c) => c.device.chipset?.fabrication),
+      F("perf.arch", "CPU Architecture", "extended", (c) => ext(c.payload, "performance.cpuArchitecture")),
+      F("perf.prime", "Prime Core", "engineering", (c) => ext(c.payload, "performance.primeCore")),
+      F("perf.perf-cores", "Performance Cores", "engineering", (c) => ext(c.payload, "performance.performanceCores")),
+      F("perf.eff-cores", "Efficiency Cores", "engineering", (c) => ext(c.payload, "performance.efficiencyCores")),
+      F("perf.max-freq", "Maximum Frequency", "extended", (c) => ext(c.payload, "performance.maxFrequency")),
+      F("perf.gpu", "GPU Model", "core", (c) => c.device.chipset?.gpu),
+      F("perf.gpu-freq", "GPU Frequency", "extended", (c) => ext(c.payload, "performance.gpuFrequency")),
+      F("perf.rt", "Ray Tracing Support", "standard", (c) => ext(c.payload, "performance.rayTracing")),
+      F("perf.npu", "NPU / AI Engine", "standard", (c) => ext(c.payload, "performance.npu")),
+      F("perf.tops", "AI Performance (TOPS)", "extended", (c) => ext(c.payload, "performance.aiTops")),
+      F("perf.thermal", "Thermal System", "extended", (c) => ext(c.payload, "performance.thermalSystem")),
+      F("perf.vapor", "Vapor Chamber Size", "engineering", (c) => ext(c.payload, "performance.vaporChamber")),
+      F("perf.cooling", "Cooling Materials", "engineering", (c) => ext(c.payload, "performance.coolingMaterials")),
+      F("perf.ram-type", "RAM Type", "standard", (c) => ext(c.payload, "performance.ramType") ?? "LPDDR5X"),
+      F("perf.ram", "RAM Capacity", "core", (c) =>
+        c.device.ramGb != null ? `${c.device.ramGb} GB` : null,
+      ),
+      F("perf.ram-freq", "RAM Frequency", "extended", (c) => ext(c.payload, "performance.ramFrequency")),
+      F("perf.storage-type", "Storage Type", "standard", (c) => ext(c.payload, "performance.storageType") ?? "UFS"),
+      F("perf.storage", "Storage Capacity", "core", (c) =>
+        c.device.storageGb != null ? `${c.device.storageGb} GB` : null,
+      ),
+      F("perf.read", "Sequential Read Speed", "engineering", (c) => ext(c.payload, "performance.seqRead")),
+      F("perf.write", "Sequential Write Speed", "engineering", (c) => ext(c.payload, "performance.seqWrite")),
+      F("perf.expandable", "Expandable Storage", "standard", (c) => ext(c.payload, "performance.expandableStorage") ?? "No"),
+    ],
+  },
+  {
+    id: "benchmarks",
+    title: "Benchmark Laboratory",
+    fields: [
+      F("bench.antutu", "AnTuTu", "standard", (c) => {
+        const v = estimateAntutu(c.device);
+        return v != null ? v.toLocaleString("en-IN") : null;
+      }, { score: (c) => estimateAntutu(c.device), higherIsBetter: true }),
+      F("bench.gb-single", "Geekbench Single", "standard", (c) => {
+        const v = estimateGeekbenchSingle(c.device);
+        return v != null ? String(v) : null;
+      }),
+      F("bench.gb-multi", "Geekbench Multi", "standard", (c) => {
+        const v = estimateGeekbenchMulti(c.device);
+        return v != null ? String(v) : null;
+      }),
+      F("bench.3dmark", "3DMark Wild Life", "extended", (c) => ext(c.payload, "benchmarks.3dmarkWildLife")),
+      F("bench.stress", "3DMark Stress Stability", "engineering", (c) => ext(c.payload, "benchmarks.3dmarkStress")),
+      F("bench.pcmark", "PCMark Work", "extended", (c) => ext(c.payload, "benchmarks.pcmark")),
+      F("bench.ai", "AI Benchmark", "extended", (c) => ext(c.payload, "benchmarks.aiBenchmark")),
+      F("bench.endurance", "Battery Endurance Score", "standard", (c) => ext(c.payload, "benchmarks.batteryEndurance")),
+      F("bench.gaming-stab", "Gaming Stability", "extended", (c) => ext(c.payload, "benchmarks.gamingStability")),
+      F("bench.throttle", "Thermal Throttling", "engineering", (c) => ext(c.payload, "benchmarks.thermalThrottling")),
+      F("bench.surface-temp", "Maximum Surface Temperature", "engineering", (c) => ext(c.payload, "benchmarks.maxSurfaceTemp")),
+    ],
+  },
+  {
+    id: "camera-rear",
+    title: "Camera Laboratory · Rear Camera System",
+    fields: [
+      F("cam.config", "Camera Configuration", "core", (c) =>
+        c.device.cameras?.length
+          ? `${c.device.cameras.length}-camera array`
+          : null,
+      ),
+      F("cam.sensors", "Sensor Models", "extended", (c) => ext(c.payload, "camera.sensorModels")),
+      F("cam.sizes", "Sensor Sizes", "engineering", (c) => ext(c.payload, "camera.sensorSizes")),
+      F("cam.coatings", "Lens Coatings", "engineering", (c) => ext(c.payload, "camera.lensCoatings")),
+      F("cam.ois", "OIS", "standard", (c) =>
+        yesNo(c.device.cameras?.some((x) => x.stabilization)) ??
+        ext(c.payload, "camera.ois"),
+      ),
+      F("cam.eis", "EIS", "standard", (c) => ext(c.payload, "camera.eis")),
+      F("cam.laser-af", "Laser Autofocus", "extended", (c) => ext(c.payload, "camera.laserAf")),
+      F("cam.color", "Color Spectrum Sensor", "engineering", (c) => ext(c.payload, "camera.colorSensor")),
+      F("cam.periscope", "Periscope System", "extended", (c) => ext(c.payload, "camera.periscope")),
+      F("cam.optical-zoom", "Optical Zoom", "standard", (c) =>
+        cameraByType(c.device, "telephoto")?.opticalZoom ??
+        ext(c.payload, "camera.opticalZoom"),
+      ),
+      F("cam.hybrid-zoom", "Hybrid Zoom", "extended", (c) => ext(c.payload, "camera.hybridZoom")),
+      F("cam.digital-zoom", "Digital Zoom", "extended", (c) => ext(c.payload, "camera.digitalZoom")),
+      F("cam.main-mp", "Main Camera · Resolution", "core", (c) => {
+        const mp = mainCameraMp(c.device);
+        return mp != null ? `${mp} MP` : null;
+      }, { score: (c) => mainCameraMp(c.device), higherIsBetter: true }),
+      F("cam.main-sensor", "Main Camera · Sensor Name", "extended", (c) => ext(c.payload, "camera.mainSensor")),
+      F("cam.main-aperture", "Main Camera · Aperture", "standard", (c) =>
+        cameraByType(c.device, "main")?.aperture ??
+        c.device.cameras?.[0]?.aperture,
+      ),
+      F("cam.main-pixel", "Main Camera · Pixel Size", "engineering", (c) => ext(c.payload, "camera.mainPixelSize")),
+      F("cam.main-fl", "Main Camera · Focal Length", "extended", (c) => ext(c.payload, "camera.mainFocalLength")),
+      F("cam.main-af", "Main Camera · Autofocus", "extended", (c) => ext(c.payload, "camera.mainAf")),
+      F("cam.uw-mp", "Ultra-Wide · Resolution", "standard", (c) => {
+        const cam = cameraByType(c.device, "ultra");
+        return cam ? `${cam.megapixel} MP` : ext(c.payload, "camera.ultraWideMp");
+      }),
+      F("cam.uw-fov", "Ultra-Wide · Field of View", "extended", (c) => ext(c.payload, "camera.ultraWideFov")),
+      F("cam.macro", "Ultra-Wide · Macro Support", "extended", (c) => ext(c.payload, "camera.macroSupport")),
+      F("cam.tele-mp", "Telephoto · Resolution", "standard", (c) => {
+        const cam = cameraByType(c.device, "tele");
+        return cam ? `${cam.megapixel} MP` : ext(c.payload, "camera.teleMp");
+      }),
+      F("cam.tele-zoom", "Telephoto · Optical Zoom", "standard", (c) =>
+        cameraByType(c.device, "tele")?.opticalZoom,
+      ),
+      F("cam.tele-mfd", "Telephoto · Min Focus Distance", "engineering", (c) => ext(c.payload, "camera.teleMfd")),
+      F("cam.video-8k", "Video · 8K", "standard", (c) => ext(c.payload, "camera.video8k")),
+      F("cam.video-4k", "Video · 4K 120fps", "extended", (c) => ext(c.payload, "camera.video4k120")),
+      F("cam.video-hdr", "Video · HDR Video", "standard", (c) => ext(c.payload, "camera.videoHdr")),
+      F("cam.video-dv", "Video · Dolby Vision", "extended", (c) => ext(c.payload, "camera.videoDolby")),
+      F("cam.video-log", "Video · LOG Recording", "engineering", (c) => ext(c.payload, "camera.videoLog")),
+      F("cam.video-raw", "Video · RAW Video", "engineering", (c) => ext(c.payload, "camera.videoRaw")),
+      F("cam.slow-mo", "Video · Slow Motion Modes", "extended", (c) => ext(c.payload, "camera.slowMotion")),
+    ],
+  },
+  {
+    id: "camera-front",
+    title: "Front Camera Studio",
+    fields: [
+      F("front.res", "Resolution", "core", (c) => ext(c.payload, "frontCamera.resolution")),
+      F("front.sensor", "Sensor", "extended", (c) => ext(c.payload, "frontCamera.sensor")),
+      F("front.af", "Autofocus", "standard", (c) => ext(c.payload, "frontCamera.autofocus")),
+      F("front.hdr", "HDR", "standard", (c) => ext(c.payload, "frontCamera.hdr")),
+      F("front.portrait", "Portrait Features", "standard", (c) => ext(c.payload, "frontCamera.portrait")),
+      F("front.night", "Night Mode", "standard", (c) => ext(c.payload, "frontCamera.nightMode")),
+      F("front.4k", "4K Recording", "extended", (c) => ext(c.payload, "frontCamera.video4k")),
+      F("front.slow", "Slow Motion Selfie", "extended", (c) => ext(c.payload, "frontCamera.slowMotion")),
+      F("front.beauty", "Beauty Engine", "engineering", (c) => ext(c.payload, "frontCamera.beautyEngine")),
+    ],
+  },
+  {
+    id: "battery",
+    title: "Battery & Power Systems",
+    fields: [
+      F("bat.capacity", "Capacity", "core", (c) =>
+        c.device.battery ? `${c.device.battery.capacity} mAh` : null,
+        { score: (c) => c.device.battery?.capacity ?? null, higherIsBetter: true },
+      ),
+      F("bat.tech", "Technology", "standard", (c) => ext(c.payload, "battery.technology")),
+      F("bat.cell", "Cell Structure", "engineering", (c) => ext(c.payload, "battery.cellStructure")),
+      F("bat.density", "Energy Density", "engineering", (c) => ext(c.payload, "battery.energyDensity")),
+      F("bat.health", "Battery Health Features", "standard", (c) => ext(c.payload, "battery.healthFeatures")),
+      F("bat.protocols", "Charging Protocols", "extended", (c) => ext(c.payload, "battery.chargingProtocols")),
+      F("bat.pd", "USB Power Delivery", "standard", (c) => ext(c.payload, "battery.usbPd")),
+      F("bat.pps", "PPS Support", "extended", (c) => ext(c.payload, "battery.pps")),
+      F("bat.wired", "Wired Charging", "core", (c) => c.device.battery?.charging),
+      F("bat.wireless", "Wireless Charging", "standard", (c) =>
+        yesNo(c.device.battery?.wireless) ?? ext(c.payload, "battery.wirelessCharging"),
+      ),
+      F("bat.reverse", "Reverse Wireless Charging", "standard", (c) => yesNo(c.device.battery?.reverse)),
+      F("bat.bypass", "Battery Bypass Mode", "extended", (c) => ext(c.payload, "battery.bypassMode")),
+      F("bat.protect", "Smart Charging Protection", "standard", (c) => ext(c.payload, "battery.smartProtection")),
+      F("bat.replacement", "Battery Replacement Availability", "extended", (c) => ext(c.payload, "battery.replacementAvailability")),
+      F("bat.cycles", "Estimated Charge Cycles", "engineering", (c) => ext(c.payload, "battery.chargeCycles")),
+    ],
+  },
+  {
+    id: "connectivity",
+    title: "Connectivity Matrix",
+    fields: [
+      F("conn.wifi", "Wi-Fi Standards", "standard", (c) => ext(c.payload, "connectivity.wifi") ?? "Wi-Fi 6/6E"),
+      F("conn.bt", "Bluetooth Version", "standard", (c) => ext(c.payload, "connectivity.bluetooth") ?? "5.x"),
+      F("conn.codecs", "Bluetooth Codecs", "extended", (c) => ext(c.payload, "connectivity.bluetoothCodecs")),
+      F("conn.nfc", "NFC", "core", (c) => yesNo(c.device.nfc)),
+      F("conn.ir", "Infrared", "standard", (c) => yesNo(c.device.infrared)),
+      F("conn.uwb", "Ultra Wideband", "extended", (c) => ext(c.payload, "connectivity.uwb")),
+      F("conn.usb", "USB Version", "standard", (c) => ext(c.payload, "connectivity.usb") ?? "USB-C"),
+      F("conn.dp", "Display Output", "engineering", (c) => ext(c.payload, "connectivity.displayOutput")),
+      F("conn.otg", "OTG", "standard", (c) => ext(c.payload, "connectivity.otg") ?? "Yes"),
+      F("conn.satellite", "Satellite Communication", "extended", (c) => ext(c.payload, "connectivity.satellite")),
+      F("conn.fm", "FM Radio", "extended", (c) => ext(c.payload, "connectivity.fmRadio")),
+      F("conn.gps", "Dual GPS", "standard", (c) => ext(c.payload, "connectivity.dualGps") ?? "GPS"),
+      F("conn.navic", "NavIC", "extended", (c) => ext(c.payload, "connectivity.navic")),
+      F("conn.galileo", "Galileo", "engineering", (c) => ext(c.payload, "connectivity.galileo") ?? "Yes"),
+      F("conn.glonass", "GLONASS", "engineering", (c) => ext(c.payload, "connectivity.glonass") ?? "Yes"),
+      F("conn.beidou", "BeiDou", "engineering", (c) => ext(c.payload, "connectivity.beidou") ?? "Yes"),
+      F("conn.qzss", "QZSS", "engineering", (c) => ext(c.payload, "connectivity.qzss")),
+    ],
+  },
+  {
+    id: "network",
+    title: "Cellular Technology · Network Support",
+    fields: [
+      F("net.2g", "2G Bands", "engineering", (c) => ext(c.payload, "network.bands2g")),
+      F("net.3g", "3G Bands", "engineering", (c) => ext(c.payload, "network.bands3g")),
+      F("net.4g", "4G Bands", "standard", (c) => ext(c.payload, "network.bands4g")),
+      F("net.5g-sa", "5G SA", "standard", (c) => ext(c.payload, "network.5gSa") ?? yesNo(c.device.fiveG)),
+      F("net.5g-nsa", "5G NSA", "standard", (c) => ext(c.payload, "network.5gNsa")),
+      F("net.mmwave", "mmWave", "extended", (c) => ext(c.payload, "network.mmWave")),
+      F("net.ca", "Carrier Aggregation", "extended", (c) => ext(c.payload, "network.carrierAggregation")),
+      F("net.volte", "VoLTE", "standard", (c) => ext(c.payload, "network.volte") ?? "Yes"),
+      F("net.vowifi", "VoWiFi", "standard", (c) => ext(c.payload, "network.vowifi")),
+      F("net.dual-sim", "Dual SIM", "core", (c) => ext(c.payload, "network.dualSim") ?? "Yes"),
+      F("net.esim", "eSIM", "standard", (c) => ext(c.payload, "network.esim")),
+      F("net.sos", "Satellite SOS", "extended", (c) => ext(c.payload, "network.satelliteSos")),
+      F("net.dl", "Maximum Download Speed", "extended", (c) => ext(c.payload, "network.maxDownload")),
+      F("net.ul", "Maximum Upload Speed", "extended", (c) => ext(c.payload, "network.maxUpload")),
+    ],
+  },
+  {
+    id: "audio",
+    title: "Audio Engineering",
+    fields: [
+      F("audio.stereo", "Stereo Speakers", "standard", (c) => ext(c.payload, "audio.stereoSpeakers") ?? "Yes"),
+      F("audio.tuning", "Speaker Tuning Partner", "extended", (c) => ext(c.payload, "audio.tuningPartner")),
+      F("audio.atmos", "Dolby Atmos", "standard", (c) => ext(c.payload, "audio.dolbyAtmos")),
+      F("audio.hires", "Hi-Res Audio", "standard", (c) => ext(c.payload, "audio.hiRes")),
+      F("audio.wireless-hires", "Wireless Hi-Res", "extended", (c) => ext(c.payload, "audio.wirelessHiRes")),
+      F("audio.dac", "Audio DAC", "engineering", (c) => ext(c.payload, "audio.dac")),
+      F("audio.jack", "Headphone Jack", "standard", (c) => ext(c.payload, "audio.headphoneJack") ?? "No"),
+      F("audio.mics", "Microphone Count", "extended", (c) => ext(c.payload, "audio.microphoneCount")),
+      F("audio.anc", "Noise Cancellation", "standard", (c) => ext(c.payload, "audio.noiseCancellation")),
+      F("audio.spatial", "Spatial Audio", "standard", (c) => ext(c.payload, "audio.spatialAudio")),
+      F("audio.aptx", "aptX", "extended", (c) => ext(c.payload, "audio.aptx")),
+      F("audio.ldac", "LDAC", "extended", (c) => ext(c.payload, "audio.ldac")),
+      F("audio.lhdc", "LHDC", "engineering", (c) => ext(c.payload, "audio.lhdc")),
+      F("audio.lc3", "LC3", "engineering", (c) => ext(c.payload, "audio.lc3")),
+      F("audio.auracast", "Auracast", "engineering", (c) => ext(c.payload, "audio.auracast")),
+    ],
+  },
+  {
+    id: "sensors",
+    title: "Sensors & Intelligence",
+    fields: [
+      F("sens.accel", "Accelerometer", "standard", (c) => ext(c.payload, "sensors.accelerometer") ?? "Yes"),
+      F("sens.gyro", "Gyroscope", "standard", (c) => ext(c.payload, "sensors.gyroscope") ?? "Yes"),
+      F("sens.compass", "Compass", "standard", (c) => ext(c.payload, "sensors.compass") ?? "Yes"),
+      F("sens.baro", "Barometer", "extended", (c) => ext(c.payload, "sensors.barometer")),
+      F("sens.als", "Ambient Light", "standard", (c) => ext(c.payload, "sensors.ambientLight") ?? "Yes"),
+      F("sens.prox", "Proximity", "standard", (c) => ext(c.payload, "sensors.proximity") ?? "Yes"),
+      F("sens.hall", "Hall Sensor", "engineering", (c) => ext(c.payload, "sensors.hall")),
+      F("sens.temp", "Temperature Sensor", "engineering", (c) => ext(c.payload, "sensors.temperature")),
+      F("sens.fingerprint", "Ultrasonic Fingerprint", "standard", (c) => c.device.fingerprint),
+      F("sens.face", "Face Recognition", "standard", (c) => ext(c.payload, "sensors.faceRecognition")),
+      F("sens.hr", "Heart Rate Sensor", "engineering", (c) => ext(c.payload, "sensors.heartRate")),
+      F("sens.uwb", "UWB Positioning", "extended", (c) => ext(c.payload, "sensors.uwbPositioning")),
+    ],
+  },
+  {
+    id: "software",
+    title: "Software Experience",
+    fields: [
+      F("sw.android", "Android Version", "core", (c) => c.device.os),
+      F("sw.ui", "Custom UI", "standard", (c) => ext(c.payload, "software.customUi")),
+      F("sw.os-updates", "Guaranteed OS Updates", "standard", (c) => ext(c.payload, "software.guaranteedOsUpdates")),
+      F("sw.security", "Security Patches", "standard", (c) => ext(c.payload, "software.securityPatches")),
+      F("sw.desktop", "Desktop Mode", "extended", (c) => ext(c.payload, "software.desktopMode")),
+      F("sw.assistant", "AI Assistant", "standard", (c) => ext(c.payload, "software.aiAssistant")),
+      F("sw.ai-write", "AI Writing Tools", "extended", (c) => ext(c.payload, "software.aiWriting")),
+      F("sw.ai-photo", "AI Image Editing", "extended", (c) => ext(c.payload, "software.aiImageEditing")),
+      F("sw.circle", "Circle to Search", "extended", (c) => ext(c.payload, "software.circleToSearch")),
+      F("sw.translate", "Live Translation", "extended", (c) => ext(c.payload, "software.liveTranslation")),
+      F("sw.record", "Call Recording", "standard", (c) => ext(c.payload, "software.callRecording")),
+      F("sw.privacy", "Privacy Dashboard", "standard", (c) => ext(c.payload, "software.privacyDashboard")),
+      F("sw.secure", "Secure Folder", "standard", (c) => ext(c.payload, "software.secureFolder")),
+      F("sw.bootloader", "Developer Unlock Policy", "engineering", (c) => ext(c.payload, "software.bootloaderPolicy")),
+    ],
+  },
+  {
+    id: "ai",
+    title: "AI Intelligence",
+    fields: [
+      F("ai.on-device", "On-Device AI", "standard", (c) => ext(c.payload, "ai.onDevice")),
+      F("ai.npu", "NPU Performance", "extended", (c) => ext(c.payload, "ai.npuPerformance")),
+      F("ai.translate", "AI Translation", "standard", (c) => ext(c.payload, "ai.translation")),
+      F("ai.summaries", "AI Summaries", "standard", (c) => ext(c.payload, "ai.summaries")),
+      F("ai.photo", "AI Photo Editing", "standard", (c) => ext(c.payload, "ai.photoEditing")),
+      F("ai.voice", "AI Voice Assistant", "standard", (c) => ext(c.payload, "ai.voiceAssistant")),
+      F("ai.search", "AI Search", "standard", (c) => ext(c.payload, "ai.search")),
+      F("ai.meetings", "AI Meeting Notes", "extended", (c) => ext(c.payload, "ai.meetingNotes")),
+      F("ai.wallpaper", "AI Wallpaper Generation", "extended", (c) => ext(c.payload, "ai.wallpaper")),
+      F("ai.coding", "AI Coding Assistant", "engineering", (c) => ext(c.payload, "ai.codingAssistant")),
+      F("ai.privacy", "AI Privacy Processing", "extended", (c) => ext(c.payload, "ai.privacyProcessing")),
+    ],
+  },
+  {
+    id: "gaming",
+    title: "Gaming Center",
+    fields: [
+      F("game.fi", "Frame Interpolation", "extended", (c) => ext(c.payload, "gaming.frameInterpolation")),
+      F("game.touch", "Touch Response", "standard", (c) => ext(c.payload, "gaming.touchResponse")),
+      F("game.upscale", "GPU Upscaling", "extended", (c) => ext(c.payload, "gaming.gpuUpscaling")),
+      F("game.rt", "Ray Tracing", "standard", (c) => ext(c.payload, "gaming.rayTracing")),
+      F("game.turbo", "Game Turbo Mode", "standard", (c) => ext(c.payload, "gaming.gameTurbo")),
+      F("game.cooling", "Cooling System", "standard", (c) => ext(c.payload, "gaming.coolingSystem")),
+      F("game.bypass", "Bypass Charging", "extended", (c) => ext(c.payload, "gaming.bypassCharging")),
+      F("game.controller", "Controller Support", "standard", (c) => ext(c.payload, "gaming.controllerSupport")),
+      F("game.external", "External Display Support", "extended", (c) => ext(c.payload, "gaming.externalDisplay")),
+      F("game.fps", "Maximum FPS", "standard", (c) => ext(c.payload, "gaming.maxFps")),
+      F("game.thermal", "Thermal Stability", "extended", (c) => ext(c.payload, "gaming.thermalStability")),
+    ],
+  },
+  {
+    id: "repairability",
+    title: "Repair & Sustainability",
+    fields: [
+      F("repair.score", "Repair Score", "standard", (c) => ext(c.payload, "repairability.score")),
+      F("repair.battery", "Battery Replacement Ease", "standard", (c) => ext(c.payload, "repairability.batteryEase")),
+      F("repair.screen-cost", "Screen Replacement Cost", "extended", (c) => ext(c.payload, "repairability.screenCost")),
+      F("repair.parts", "Spare Parts Availability", "standard", (c) => ext(c.payload, "repairability.spareParts")),
+      F("repair.warranty", "Warranty Period", "standard", (c) => ext(c.payload, "repairability.warranty")),
+      F("repair.care", "Extended Care Plans", "extended", (c) => ext(c.payload, "repairability.extendedCare")),
+      F("repair.recycled", "Recycled Materials", "engineering", (c) => ext(c.payload, "repairability.recycledMaterials")),
+      F("repair.packaging", "Packaging Sustainability", "engineering", (c) => ext(c.payload, "repairability.packaging")),
+      F("repair.carbon", "Carbon Footprint", "engineering", (c) => ext(c.payload, "repairability.carbonFootprint")),
+    ],
+  },
+  {
+    id: "ecosystem",
+    title: "Ecosystem Integration",
+    fields: [
+      F("eco.watch", "Smartwatch Support", "standard", (c) => ext(c.payload, "ecosystem.smartwatch")),
+      F("eco.earbuds", "Earbuds Integration", "standard", (c) => ext(c.payload, "ecosystem.earbuds")),
+      F("eco.tablet", "Tablet Continuity", "extended", (c) => ext(c.payload, "ecosystem.tabletContinuity")),
+      F("eco.desktop", "Desktop Features", "extended", (c) => ext(c.payload, "ecosystem.desktopFeatures")),
+      F("eco.car", "Car Connectivity", "standard", (c) => ext(c.payload, "ecosystem.carConnectivity")),
+      F("eco.home", "Smart Home Compatibility", "standard", (c) => ext(c.payload, "ecosystem.smartHome")),
+      F("eco.clipboard", "Cross Device Clipboard", "extended", (c) => ext(c.payload, "ecosystem.clipboard")),
+      F("eco.multi", "Multi Screen Collaboration", "extended", (c) => ext(c.payload, "ecosystem.multiScreen")),
+    ],
+  },
+];

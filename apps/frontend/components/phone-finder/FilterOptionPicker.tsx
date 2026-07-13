@@ -1,7 +1,7 @@
 "use client";
 
 import { ChevronDown } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import { cn } from "@/design-system/utils/cn";
 
@@ -16,7 +16,19 @@ type FilterOptionPickerProps<T extends string> = {
   value: T;
   onChange: (value: T) => void;
   columns?: 1 | 2 | 3;
+  /** Keep option labels in original language (brands, chipsets, etc.). */
+  preserveLabels?: boolean;
 };
+
+function maybePreserve(label: string, value: string, preserve?: boolean): ReactNode {
+  void value;
+  if (!preserve) return label;
+  return (
+    <span className="arena-brand-name notranslate" translate="no">
+      {label}
+    </span>
+  );
+}
 
 export function FilterOptionPicker<T extends string>({
   label,
@@ -24,6 +36,7 @@ export function FilterOptionPicker<T extends string>({
   value,
   onChange,
   columns = 2,
+  preserveLabels = false,
 }: FilterOptionPickerProps<T>) {
   const gridClass =
     columns === 1
@@ -55,7 +68,7 @@ export function FilterOptionPicker<T extends string>({
                   : "border-white/10 bg-white/5 text-[var(--text-secondary)] hover:border-white/20 hover:text-[var(--text-primary)]",
               )}
             >
-              {opt.label}
+              {maybePreserve(opt.label, opt.value, preserveLabels)}
             </button>
           );
         })}
@@ -74,6 +87,8 @@ type ChooseableFilterPickerProps<T extends string> = {
   hideLabel?: boolean;
   /** When value is `All`, show placeholder text in the trigger instead of the option label. */
   blankDefault?: boolean;
+  /** Keep brand / proper-noun option labels out of page translation. */
+  preserveLabels?: boolean;
 };
 
 export function ChooseableFilterPicker<T extends string>({
@@ -85,6 +100,7 @@ export function ChooseableFilterPicker<T extends string>({
   searchPlaceholder = "Search…",
   hideLabel = false,
   blankDefault = false,
+  preserveLabels = false,
 }: ChooseableFilterPickerProps<T>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -187,7 +203,7 @@ export function ChooseableFilterPicker<T extends string>({
                           : "text-[var(--text-primary)] hover:bg-white/5",
                       )}
                     >
-                      {opt.label}
+                      {maybePreserve(opt.label, opt.value, preserveLabels)}
                     </button>
                   </li>
                 );

@@ -1,6 +1,7 @@
 "use client";
 
 import { RotateCcw, SlidersHorizontal } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 import { PhoneFinderSearch } from "@/components/phone-finder/PhoneFinderSearch";
 import BrandFilter from "@/components/filters/BrandFilter";
@@ -34,6 +35,7 @@ import {
   DEFAULT_PHONE_FINDER_FILTERS,
   formatPriceAmount,
   PRICE_CURRENCY_OPTIONS,
+  type CatalogFilterOption,
   type PhoneFinderFilters,
 } from "@/features/phone-finder";
 import type { Device } from "@/lib/api";
@@ -66,7 +68,18 @@ function boolToggle(
   return { [key]: on ? true : null } as Partial<PhoneFinderFilters>;
 }
 
+function translateOptions(
+  options: CatalogFilterOption[],
+  t: (key: string) => string,
+) {
+  return options.map((opt) => ({
+    label: t(opt.labelKey),
+    value: opt.value,
+  }));
+}
+
 export function PhoneFinderFilterPanel(props: Props) {
+  const t = useTranslations("finder");
   const {
     filters,
     onChange,
@@ -91,30 +104,44 @@ export function PhoneFinderFilterPanel(props: Props) {
     onChange({ ...filters, ...partial, preset: null });
   }
 
+  const currencyOptions = PRICE_CURRENCY_OPTIONS.map((opt) => ({
+    label:
+      opt.value === "USD"
+        ? t("filters.currencyUsd")
+        : t("filters.currencyInr"),
+    value: opt.value,
+  }));
+
   return (
     <div className="space-y-4">
-      <SpectrumPanel className="p-5">
-        <div className="mb-4 flex items-center justify-between gap-2">
-          <div className="flex items-center gap-2">
+      <SpectrumPanel className="min-w-0 overflow-hidden p-4 sm:p-5">
+        <div className="mb-4 flex items-start justify-between gap-3">
+          <div className="flex min-w-0 flex-1 flex-wrap items-center gap-2">
             <SlidersHorizontal size={18} className="text-[var(--electric-cyan)]" />
-            <h2 className="font-bold text-[var(--text-primary)]">Filters</h2>
-            {active > 0 && <Badge variant="cyan">{active} active</Badge>}
+            <h2 className="font-bold text-[var(--text-primary)]">
+              {t("filters.title")}
+            </h2>
+            {active > 0 && (
+              <Badge variant="cyan">
+                {t("filters.activeCount", { count: active })}
+              </Badge>
+            )}
           </div>
           <button
             type="button"
             onClick={() => onChange({ ...DEFAULT_PHONE_FINDER_FILTERS })}
-            className="inline-flex items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--electric-cyan)]"
+            className="inline-flex shrink-0 items-center gap-1 text-xs font-semibold text-[var(--text-secondary)] hover:text-[var(--electric-cyan)]"
           >
             <RotateCcw size={14} />
-            Reset
+            {t("filters.reset")}
           </button>
         </div>
 
         <p className="mb-4 text-xs text-[var(--text-secondary)]">
-          {resultCount} of {totalCount} devices match
+          {t("filters.matchDevices", { resultCount, totalCount })}
         </p>
 
-        <FilterListSection title="Device">
+        <FilterListSection title={t("filters.device")}>
           <PhoneFinderSearch
             layout="sidebar"
             value={searchValue}
@@ -128,18 +155,19 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
         </FilterListSection>
 
-        <FilterListSection title="Brands">
+        <FilterListSection title={t("filters.brands")}>
           <BrandFilter
+            variant="select"
             brands={brands}
             devices={devices}
             selected={filters.brand}
             onSelect={(brand) => patch({ brand })}
           />
         </FilterListSection>
-        <FilterListSection title="Price">
+        <FilterListSection title={t("filters.price")}>
           <div className="space-y-3">
             <FilterChoiceList
-              options={PRICE_CURRENCY_OPTIONS}
+              options={currencyOptions}
               value={filters.priceCurrency}
               onChange={(nextCurrency) =>
                 patch({
@@ -162,16 +190,13 @@ export function PhoneFinderFilterPanel(props: Props) {
           </div>
         </FilterListSection>
 
-        <FilterListSection title="Display">
+        <FilterListSection title={t("filters.display")}>
           <StepSlider
             hideLabel
             blankDefault
-            label="Display"
-            placeholder="Choose display"
-            options={DISPLAY_TECH_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.display")}
+            placeholder={t("filters.chooseDisplay")}
+            options={translateOptions(DISPLAY_TECH_OPTIONS, t)}
             value={filters.displayTech}
             onChange={(displayTech) =>
               patch({ displayTech: displayTech ?? "All" })
@@ -179,16 +204,13 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
         </FilterListSection>
 
-        <FilterListSection title="Processor">
+        <FilterListSection title={t("filters.processor")}>
           <StepSlider
             hideLabel
             blankDefault
-            label="Processor"
-            placeholder="Choose processor"
-            options={PROCESSOR_BRAND_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.processor")}
+            placeholder={t("filters.chooseProcessor")}
+            options={translateOptions(PROCESSOR_BRAND_OPTIONS, t)}
             value={filters.processorBrand}
             onChange={(processorBrand) =>
               patch({ processorBrand: processorBrand ?? "All" })
@@ -196,9 +218,9 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
         </FilterListSection>
 
-        <FilterListSection title="Camera">
+        <FilterListSection title={t("filters.camera")}>
           <MinRangeSlider
-            label="Main Camera Resolution"
+            label={t("filters.mainCameraMp")}
             min={0}
             max={300}
             step={1}
@@ -208,7 +230,7 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
 
           <MinRangeSlider
-            label="Front Camera Resolution"
+            label={t("filters.frontCameraMp")}
             min={0}
             max={200}
             step={1}
@@ -218,50 +240,47 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
 
           <TriSlide
-            label="Ultra-Wide Camera"
+            label={t("filters.ultraWide")}
             value={filters.ultraWideCamera}
             onChange={(ultraWideCamera) => patch({ ultraWideCamera })}
           />
 
           <TriSlide
-            label="Telephoto Camera"
+            label={t("filters.telephoto")}
             value={filters.telephotoCamera}
             onChange={(telephotoCamera) => patch({ telephotoCamera })}
           />
 
           <TriSlide
-            label="Optical Zoom"
+            label={t("filters.opticalZoom")}
             value={filters.opticalZoom}
             onChange={(opticalZoom) => patch({ opticalZoom })}
           />
 
           <TriSlide
-            label="OIS Support"
+            label={t("filters.ois")}
             value={filters.ois}
             onChange={(ois) => patch({ ois })}
           />
 
           <TriSlide
-            label="4K Recording"
+            label={t("filters.video4k")}
             value={filters.video4k}
             onChange={(video4k) => patch({ video4k })}
           />
 
           <TriSlide
-            label="8K Recording"
+            label={t("filters.video8k")}
             value={filters.video8k}
             onChange={(video8k) => patch({ video8k })}
           />
         </FilterListSection>
 
-        <FilterListSection title="Battery Capacity">
+        <FilterListSection title={t("filters.batteryCapacity")}>
           <StepSlider
             hideLabel
-            label="Battery Capacity"
-            options={BATTERY_BUCKET_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.batteryCapacity")}
+            options={translateOptions(BATTERY_BUCKET_OPTIONS, t)}
             value={filters.batteryBucket}
             onChange={(batteryBucket) =>
               patch({ batteryBucket: batteryBucket ?? "All" })
@@ -269,13 +288,10 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
         </FilterListSection>
 
-        <FilterListSection title="Connectivity">
+        <FilterListSection title={t("filters.connectivity")}>
           <StepSlider
-            label="Network"
-            options={CELLULAR_NETWORK_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.network")}
+            options={translateOptions(CELLULAR_NETWORK_OPTIONS, t)}
             value={filters.cellularNetwork}
             onChange={(cellularNetwork) =>
               patch({ cellularNetwork: cellularNetwork ?? "All" })
@@ -283,21 +299,15 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
 
           <StepSlider
-            label="Wi-Fi Version"
-            options={WIFI_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.wifiVersion")}
+            options={translateOptions(WIFI_OPTIONS, t)}
             value={filters.wifiVersion}
             onChange={(wifiVersion) => patch({ wifiVersion: wifiVersion ?? "All" })}
           />
 
           <StepSlider
-            label="Bluetooth Version"
-            options={BLUETOOTH_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.bluetoothVersion")}
+            options={translateOptions(BLUETOOTH_OPTIONS, t)}
             value={filters.bluetoothVersion}
             onChange={(bluetoothVersion) =>
               patch({ bluetoothVersion: bluetoothVersion ?? "All" })
@@ -305,41 +315,35 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
 
           <TriSlide
-            label="NFC"
+            label={t("filters.nfc")}
             value={filters.nfc}
             onChange={(nfc) => patch({ nfc })}
           />
 
           <TriSlide
-            label="IR Blaster"
+            label={t("filters.irBlaster")}
             value={filters.infrared}
             onChange={(infrared) => patch({ infrared })}
           />
 
           <TriSlide
-            label="eSIM Support"
+            label={t("filters.esimSupport")}
             value={filters.esim}
             onChange={(esim) => patch({ esim })}
           />
 
           <StepSlider
-            label="SIM Type"
-            options={SIM_TYPE_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.simType")}
+            options={translateOptions(SIM_TYPE_OPTIONS, t)}
             value={filters.simType}
             onChange={(simType) => patch({ simType: simType ?? "All" })}
           />
         </FilterListSection>
 
-        <FilterListSection title="Security & Build">
+        <FilterListSection title={t("filters.securityBuild")}>
           <StepSlider
-            label="Fingerprint Type"
-            options={FINGERPRINT_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.fingerprintType")}
+            options={translateOptions(FINGERPRINT_OPTIONS, t)}
             value={filters.fingerprintType}
             onChange={(fingerprintType) =>
               patch({ fingerprintType: fingerprintType ?? "All" })
@@ -347,21 +351,15 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
 
           <StepSlider
-            label="IP Rating"
-            options={IP_RATING_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.ipRating")}
+            options={translateOptions(IP_RATING_OPTIONS, t)}
             value={filters.ipRating}
             onChange={(ipRating) => patch({ ipRating: ipRating ?? "All" })}
           />
 
           <StepSlider
-            label="Build Material"
-            options={BUILD_MATERIAL_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.buildMaterial")}
+            options={translateOptions(BUILD_MATERIAL_OPTIONS, t)}
             value={filters.buildMaterial}
             onChange={(buildMaterial) =>
               patch({ buildMaterial: buildMaterial ?? "All" })
@@ -369,39 +367,36 @@ export function PhoneFinderFilterPanel(props: Props) {
           />
         </FilterListSection>
 
-        <FilterListSection title="Operating System">
+        <FilterListSection title={t("filters.operatingSystem")}>
           <StepSlider
             hideLabel
-            label="Operating System"
-            options={OS_FAMILY_OPTIONS.map((opt) => ({
-              label: opt.label,
-              value: opt.value,
-            }))}
+            label={t("filters.operatingSystem")}
+            options={translateOptions(OS_FAMILY_OPTIONS, t)}
             value={filters.osFamily}
             onChange={(osFamily) => patch({ osFamily: osFamily ?? "All" })}
           />
         </FilterListSection>
 
-        <FilterListSection title="Gaming & AI">
-          <FilterListItem label="Gaming Features">
+        <FilterListSection title={t("filters.gamingAi")}>
+          <FilterListItem label={t("filters.gamingFeatures")}>
             <ul className="space-y-2" role="list">
               <li>
                 <SlideToggle
-                  label="Shoulder Triggers"
+                  label={t("filters.shoulderTriggers")}
                   active={filters.gamingShoulderTriggers === true}
                   onChange={(on) => patch(boolToggle("gamingShoulderTriggers", on))}
                 />
               </li>
               <li>
                 <SlideToggle
-                  label="Cooling Fan"
+                  label={t("filters.coolingFan")}
                   active={filters.gamingCoolingFan === true}
                   onChange={(on) => patch(boolToggle("gamingCoolingFan", on))}
                 />
               </li>
               <li>
                 <SlideToggle
-                  label="High Touch Sampling Rate"
+                  label={t("filters.highTouchSampling")}
                   active={filters.highTouchSampling === true}
                   onChange={(on) => patch(boolToggle("highTouchSampling", on))}
                 />
@@ -409,39 +404,39 @@ export function PhoneFinderFilterPanel(props: Props) {
             </ul>
           </FilterListItem>
 
-          <FilterListItem label="AI Features">
+          <FilterListItem label={t("filters.aiFeatures")}>
             <ul className="space-y-2" role="list">
               <li>
                 <SlideToggle
-                  label="AI Photography"
+                  label={t("filters.aiPhotography")}
                   active={filters.aiPhotography === true}
                   onChange={(on) => patch(boolToggle("aiPhotography", on))}
                 />
               </li>
               <li>
                 <SlideToggle
-                  label="AI Translation"
+                  label={t("filters.aiTranslation")}
                   active={filters.aiTranslation === true}
                   onChange={(on) => patch(boolToggle("aiTranslation", on))}
                 />
               </li>
               <li>
                 <SlideToggle
-                  label="AI Call Summary"
+                  label={t("filters.aiCallSummary")}
                   active={filters.aiCallSummary === true}
                   onChange={(on) => patch(boolToggle("aiCallSummary", on))}
                 />
               </li>
               <li>
                 <SlideToggle
-                  label="Circle to Search"
+                  label={t("filters.circleToSearch")}
                   active={filters.circleToSearch === true}
                   onChange={(on) => patch(boolToggle("circleToSearch", on))}
                 />
               </li>
               <li>
                 <SlideToggle
-                  label="On-device AI Models"
+                  label={t("filters.onDeviceAi")}
                   active={filters.onDeviceAi === true}
                   onChange={(on) => patch(boolToggle("onDeviceAi", on))}
                 />

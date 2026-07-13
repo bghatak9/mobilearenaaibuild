@@ -13,6 +13,7 @@ export type SpotlightTone =
 export type SpotlightDevice = {
   name: string;
   slug: string;
+  brand?: string | null;
   price?: number | null;
   rating?: number | null;
   image?: string;
@@ -48,6 +49,7 @@ function toSpotlightDevice(device: Device): SpotlightDevice {
   return {
     name: device.name,
     slug: device.slug,
+    brand: device.brand?.name ?? null,
     price: device.price,
     rating: device.rating,
     image: device.images?.[0]?.url,

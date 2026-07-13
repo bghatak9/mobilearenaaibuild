@@ -1,8 +1,9 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "@/i18n/navigation";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CheckCircle2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { useState } from "react";
 
 import {
@@ -18,6 +19,7 @@ import { facebookSignIn, googleSignIn, registerUser, setToken } from "@/lib/api"
 import { passwordValidationMessage } from "@/lib/password-policy";
 
 export function SignUpForm() {
+  const t = useTranslations("auth");
   const router = useRouter();
   const searchParams = useSearchParams();
   const success = searchParams.get("success") === "1";
@@ -31,9 +33,7 @@ export function SignUpForm() {
 
   function requireAgreement(): boolean {
     if (agreedToTerms) return true;
-    setError(
-      "Please accept the Terms of Service, Privacy Policy, and Community Guidelines to continue.",
-    );
+    setError(t("agreeRequired"));
     return false;
   }
 
@@ -63,7 +63,7 @@ export function SignUpForm() {
       }
       router.replace("/signup?success=1");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Registration failed.");
+      setError(err instanceof Error ? err.message : t("registrationFailed"));
     } finally {
       setLoading(false);
     }
@@ -79,7 +79,7 @@ export function SignUpForm() {
       setToken(access_token);
       router.replace("/signup?success=1");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Google sign-up failed.");
+      setError(err instanceof Error ? err.message : t("googleSignUpFailed"));
     } finally {
       setLoading(false);
     }
@@ -95,7 +95,7 @@ export function SignUpForm() {
       setToken(access_token);
       router.replace("/signup?success=1");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Facebook sign-up failed.");
+      setError(err instanceof Error ? err.message : t("facebookSignUpFailed"));
     } finally {
       setLoading(false);
     }
@@ -111,8 +111,8 @@ export function SignUpForm() {
   if (success) {
     return (
       <AuthCard
-        title="Welcome to the Arena"
-        subtitle="Your account is ready. Explore phones, save favorites, and join the community."
+        title={t("welcomeArena")}
+        subtitle={t("accountReady")}
         className="text-center"
       >
         <div className="arena-auth-success-icon">
@@ -122,7 +122,7 @@ export function SignUpForm() {
           href="/"
           className="arena-btn-primary mt-5 inline-flex px-5 py-2 text-sm"
         >
-          Enter the Arena
+          {t("enterArena")}
         </Link>
       </AuthCard>
     );
@@ -130,19 +130,19 @@ export function SignUpForm() {
 
   return (
     <AuthCard
-      title="Create account"
-      subtitle="Join in seconds to unlock member benefits — free forever."
+      title={t("createAccount")}
+      subtitle={t("joinSubtitle")}
       error={error}
       footer={
         <AuthFooterLink
-          prompt="Already have an account?"
+          prompt={t("haveAccount")}
           href="/login"
-          label="Sign in"
+          label={t("signIn")}
         />
       }
     >
       <SocialAuthBlock
-        dividerLabel="or sign up with email"
+        dividerLabel={t("orSignUpEmail")}
         disabled={loading}
         onGoogleCredential={(token) => void handleGoogle(token)}
         onFacebookAccessToken={(token) => void handleFacebook(token)}
@@ -152,30 +152,30 @@ export function SignUpForm() {
 
       <form onSubmit={handleSubmit} className="arena-auth-form">
         <Input
-          label="Full name"
+          label={t("fullName")}
           type="text"
           autoComplete="name"
-          placeholder="Alex Rivera"
+          placeholder={t("namePlaceholder")}
           value={name}
           onChange={(e) => setName(e.target.value)}
         />
         <Input
-          label="Email address"
+          label={t("emailAddress")}
           type="email"
           required
           autoComplete="email"
-          placeholder="you@example.com"
+          placeholder={t("emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
         />
         <div>
           <Input
-            label="Password"
+            label={t("password")}
             type="password"
             required
             minLength={8}
             autoComplete="new-password"
-            placeholder="At least 8 characters"
+            placeholder={t("passwordPlaceholder")}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
@@ -197,7 +197,7 @@ export function SignUpForm() {
           size="sm"
           className="w-full"
         >
-          Create account
+          {loading ? t("creatingAccount") : t("createAccount")}
         </Button>
       </form>
     </AuthCard>

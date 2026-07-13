@@ -1,4 +1,6 @@
 import type { Device } from "@/lib/api";
+import { formatDate } from "@/lib/format-datetime";
+import { computeArenaScore } from "@/lib/arena-score";
 
 import { rankBrandsByValue } from "@/lib/brand-categories";
 import { usdToInr } from "./nlp";
@@ -402,6 +404,15 @@ export function affiliatePartnersForCurrency(
   ];
 }
 
+export function activeAffiliateOffers(
+  device: Device,
+  currency: PriceCurrency,
+) {
+  return (device.affiliateOffers ?? [])
+    .filter((offer) => offer.active && offer.currency === currency)
+    .sort((a, b) => b.priority - a.priority || a.price - b.price);
+}
+
 export function priceSliderStep(currency: PriceCurrency): number {
   return currency === "INR" ? 500 : 50;
 }
@@ -491,7 +502,7 @@ export function formatDeviceLaunchLabel(device: Device): string {
 
   const now = Date.now();
   if (target.getTime() > now) {
-    return target.toLocaleDateString("en-US", {
+    return formatDate(target, {
       month: "short",
       day: "numeric",
       year: "numeric",
@@ -512,4 +523,15 @@ export function getUpcomingDevices(devices: Device[], limit = 4): Device[] {
     );
 
   return upcoming.slice(0, limit);
+}
+
+/** Community + Arena score ranking used by Trending Arena on home and /phones?trending=1 */
+export function getTrendingArenaDevices(devices: Device[], limit?: number): Device[] {
+  const sorted = [...devices].sort(
+    (a, b) =>
+      computeArenaScore(b) * 0.5 +
+      (b.rating ?? 0) * 5 -
+      (computeArenaScore(a) * 0.5 + (a.rating ?? 0) * 5),
+  );
+  return limit != null ? sorted.slice(0, limit) : sorted;
 }

@@ -1,0 +1,14 @@
+{
+  "news": {
+    "title": "Notizie",
+    "loadError": "Impossibile caricare le notizie. L’API è attiva?",
+    "empty": "Ancora nessuna notizia.",
+    "featured": "Featured",
+    "home": "Home",
+    "breadcrumb": "News",
+    "notFound": "Article not found",
+    "readMore": "Read more",
+    "latest": "Latest news",
+    "published": "Published"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "reviews": {
+    "title": "Обзоры",
+    "loadError": "Не удалось загрузить обзоры. API запущен?",
+    "empty": "Пока нет обзоров.",
+    "home": "Home",
+    "breadcrumb": "Reviews",
+    "notFound": "Review not found",
+    "pros": "Pros",
+    "cons": "Cons",
+    "score": "Score",
+    "readFull": "Read full review"
+  }
+}

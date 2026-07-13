@@ -51,10 +51,11 @@ export const NAV_LINK_ACCENTS: Record<string, TitanAccent> = {
   "/phones": "blue",
   "/phone-finder": "cyan",
   "/compare": "purple",
-  "/phones?upcoming=1": "green",
+  "/phones?upcoming=1": "cyan",
   "/news": "orange",
   "/reviews": "pink",
   "/community": "purple",
+  "/ev": "green",
   "/contact": "green",
 };
 
@@ -72,6 +73,7 @@ export function accentForPathname(pathname: string, search = ""): TitanAccent {
   if (pathname.startsWith("/news")) return "orange";
   if (pathname.startsWith("/reviews")) return "pink";
   if (pathname.startsWith("/community")) return "purple";
+  if (pathname.startsWith("/ev")) return "green";
   if (pathname.startsWith("/contact")) return "green";
   if (pathname === "/phones" || pathname.startsWith("/phones/")) return "blue";
 

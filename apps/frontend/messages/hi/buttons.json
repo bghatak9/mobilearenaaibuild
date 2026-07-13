@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "साइन इन",
+    "myProfile": "मेरी प्रोफ़ाइल",
+    "notifications": "सूचनाएँ",
+    "favorites": "पसंदीदा फ़ोन",
+    "search": "खोजें",
+    "openMenu": "मेनू खोलें",
+    "language": "भाषा",
+    "theme": "थीम बदलें",
+    "voiceSearch": "आवाज़ खोज",
+    "closeMenu": "मेनू बंद करें",
+    "menu": "मेनू"
+  },
+  "languagePicker": {
+    "search": "भाषा खोजें…",
+    "close": "बंद करें",
+    "favorites": "पसंदीदा",
+    "recent": "हाल ही में उपयोग",
+    "popular": "लोकप्रिय",
+    "all": "सभी भाषाएँ ({count})",
+    "matches": "{count} परिणाम",
+    "empty": "कोई भाषा नहीं मिली",
+    "addFavorite": "पसंदीदा जोड़ें",
+    "removeFavorite": "पसंदीदा हटाएँ",
+    "changed": "Language changed to {language}"
+  }
+}

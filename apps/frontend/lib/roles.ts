@@ -14,11 +14,11 @@ export const AUTH_POLICY_NOTE =
 
 /** Human-readable role responsibilities. */
 export const ROLE_DESCRIPTIONS: Record<UserRole, string> = {
-  SUPER_ADMIN: `Platform owner — full system access${AUTH_POLICY_NOTE}`,
-  ADMIN: `Business content, catalog uploads & moderation${AUTH_POLICY_NOTE}`,
-  EDITOR: `Publish news and reviews${AUTH_POLICY_NOTE}`,
-  AUTHOR: `Write drafts (no direct publish)${AUTH_POLICY_NOTE}`,
-  MODERATOR: `Comment moderation${AUTH_POLICY_NOTE}`,
+  SUPER_ADMIN: `Platform owner — full system access including EV${AUTH_POLICY_NOTE}`,
+  ADMIN: `Business content, catalog uploads, EV management & moderation${AUTH_POLICY_NOTE}`,
+  EDITOR: `Publish news, reviews, and EV content${AUTH_POLICY_NOTE}`,
+  AUTHOR: `Write drafts including EV entries (no direct publish)${AUTH_POLICY_NOTE}`,
+  MODERATOR: `Comment moderation and EV community oversight${AUTH_POLICY_NOTE}`,
   USER: `Public registered accounts${AUTH_POLICY_NOTE}`,
 };
 
@@ -95,6 +95,7 @@ export function canManageNewsArea(role: UserRole | null | undefined): boolean {
 export {
   canAccessArea,
   canImport,
+  canManageEv,
   contentAccessMatrix,
   getImportKindsForRole,
   CONTENT_AREAS,
@@ -103,6 +104,7 @@ export {
   IMPORT_KIND_HINTS,
   IMPORT_KIND_LABELS,
   ROLE_RESPONSIBILITIES,
+  STAFF_EV_ROLES,
   type ContentArea,
   type ImportKind,
 } from "./content-permissions";

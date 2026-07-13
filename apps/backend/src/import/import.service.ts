@@ -4,7 +4,7 @@ import { UserRole } from '@prisma/client';
 import { ImportExecutor } from './import.executor';
 import { ImportJobService } from './import-job.service';
 import { ImportLifecycleService } from './import-lifecycle.service';
-import type { BulkImportKind, ImportActor } from './import.types';
+import type { BulkImportKind, EvUploadSubkind, ImportActor } from './import.types';
 
 /** Facade for bulk upload — validate, run, and job status. */
 @Injectable()
@@ -15,15 +15,25 @@ export class ImportService {
     private readonly lifecycle: ImportLifecycleService,
   ) {}
 
-  validate(kind: BulkImportKind, file: Express.Multer.File, role: UserRole) {
-    return this.executor.validate(kind, file, role);
+  validate(
+    kind: BulkImportKind,
+    file: Express.Multer.File,
+    role: UserRole,
+    options?: { slug?: string; subkind?: EvUploadSubkind },
+  ) {
+    return this.executor.validate(kind, file, role, options);
   }
 
   run(
     kind: BulkImportKind,
     file: Express.Multer.File,
     actor: ImportActor,
-    options?: { atomic?: boolean; background?: boolean },
+    options?: {
+      atomic?: boolean;
+      background?: boolean;
+      slug?: string;
+      subkind?: EvUploadSubkind;
+    },
   ) {
     return this.executor.run(kind, file, actor, options);
   }

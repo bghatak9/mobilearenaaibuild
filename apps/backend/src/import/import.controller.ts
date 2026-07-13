@@ -23,7 +23,7 @@ import { RolesGuard } from '../auth/roles.guard';
 import { Roles } from '../auth/roles.decorator';
 import { canImport, type ImportKind } from '../auth/content-permissions';
 import { canImportKind } from './import-file-policy';
-import type { BulkImportKind } from './import.types';
+import type { BulkImportKind, EvUploadSubkind } from './import.types';
 import { ImportService } from './import.service';
 
 interface AuthRequest extends Request {
@@ -85,15 +85,21 @@ export class ImportController {
     UserRole.ADMIN,
     UserRole.EDITOR,
     UserRole.AUTHOR,
+    UserRole.MODERATOR,
   )
   @UseInterceptors(FileInterceptor('file'))
   validate(
     @Param('kind') kind: BulkImportKind,
     @UploadedFile() file: Express.Multer.File,
     @Req() req: AuthRequest,
+    @Query('slug') slug?: string,
+    @Query('subkind') subkind?: string,
   ) {
     this.assertKindAccess(kind, req.user.role);
-    return this.importService.validate(kind, file, req.user.role);
+    return this.importService.validate(kind, file, req.user.role, {
+      slug,
+      subkind: this.parseEvSubkind(subkind),
+    });
   }
 
   @Post(':kind/run')
@@ -102,6 +108,7 @@ export class ImportController {
     UserRole.ADMIN,
     UserRole.EDITOR,
     UserRole.AUTHOR,
+    UserRole.MODERATOR,
   )
   @UseInterceptors(FileInterceptor('file'))
   run(
@@ -110,11 +117,15 @@ export class ImportController {
     @Req() req: AuthRequest,
     @Query('atomic') atomic?: string,
     @Query('background') background?: string,
+    @Query('slug') slug?: string,
+    @Query('subkind') subkind?: string,
   ) {
     this.assertKindAccess(kind, req.user.role);
     return this.importService.run(kind, file, req.user, {
       atomic: atomic !== 'false',
       background: background !== 'false',
+      slug,
+      subkind: this.parseEvSubkind(subkind),
     });
   }
 
@@ -228,6 +239,19 @@ export class ImportController {
     return this.importService.run('advertisements', file, req.user, {
       background: false,
     });
+  }
+
+  private parseEvSubkind(raw?: string): EvUploadSubkind | undefined {
+    const value = raw?.trim().toLowerCase();
+    if (
+      value === 'vehicles' ||
+      value === 'upcoming' ||
+      value === 'news' ||
+      value === 'reviews'
+    ) {
+      return value;
+    }
+    return undefined;
   }
 
   private assertKindAccess(kind: BulkImportKind, role: UserRole | undefined) {

@@ -1,7 +1,7 @@
 import type { MouseEvent } from "react";
 
 import { apiPath } from "@/lib/api-base";
-import { API_URL } from "@/lib/api";
+import { getApiUrl } from "@/lib/api";
 import { getCachedVisitorCountryCode } from "@/lib/visitor-geo";
 
 const VISITOR_KEY = "ma_visitor_id";
@@ -58,7 +58,7 @@ export async function trackAdImpression(
 
   try {
     const countryCode = getCachedVisitorCountryCode();
-    await fetch(`${API_URL}/advertisements/${adId}/impression`, {
+    await fetch(`${getApiUrl()}/advertisements/${adId}/impression`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

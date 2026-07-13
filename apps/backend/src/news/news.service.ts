@@ -1,10 +1,11 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { PostStatus, Prisma } from '@prisma/client';
+import { ContentEntityType, PostStatus, Prisma } from '@prisma/client';
 
 import { isImportedOnlyCatalog, catalogNewsWhere } from '../common/catalog-mode';
 import { PrismaService } from '../prisma/prisma.service';
 import { CacheService } from '../cache/cache.service';
 import { slugify } from '../common/slug';
+import { ContentTranslationService } from '../content-translation/content-translation.service';
 import { CreateNewsDto } from './dto/create-news.dto';
 import { UpdateNewsDto } from './dto/update-news.dto';
 
@@ -20,51 +21,113 @@ export class NewsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly cache: CacheService,
+    private readonly translations: ContentTranslationService,
   ) {}
 
-  findAll(
-    params?: { status?: PostStatus; featured?: boolean },
+  async findAll(
+    params?: {
+      status?: PostStatus;
+      featured?: boolean;
+      locale?: string;
+      search?: string;
+    },
     options?: { includeCatalogHidden?: boolean },
   ) {
     const scope = options?.includeCatalogHidden
       ? 'admin'
       : catalogCacheScope();
-    const key = `${CACHE_PREFIX}list:${scope}:${params?.status ?? 'any'}:${
+    const locale = params?.locale ?? 'en';
+    const cleanSearch = params?.search?.trim();
+    const key = `${CACHE_PREFIX}list:${scope}:${locale}:${params?.status ?? 'any'}:${
       params?.featured ?? 'any'
-    }`;
+    }:${cleanSearch || 'all'}`;
 
-    return this.cache.wrap(key, CACHE_TTL, () => {
+    return this.cache.wrap(key, CACHE_TTL, async () => {
       const where: Prisma.NewsWhereInput = options?.includeCatalogHidden
         ? {}
         : catalogNewsWhere();
       if (params?.status) where.status = params.status;
       if (params?.featured !== undefined) where.featured = params.featured;
 
-      return this.prisma.news.findMany({
+      if (cleanSearch) {
+        const translationIds = await this.translations.searchEntityIds(
+          ContentEntityType.NEWS,
+          cleanSearch,
+          locale,
+        );
+        where.OR = [
+          { title: { contains: cleanSearch, mode: 'insensitive' } },
+          { content: { contains: cleanSearch, mode: 'insensitive' } },
+          { excerpt: { contains: cleanSearch, mode: 'insensitive' } },
+          { seoTitle: { contains: cleanSearch, mode: 'insensitive' } },
+          { keywords: { contains: cleanSearch, mode: 'insensitive' } },
+          ...(translationIds.length
+            ? [{ id: { in: translationIds } }]
+            : []),
+        ];
+      }
+
+      const rows = await this.prisma.news.findMany({
         where,
         orderBy: [{ publishedAt: 'desc' }, { createdAt: 'desc' }],
       });
+      return this.translations.localizeMany(
+        ContentEntityType.NEWS,
+        rows,
+        locale,
+      );
     });
   }
 
-  async findBySlug(slug: string, options?: { includeCatalogHidden?: boolean }) {
+  async findBySlug(
+    slug: string,
+    options?: { includeCatalogHidden?: boolean; locale?: string },
+  ) {
     const scope = options?.includeCatalogHidden
       ? 'admin'
       : catalogCacheScope();
+    const locale = options?.locale ?? 'en';
 
     return this.cache.wrap(
-      `${CACHE_PREFIX}slug:${scope}:${slug}`,
+      `${CACHE_PREFIX}slug:${scope}:${locale}:${slug}`,
       CACHE_TTL,
       async () => {
-        const article = await this.prisma.news.findFirst({
+        let article = await this.prisma.news.findFirst({
           where: options?.includeCatalogHidden
             ? { slug }
             : catalogNewsWhere({ slug }),
         });
+
+        if (!article) {
+          const translatedId =
+            await this.translations.resolveEntityIdByLocalizedSlug(
+              ContentEntityType.NEWS,
+              slug,
+              locale,
+            );
+          if (translatedId) {
+            article = await this.prisma.news.findFirst({
+              where: options?.includeCatalogHidden
+                ? { id: translatedId }
+                : catalogNewsWhere({ id: translatedId }),
+            });
+          }
+        }
+
         if (!article) {
           throw new NotFoundException(`News article "${slug}" not found.`);
         }
-        return article;
+        const localized = await this.translations.localizeOne(
+          ContentEntityType.NEWS,
+          article,
+          locale,
+        );
+        const localeSlugs = await this.translations.localeSlugMap(
+          ContentEntityType.NEWS,
+          article.id,
+          article.slug,
+        );
+        return { ...localized, localeSlugs };
       },
     );
   }
@@ -107,7 +170,6 @@ export class NewsService {
     if (dto.publishedAt !== undefined) {
       data.publishedAt = dto.publishedAt ? new Date(dto.publishedAt) : null;
     } else if (dto.status === PostStatus.PUBLISHED) {
-      // Auto-stamp publish time when transitioning to PUBLISHED.
       data.publishedAt = new Date();
     }
 

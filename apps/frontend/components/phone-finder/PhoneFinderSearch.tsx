@@ -34,15 +34,16 @@ import {
   addSearchHistory,
   clearSearchHistory,
   getSearchHistory,
-  getToken,
   removeSearchHistory,
   type Device,
 } from "@/lib/api";
 import { cn } from "@/design-system/utils/cn";
 import { SearchLanguageSelect } from "@/components/search/SearchLanguageSelect";
 import { useCompare } from "@/lib/compare-context";
+import { useClientMounted } from "@/hooks/useClientMounted";
 import { usePreparedVoiceSearch } from "@/lib/use-prepared-voice-search";
 import { useSearchLanguage } from "@/lib/use-search-language";
+import { useSiteAuth } from "@/lib/site-auth";
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
   const [debounced, setDebounced] = useState(value);
@@ -101,15 +102,16 @@ export function PhoneFinderSearch({
   const panelRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const compare = useCompare();
+  const mounted = useClientMounted();
   const { language: searchLanguage } = useSearchLanguage();
+  const { user, ready: authReady } = useSiteAuth();
   const [open, setOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [history, setHistory] = useState<SearchHistoryItem[]>([]);
-  const [isMobile, setIsMobile] = useState(false);
   const debouncedValue = useDebouncedValue(value, 400);
-  const loggedIn = Boolean(getToken());
+  const loggedIn = authReady && Boolean(user);
 
-  const suggestionLimit = isMobile ? 5 : 8;
+  const suggestionLimit = 8;
   const trending = useMemo(
     () => getDailyTrendingSearches(filters.priceCurrency),
     [filters.priceCurrency],
@@ -132,14 +134,6 @@ export function PhoneFinderSearch({
   useEffect(() => {
     void loadHistory();
   }, [loadHistory]);
-
-  useEffect(() => {
-    const mq = window.matchMedia("(max-width: 1023px)");
-    const update = () => setIsMobile(mq.matches);
-    update();
-    mq.addEventListener("change", update);
-    return () => mq.removeEventListener("change", update);
-  }, []);
 
   useEffect(() => {
     onCommit(debouncedValue);
@@ -242,6 +236,7 @@ export function PhoneFinderSearch({
     lang: searchLanguage,
     onPrepared: handleVoicePrepared,
   });
+  const showVoice = mounted && voice.supported;
 
   const commitCurrent = useCallback(async () => {
     const q = value.trim();
@@ -323,8 +318,12 @@ export function PhoneFinderSearch({
   const isSidebar = layout === "sidebar";
 
   return (
-    <div ref={panelRef} className={cn("relative w-full", className)}>
-      <div className={cn(isSidebar ? "space-y-2" : "flex items-start gap-2")}>
+    <div ref={panelRef} className={cn("relative w-full min-w-0", className)}>
+      <div
+        className={cn(
+          isSidebar ? "space-y-2" : "flex flex-col gap-2",
+        )}
+      >
         <div className="relative min-w-0 flex-1">
           <form
             onSubmit={(e) => {
@@ -367,11 +366,11 @@ export function PhoneFinderSearch({
               className={cn(
                 "w-full border border-[var(--border-subtle)] bg-[var(--surface-elevated)] pl-10 text-sm text-[var(--text-primary)] outline-none transition duration-150",
                 isSidebar ? "rounded-xl py-2.5" : "rounded-full py-2.5",
-                voice.supported ? (value ? "pr-[4.5rem]" : "pr-11") : "pr-4",
+                showVoice ? (value ? "pr-[4.5rem]" : "pr-11") : "pr-4",
                 "focus:border-[var(--ma-brand)]/50 focus:ring-2 focus:ring-[var(--ma-brand)]/25",
               )}
             />
-            {voice.supported && (
+            {showVoice && (
               <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center">
                 <VoiceSearchMicButton
                   listening={voice.listening}
@@ -391,7 +390,7 @@ export function PhoneFinderSearch({
                 }}
                 className={cn(
                   "absolute top-1/2 -translate-y-1/2 text-[var(--text-secondary)] hover:text-[var(--text-primary)]",
-                  voice.supported ? "right-10" : "right-3",
+                  showVoice ? "right-10" : "right-3",
                 )}
                 aria-label="Clear search"
               >
@@ -424,7 +423,7 @@ export function PhoneFinderSearch({
                   Clear all
                 </button>
               </div>
-              {history.slice(0, isMobile ? 5 : 8).map((item) => (
+              {history.slice(0, 8).map((item) => (
                 <div
                   key={item.id}
                   className="flex items-center gap-1 rounded-xl hover:bg-white/5"
@@ -538,7 +537,7 @@ export function PhoneFinderSearch({
             </div>
           )}
         </div>
-        {!isSidebar ? <SearchLanguageSelect className="mt-0.5 shrink-0" /> : null}
+        {!isSidebar ? <SearchLanguageSelect className="w-full" /> : null}
       </div>
       {isSidebar ? (
         <SearchLanguageSelect className="w-full justify-between px-1" />

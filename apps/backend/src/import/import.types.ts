@@ -10,7 +10,8 @@ export type BulkImportKind =
   | 'prices'
   | 'reviews'
   | 'documentation'
-  | 'advertisements';
+  | 'advertisements'
+  | 'ev';
 
 export type ImportJobStatus =
   | 'queued'
@@ -73,6 +74,9 @@ export type ImportJobSnapshot = {
   createdAt: string;
   finishedAt?: string;
 };
+
+/** EV bulk upload sub-sections (all under kind `ev`). */
+export type EvUploadSubkind = 'vehicles' | 'upcoming' | 'news' | 'reviews';
 
 export type ImportActor = {
   userId: number;

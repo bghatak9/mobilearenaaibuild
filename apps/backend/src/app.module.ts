@@ -1,8 +1,9 @@
 import { Module } from '@nestjs/common';
-import { APP_FILTER } from '@nestjs/core';
+import { APP_FILTER, APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AllExceptionsFilter } from './observability/all-exceptions.filter';
+import { LocaleInterceptor } from './common/locale.interceptor';
 import { PrismaModule } from './prisma/prisma.module';
 import { CacheModule } from './cache/cache.module';
 import { HealthModule } from './health/health.module';
@@ -27,6 +28,9 @@ import { NewsletterModule } from './newsletter/newsletter.module';
 import { ContactModule } from './contact/contact.module';
 import { CommunityModule } from './community/community.module';
 import { TranslateModule } from './translate/translate.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { ContentTranslationModule } from './content-translation/content-translation.module';
+import { SearchModule } from './search/search.module';
 
 @Module({
   imports: [
@@ -43,6 +47,8 @@ import { TranslateModule } from './translate/translate.module';
     AuthModule,
     ReviewModule,
     NewsModule,
+    ContentTranslationModule,
+    SearchModule,
     RatingModule,
     CommentModule,
     CompareModule,
@@ -54,11 +60,13 @@ import { TranslateModule } from './translate/translate.module';
     ContactModule,
     CommunityModule,
     TranslateModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [
     AppService,
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
+    { provide: APP_INTERCEPTOR, useClass: LocaleInterceptor },
   ],
 })
 export class AppModule {}

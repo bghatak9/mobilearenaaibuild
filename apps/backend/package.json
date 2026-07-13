@@ -22,6 +22,7 @@
     "prisma:migrate": "prisma migrate dev",
     "prisma:studio": "prisma studio",
     "prisma:seed": "tsx prisma/seed.ts",
+    "prisma:seed:brand-i18n": "tsx prisma/scripts/seed-brand-translations.ts",
     "catalog:hide-seed": "tsx scripts/hide-seed-devices.ts"
   },
   "prisma": {
@@ -45,6 +46,7 @@
     "dotenv": "^16.6.1",
     "geoip-lite": "^2.0.3",
     "ioredis": "^5.11.1",
+    "meilisearch": "^0.45.0",
     "multer": "^2.2.0",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

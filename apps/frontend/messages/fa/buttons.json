@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "ورود",
+    "myProfile": "پروفایل من",
+    "notifications": "اعلان‌ها",
+    "favorites": "علاقه‌مندی‌ها",
+    "search": "جستجو",
+    "openMenu": "باز کردن منو",
+    "language": "زبان",
+    "theme": "تغییر پوسته",
+    "voiceSearch": "جستجوی صوتی",
+    "closeMenu": "بستن منو",
+    "menu": "منو"
+  },
+  "languagePicker": {
+    "search": "جستجوی زبان…",
+    "close": "بستن",
+    "favorites": "علاقه‌مندی‌ها",
+    "recent": "اخیراً استفاده‌شده",
+    "popular": "محبوب",
+    "all": "همه زبان‌ها ({count})",
+    "matches": "{count} مورد",
+    "empty": "زبانی یافت نشد",
+    "addFavorite": "افزودن به علاقه‌مندی",
+    "removeFavorite": "حذف از علاقه‌مندی",
+    "changed": "Language changed to {language}"
+  }
+}

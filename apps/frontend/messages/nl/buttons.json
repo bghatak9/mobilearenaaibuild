@@ -1,0 +1,28 @@
+{
+  "action": {
+    "signIn": "Inloggen",
+    "myProfile": "Mijn profiel",
+    "notifications": "Meldingen",
+    "favorites": "Favorieten",
+    "search": "Zoeken",
+    "openMenu": "Menu openen",
+    "language": "Taal",
+    "theme": "Thema wisselen",
+    "voiceSearch": "Spraakzoeken",
+    "closeMenu": "Menu sluiten",
+    "menu": "Menu"
+  },
+  "languagePicker": {
+    "search": "Taal zoeken…",
+    "close": "Sluiten",
+    "favorites": "Favorieten",
+    "recent": "Recent gebruikt",
+    "popular": "Populair",
+    "all": "Alle talen ({count})",
+    "matches": "{count} resultaten",
+    "empty": "Geen talen gevonden",
+    "addFavorite": "Favoriet toevoegen",
+    "removeFavorite": "Favoriet verwijderen",
+    "changed": "Language changed to {language}"
+  }
+}
